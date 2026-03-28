@@ -6,7 +6,7 @@ const DEMO = PUBLIC_DEMO_MODE === 'true'
 
 export const load: LayoutServerLoad = async ({ locals }) => {
   if (DEMO) {
-    return { session: mockSession as any, profile: mockProfile }
+    return { session: mockSession as any, user: mockSession.user as any, profile: mockProfile }
   }
 
   const { session, user } = await locals.safeGetSession()
@@ -21,5 +21,5 @@ export const load: LayoutServerLoad = async ({ locals }) => {
     profile = data
   }
 
-  return { session, profile }
+  return { session, user, profile }
 }

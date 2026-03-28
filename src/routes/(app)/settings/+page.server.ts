@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit'
 import { PUBLIC_DEMO_MODE } from '$env/static/public'
 import { mockProfile } from '$lib/mock'
+import { uploadAvatar } from '$lib/server/storage'
 import { profileEditSchema } from '$lib/validators'
 import type { Actions, PageServerLoad } from './$types'
 
@@ -40,9 +41,19 @@ export const actions: Actions = {
       return fail(400, { errors: result.error.flatten().fieldErrors })
     }
 
+    const avatar = formData.get('avatar')
+    let avatarUrl: string | undefined
+    if (avatar instanceof File && avatar.size > 0) {
+      avatarUrl = await uploadAvatar(locals, user.id, avatar)
+    }
+
     const { error } = await locals.supabase
       .from('profiles')
-      .update({ ...result.data, updated_at: new Date().toISOString() })
+      .update({
+        ...result.data,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+        updated_at: new Date().toISOString()
+      })
       .eq('id', user.id)
 
     if (error) return fail(500, { message: error.message })

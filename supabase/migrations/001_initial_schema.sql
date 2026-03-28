@@ -171,11 +171,23 @@ CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE USING (auth.ui
 CREATE POLICY "posts_select" ON public.posts FOR SELECT USING (is_deleted = false);
 CREATE POLICY "posts_insert_own" ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "posts_update_own" ON public.posts FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "posts_admin_update" ON public.posts FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+  )
+);
 CREATE POLICY "posts_delete_own" ON public.posts FOR DELETE USING (auth.uid() = user_id);
 
 -- Comments
 CREATE POLICY "comments_select" ON public.comments FOR SELECT USING (is_deleted = false);
 CREATE POLICY "comments_insert_own" ON public.comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "comments_admin_update" ON public.comments FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+  )
+);
 CREATE POLICY "comments_delete_own" ON public.comments FOR DELETE USING (auth.uid() = user_id);
 
 -- Likes
@@ -190,12 +202,36 @@ CREATE POLICY "follows_delete_own" ON public.follows FOR DELETE USING (auth.uid(
 
 -- Categories
 CREATE POLICY "categories_select" ON public.categories FOR SELECT USING (is_active = true);
+CREATE POLICY "categories_admin_select" ON public.categories FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+  )
+);
+CREATE POLICY "categories_admin_insert" ON public.categories FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+  )
+);
+CREATE POLICY "categories_admin_update" ON public.categories FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+  )
+);
 
 -- Category suggestions
 CREATE POLICY "suggestions_insert" ON public.category_suggestions FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "suggestions_select" ON public.category_suggestions FOR SELECT USING (
   auth.uid() = user_id OR
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'moderator'))
+);
+CREATE POLICY "suggestions_update_staff" ON public.category_suggestions FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+  )
 );
 
 -- Messages

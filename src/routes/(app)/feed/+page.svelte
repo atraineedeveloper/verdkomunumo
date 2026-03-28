@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/state'
   import { t, type TranslationKey } from '$lib/i18n'
   import { formatDate } from '$lib/utils'
   import { CATEGORY_COLORS } from '$lib/icons'
@@ -67,7 +68,9 @@
           {/if}
 
           <div class="actions">
-            <button class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
+            <form method="POST" action={`/post/${post.id}?/toggleLike`}>
+              <button type="submit" class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
+            </form>
             <a href="/post/{post.id}" class="act"><MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span></a>
           </div>
         </div>
@@ -208,6 +211,8 @@
     gap: 0.15rem;
     margin-top: 0.1rem;
   }
+
+  .actions form { margin: 0; }
 
   .act {
     display: inline-flex;

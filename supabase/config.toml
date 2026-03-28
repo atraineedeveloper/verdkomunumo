@@ -1,0 +1,18 @@
+project_id = "verdkomunumo"
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5173/auth/callback",
+  "http://127.0.0.1:5173/auth/callback"
+]
+enable_signup = true
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+double_confirm_changes = true
+secure_password_change = false

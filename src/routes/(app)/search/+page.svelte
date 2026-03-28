@@ -1,35 +1,28 @@
 <script lang="ts">
+  import { page } from '$app/state'
   import { t, type TranslationKey } from '$lib/i18n'
-  import { mockPosts, mockProfile } from '$lib/mock'
   import { formatDate, getAvatarUrl } from '$lib/utils'
   import { CATEGORY_COLORS } from '$lib/icons'
   import { Heart, MessageSquare } from 'lucide-svelte'
   import PostMedia from '$lib/components/PostMedia.svelte'
+  import type { PageData } from './$types'
 
+  let { data }: { data: PageData } = $props()
   let query = $state('')
-  let tab = $state<'posts' | 'users'>('posts')
+  const tab = $derived(data.tab)
+  const filteredPosts = $derived(data.posts)
+  const filteredUsers = $derived(data.users)
+  const searchHref = $derived((targetTab: 'posts' | 'users') => {
+    const params = new URLSearchParams()
+    if (query.trim()) params.set('q', query.trim())
+    params.set('tab', targetTab)
+    const suffix = params.toString()
+    return suffix ? `/search?${suffix}` : '/search'
+  })
 
-  const allUsers = $derived(
-    [...new Map(
-      mockPosts.filter((p) => p.author).map((p) => [p.author!.id, p.author!])
-    ).values(), mockProfile]
-  )
-
-  const filteredPosts = $derived(
-    query.trim().length < 2 ? [] :
-    mockPosts.filter((p) =>
-      p.content.toLowerCase().includes(query.toLowerCase()) ||
-      p.author?.display_name.toLowerCase().includes(query.toLowerCase())
-    )
-  )
-
-  const filteredUsers = $derived(
-    query.trim().length < 2 ? [] :
-    allUsers.filter((u) =>
-      u.display_name.toLowerCase().includes(query.toLowerCase()) ||
-      u.username.toLowerCase().includes(query.toLowerCase())
-    )
-  )
+  $effect(() => {
+    query = data.q
+  })
 </script>
 
 <svelte:head>
@@ -37,24 +30,28 @@
 </svelte:head>
 
 <div class="search-wrap">
-  <input
-    type="search"
-    bind:value={query}
-    placeholder={$t('search_placeholder')}
-    class="search-input"
-  />
+  <form method="GET" class="search-form">
+    <input type="hidden" name="tab" value={tab} />
+    <input
+      type="search"
+      bind:value={query}
+      name="q"
+      placeholder={$t('search_placeholder')}
+      class="search-input"
+    />
+  </form>
 </div>
 
 <div class="tabs">
-  <button class="tab" class:active={tab === 'posts'} onclick={() => (tab = 'posts')}>
+  <a class="tab" class:active={tab === 'posts'} href={searchHref('posts')}>
     {$t('search_posts')}{#if filteredPosts.length > 0} <span class="count">{filteredPosts.length}</span>{/if}
-  </button>
-  <button class="tab" class:active={tab === 'users'} onclick={() => (tab = 'users')}>
+  </a>
+  <a class="tab" class:active={tab === 'users'} href={searchHref('users')}>
     {$t('search_users')}{#if filteredUsers.length > 0} <span class="count">{filteredUsers.length}</span>{/if}
-  </button>
+  </a>
 </div>
 
-{#if query.trim().length < 2}
+{#if data.q.trim().length < 2}
   <p class="hint">{$t('search_hint')}</p>
 {:else if tab === 'posts'}
   {#if filteredPosts.length === 0}
@@ -94,7 +91,9 @@
               <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />
             {/if}
             <div class="acts">
-              <span class="act"><Heart size={13} strokeWidth={1.75} /> {post.likes_count}</span>
+              <form method="POST" action={`/post/${post.id}?/toggleLike`}>
+                <button type="submit" class="act act-btn"><Heart size={13} strokeWidth={1.75} /> {post.likes_count}</button>
+              </form>
               <span class="act"><MessageSquare size={13} strokeWidth={1.75} /> {post.comments_count}</span>
             </div>
           </div>
@@ -127,6 +126,10 @@
   /* ── Search input ── */
   .search-wrap {
     margin-bottom: 1rem;
+  }
+
+  .search-form {
+    margin: 0;
   }
 
   .search-input {
@@ -166,6 +169,7 @@
     display: flex;
     align-items: center;
     gap: 0.3rem;
+    text-decoration: none;
   }
   .tab:hover { color: var(--color-text); }
   .tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
@@ -246,6 +250,18 @@
 
   .acts { display: flex; gap: 0.75rem; }
   .act { font-size: 0.8rem; color: var(--color-text-muted); }
+  .acts form { margin: 0; }
+  .act-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
 
   /* ── Users ── */
   .user-list { display: flex; flex-direction: column; }

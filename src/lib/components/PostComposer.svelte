@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t, type TranslationKey } from '$lib/i18n'
   import { DEMO_MODE } from '$lib/mock'
+  import { POST_MAX_IMAGES } from '$lib/constants'
   import type { Category } from '$lib/types'
 
   interface Props {
@@ -11,9 +12,18 @@
   let { categories, defaultCategoryId = '' }: Props = $props()
 
   let content    = $state('')
-  let categoryId = $state(defaultCategoryId || (categories[0]?.id ?? ''))
+  let categoryId = $state('')
   let toast      = $state(false)
   let focused    = $state(false)
+  let fileInput = $state<HTMLInputElement | null>(null)
+  let imageCount = $state(0)
+
+  $effect(() => {
+    const nextCategoryId = defaultCategoryId || (categories[0]?.id ?? '')
+    if (!categoryId || !categories.some((category) => category.id === categoryId)) {
+      categoryId = nextCategoryId
+    }
+  })
 
   const remaining = $derived(5000 - content.length)
   const canPost   = $derived(content.trim().length > 0 && categoryId !== '' && remaining >= 0)
@@ -23,7 +33,13 @@
       e.preventDefault()
       toast = true
       setTimeout(() => (toast = false), 2500)
+      return
     }
+
+    content = ''
+    focused = false
+    imageCount = 0
+    if (fileInput) fileInput.value = ''
   }
 </script>
 
@@ -32,7 +48,7 @@
     <div class="toast" role="status">{$t('post_compose_demo')}</div>
   {/if}
 
-  <form method="POST" action="?/createPost" onsubmit={handleSubmit}
+  <form method="POST" action="?/createPost" enctype="multipart/form-data" onsubmit={handleSubmit}
     onfocusin={() => (focused = true)}
     onfocusout={(e) => {
       if (!e.currentTarget.contains(e.relatedTarget as Node) && !content.trim()) focused = false
@@ -53,6 +69,23 @@
             <option value={cat.id}>{$t(('cat_name_' + cat.slug) as TranslationKey)}</option>
           {/each}
         </select>
+
+        <label class="file-btn">
+          <input
+            bind:this={fileInput}
+            type="file"
+            name="images"
+            accept="image/*"
+            multiple
+            onchange={(event) => {
+              imageCount = Math.min(
+                (event.currentTarget as HTMLInputElement).files?.length ?? 0,
+                POST_MAX_IMAGES
+              )
+            }}
+          />
+          {imageCount > 0 ? `${imageCount}/${POST_MAX_IMAGES} bildoj` : 'Bildoj'}
+        </label>
 
         <span class="chars" class:warn={remaining < 200} class:over={remaining < 0}>
           {remaining}
@@ -131,6 +164,23 @@
   }
 
   select:hover { border-color: var(--color-primary); }
+
+  .file-btn {
+    display: inline-flex;
+    align-items: center;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    color: var(--color-text);
+    font-size: 0.8rem;
+    padding: 0.28rem 0.55rem;
+    cursor: pointer;
+    transition: border-color 0.12s;
+    white-space: nowrap;
+  }
+
+  .file-btn:hover { border-color: var(--color-primary); }
+  .file-btn input { display: none; }
 
   .chars {
     font-size: 0.75rem;

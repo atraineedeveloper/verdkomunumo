@@ -1,7 +1,5 @@
 <script>
   import { PenLine, MessageCircle, BookOpen, Sprout } from 'lucide-svelte'
-  import { PUBLIC_DEMO_MODE } from '$env/static/public'
-  const isDemo = PUBLIC_DEMO_MODE === 'true'
 </script>
 
 <svelte:head>
@@ -20,17 +18,9 @@
       Konektiĝu, diskutu, kaj praktiku la lingvon.
     </p>
     <div class="hero-actions">
-      {#if isDemo}
-        <a href="/feed" class="btn-primary">Esplori la demon →</a>
-        <a href="/login" class="btn-outline">Ensaluti</a>
-      {:else}
-        <a href="/register" class="btn-primary">Registriĝi — senpaga</a>
-        <a href="/login" class="btn-outline">Ensaluti</a>
-      {/if}
+      <a href="/register" class="btn-primary">Registriĝi — senpaga</a>
+      <a href="/login" class="btn-outline">Ensaluti</a>
     </div>
-    {#if isDemo}
-      <p class="demo-note">Versio demo — neniu konto bezonata</p>
-    {/if}
   </section>
 
   <!-- Features -->
@@ -204,10 +194,4 @@
   }
 
   .landing-footer a { color: var(--color-primary); text-decoration: none; }
-
-  .demo-note {
-    font-size: 0.78rem;
-    color: var(--color-text-muted);
-    margin: 0.5rem 0 0;
-  }
 </style>

@@ -91,7 +91,9 @@
             </span>
           {/if}
           <span class="post-date">{new Date(post.created_at).toLocaleDateString('eo')}</span>
-          <span class="stat rose"><Heart size={12} strokeWidth={1.75} /> {post.likes_count}</span>
+          <form method="POST" action={`/post/${post.id}?/toggleLike`}>
+            <button type="submit" class="stat-btn rose"><Heart size={12} strokeWidth={1.75} /> {post.likes_count}</button>
+          </form>
           <span class="stat blue"><MessageSquare size={12} strokeWidth={1.75} /> {post.comments_count}</span>
         </div>
       </article>
@@ -267,6 +269,8 @@
     color: var(--color-text-muted);
   }
 
+  .post-meta form { margin: 0; }
+
   .post-category {
     display: inline-flex;
     align-items: center;
@@ -280,8 +284,20 @@
     align-items: center;
     gap: 0.25rem;
   }
-  .stat.rose { color: #f43f5e; }
   .stat.blue { color: #60a5fa; }
+
+  .stat-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: transparent;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    color: inherit;
+  }
+  .stat-btn.rose { color: #f43f5e; }
 
   .empty {
     color: var(--color-text-muted);

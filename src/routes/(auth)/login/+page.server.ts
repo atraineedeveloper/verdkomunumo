@@ -1,4 +1,5 @@
 import { redirect, fail } from '@sveltejs/kit'
+import { PUBLIC_GOOGLE_AUTH_ENABLED } from '$env/static/public'
 import { loginSchema } from '$lib/validators'
 import type { Actions, PageServerLoad } from './$types'
 
@@ -25,6 +26,10 @@ export const actions: Actions = {
   },
 
   google: async ({ locals }) => {
+    if (PUBLIC_GOOGLE_AUTH_ENABLED !== 'true') {
+      return fail(400, { message: 'Google OAuth ankoraŭ ne estas agordita' })
+    }
+
     const { data, error } = await locals.supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${process.env.PUBLIC_APP_URL ?? 'http://localhost:5173'}/auth/callback` }

@@ -3,6 +3,7 @@
   import { themeStore } from '$lib/stores/theme'
   import { t, locale, LOCALE_LABELS, LOCALE_COUNTRY, type Locale } from '$lib/i18n'
   import { ESPERANTO_LEVELS } from '$lib/constants'
+  import { getAvatarUrl } from '$lib/utils'
   import type { PageData, ActionData } from './$types'
   import type { Theme } from '$lib/types'
 
@@ -32,10 +33,22 @@
 <section class="section">
   <h2 class="section-title">{$t('settings_profile')}</h2>
 
-  <form method="POST" action="?/updateProfile" use:enhance={() => {
+  <form method="POST" action="?/updateProfile" enctype="multipart/form-data" use:enhance={() => {
     savingProfile = true
     return async ({ update }) => { savingProfile = false; await update() }
   }}>
+    <div class="avatar-field">
+      <img
+        class="avatar-preview"
+        src={getAvatarUrl(data.profile?.avatar_url ?? '', data.profile?.display_name ?? 'Verdkomunumo')}
+        alt={data.profile?.display_name ?? 'Avatar'}
+      />
+      <div class="avatar-copy">
+        <label for="avatar">Avatar</label>
+        <input id="avatar" name="avatar" type="file" accept="image/*" />
+      </div>
+    </div>
+
     <div class="field">
       <label for="display_name">{$t('auth_display_name')}</label>
       <input
@@ -158,6 +171,28 @@
     flex-direction: column;
     gap: 0.3rem;
     margin-bottom: 1rem;
+    flex: 1;
+  }
+
+  .avatar-field {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .avatar-preview {
+    width: 72px;
+    height: 72px;
+    border-radius: 9999px;
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    background: var(--color-surface-alt);
+  }
+
+  .avatar-copy {
+    min-width: 220px;
     flex: 1;
   }
 

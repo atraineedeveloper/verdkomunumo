@@ -1,20 +1,17 @@
 <script lang="ts">
   import { t, type TranslationKey } from '$lib/i18n'
-  import { mockPosts, mockCategories, mockProfile } from '$lib/mock'
+  import { formatDate } from '$lib/utils'
   import { Users, Layers, Flag, Heart, MessageSquare } from 'lucide-svelte'
   import { CATEGORY_ICONS, CATEGORY_COLORS, LEVEL_ICONS, LEVEL_COLORS } from '$lib/icons'
+  import type { PageData } from './$types'
+
+  let { data }: { data: PageData } = $props()
 
   const stats = $derived([
-    { label: $t('admin_users'), value: '1,284', Icon: Users, trend: '+12 ĉi-semajne' },
-    { label: $t('nav_categories'), value: mockCategories.length.toString(), Icon: Layers, trend: '' },
-    { label: $t('admin_nav_reports'), value: '3', Icon: Flag, trend: 'Traktendaj' },
+    { label: $t('admin_users'), value: data.stats.users.toString(), Icon: Users, trend: '' },
+    { label: $t('nav_categories'), value: data.stats.categories.toString(), Icon: Layers, trend: '' },
+    { label: $t('admin_nav_reports'), value: data.stats.pendingSuggestions.toString(), Icon: Flag, trend: 'Traktendaj' },
   ])
-
-  const recentUsers = [
-    { name: 'Lucas Oliveira', username: 'lucas_br', joined: 'antaŭ 2 tagoj', level: 'komencanto' },
-    { name: 'Kenji Yamamoto', username: 'kenji_eo', joined: 'antaŭ 3 tagoj', level: 'progresanto' },
-    { name: 'María Fernández', username: 'maria_es', joined: 'antaŭ 5 tagoj', level: 'komencanto' },
-  ]
 </script>
 
 <svelte:head>
@@ -22,7 +19,7 @@
 </svelte:head>
 
 <h1 class="page-title">{$t('admin_panel')}</h1>
-<p class="page-subtitle">{$t('admin_welcome')} {mockProfile.display_name}</p>
+<p class="page-subtitle">{$t('admin_welcome')} {data.staffProfile?.display_name ?? 'Admin'}</p>
 
 <!-- Stats -->
 <div class="stats-grid">
@@ -54,7 +51,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each mockPosts as post}
+        {#each data.recentPosts as post}
           <tr>
             <td>
               <a href="/profile/{post.author?.username}" class="table-link">
@@ -76,7 +73,10 @@
             <td>{post.comments_count}</td>
             <td>
               <a href="/post/{post.id}" class="action-link">{$t('admin_view')}</a>
-              <button class="action-btn-danger">{$t('admin_delete')}</button>
+              <form method="POST" action="?/deletePost" class="inline-form">
+                <input type="hidden" name="post_id" value={post.id} />
+                <button type="submit" class="action-btn-danger">{$t('admin_delete')}</button>
+              </form>
             </td>
           </tr>
         {/each}
@@ -89,15 +89,15 @@
 <section class="section">
   <h2 class="section-title">{$t('admin_new_users')}</h2>
   <div class="user-list">
-    {#each recentUsers as user}
-      {@const LevelIcon = LEVEL_ICONS[user.level]}
+    {#each data.recentUsers as user}
+      {@const LevelIcon = LEVEL_ICONS[user.esperanto_level]}
       <div class="user-row">
-        <span class="user-level" style="color: {LEVEL_COLORS[user.level]}">{#if LevelIcon}<LevelIcon size={18} strokeWidth={1.75} />{/if}</span>
+        <span class="user-level" style="color: {LEVEL_COLORS[user.esperanto_level]}">{#if LevelIcon}<LevelIcon size={18} strokeWidth={1.75} />{/if}</span>
         <div class="user-info">
-          <a href="/profile/{user.username}" class="table-link">{user.name}</a>
-          <span class="user-meta">@{user.username} · {user.joined}</span>
+          <a href="/profile/{user.username}" class="table-link">{user.display_name}</a>
+          <span class="user-meta">@{user.username} · {formatDate(user.created_at)}</span>
         </div>
-        <button class="action-btn-danger">{$t('admin_block')}</button>
+        <span class="role-badge">{user.role}</span>
       </div>
     {/each}
   </div>
@@ -226,6 +226,10 @@
     margin-right: 0.5rem;
   }
 
+  .inline-form {
+    display: inline;
+  }
+
   .action-btn-danger {
     background: none;
     border: 1px solid #dc2626;
@@ -264,6 +268,13 @@
   .user-meta {
     display: block;
     font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .role-badge {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--color-text-muted);
   }
 </style>

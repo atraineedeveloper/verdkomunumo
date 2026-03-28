@@ -1,16 +1,15 @@
 <script lang="ts">
   import { t } from '$lib/i18n'
+  import { page } from '$app/state'
   import { formatDate, getAvatarUrl } from '$lib/utils'
-  import { mockProfile } from '$lib/mock'
   import type { Profile } from '$lib/types'
   import type { PageData } from './$types'
 
   let { data }: { data: PageData } = $props()
-
-  const MY_ID = mockProfile.id
+  const myId = $derived(page.data.profile?.id ?? '')
 
   function getOther(conv: (typeof data.conversations)[0]) {
-    return conv.participants?.find((p: Profile) => p.id !== MY_ID) ?? conv.participants?.[0]
+    return conv.participants?.find((p: Profile) => p.id !== myId) ?? conv.participants?.[0]
   }
 </script>
 

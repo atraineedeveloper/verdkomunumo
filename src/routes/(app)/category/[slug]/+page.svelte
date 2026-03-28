@@ -66,7 +66,9 @@
             <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />
           {/if}
           <div class="actions">
-            <button class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
+            <form method="POST" action={`/post/${post.id}?/toggleLike`}>
+              <button type="submit" class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
+            </form>
             <a href="/post/{post.id}" class="act"><MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span></a>
           </div>
         </div>
@@ -179,6 +181,8 @@
     display: flex;
     gap: 0.15rem;
   }
+
+  .actions form { margin: 0; }
 
   .act {
     display: inline-flex;

@@ -1,15 +1,17 @@
 <script lang="ts">
   import { t } from '$lib/i18n'
+  import { page } from '$app/state'
   import { formatDate, getAvatarUrl } from '$lib/utils'
-  import { mockProfile } from '$lib/mock'
   import type { Profile } from '$lib/types'
   import type { PageData } from './$types'
 
   let { data }: { data: PageData } = $props()
-  const { conversation, messages } = data
-
-  const MY_ID = mockProfile.id
-  const other = conversation.participants?.find((p: Profile) => p.id !== MY_ID) ?? conversation.participants?.[0]
+  const conversation = $derived(data.conversation)
+  const messages = $derived(data.messages)
+  const myId = $derived(page.data.profile?.id ?? '')
+  const other = $derived(
+    conversation.participants?.find((p: Profile) => p.id !== myId) ?? conversation.participants?.[0]
+  )
 </script>
 
 <svelte:head>
@@ -31,7 +33,7 @@
 <!-- Messages -->
 <div class="msgs">
   {#each messages as msg}
-    {@const isMe = msg.sender_id === MY_ID}
+    {@const isMe = msg.sender_id === myId}
     <div class="row" class:me={isMe}>
       {#if !isMe && msg.sender}
         <img src={getAvatarUrl(msg.sender.avatar_url, msg.sender.display_name)}

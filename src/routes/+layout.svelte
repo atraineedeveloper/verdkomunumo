@@ -10,7 +10,7 @@
 	let { data, children }: { data: LayoutData; children: any } = $props()
 
 	$effect(() => {
-		currentUser.set(data.session?.user ?? null)
+		currentUser.set(data.user ?? null)
 		currentProfile.set(data.profile)
 	})
 

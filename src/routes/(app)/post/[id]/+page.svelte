@@ -7,7 +7,8 @@
   import type { PageData } from './$types'
 
   let { data }: { data: PageData } = $props()
-  const { post, comments } = data
+  const post = $derived(data.post)
+  const comments = $derived(data.comments)
 </script>
 
 <svelte:head>
@@ -50,7 +51,9 @@
     <span class="time">{formatDate(post.created_at)}</span>
     {#if post.is_edited}<span class="edited">{$t('post_edited')}</span>{/if}
     <div class="stats">
-      <button class="act"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</button>
+      <form method="POST" action="?/toggleLike">
+        <button type="submit" class="act"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</button>
+      </form>
       <span class="muted"><MessageSquare size={14} strokeWidth={1.75} /> {post.comments_count}</span>
     </div>
   </div>
@@ -71,7 +74,7 @@
 </div>
 
 <!-- Comments -->
-<section class="comments">
+<section class="comments" id="comments">
   <h2>{$t('post_comments')} <span class="count">({comments.length})</span></h2>
 
   {#if comments.length === 0}
@@ -100,7 +103,7 @@
             {/if}
           </div>
           <p class="ccontent">{comment.content}</p>
-          <button class="act"><Heart size={13} strokeWidth={1.75} /> {comment.likes_count}</button>
+          <span class="act static"><Heart size={13} strokeWidth={1.75} /> {comment.likes_count}</span>
         </div>
       </div>
     {/each}
@@ -198,6 +201,7 @@
   }
 
   .stats { display: flex; gap: 0.5rem; margin-left: auto; }
+  .stats form { margin: 0; }
 
   /* ── Compose ── */
   .compose {
@@ -296,6 +300,8 @@
     font-family: inherit;
   }
   .act:hover { color: var(--color-primary); background: var(--color-primary-dim); }
+  .act.static { cursor: default; }
+  .act.static:hover { color: var(--color-text-muted); background: transparent; }
 
   .btn {
     background: var(--color-primary);
