@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+@import 'flag-icons/css/flag-icons.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
+
+*, *::before, *::after {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
+
+/* ─── Green ──────────────────────────────────────── */
+.theme-green {
+  --color-bg:          #ffffff;
+  --color-surface:     #ffffff;
+  --color-surface-alt: #f7f9f8;
+  --color-primary:     #16a34a;
+  --color-primary-dim: rgba(22, 163, 74, 0.07);
+  --color-text:        #0f1a14;
+  --color-text-muted:  #6b7a6f;
+  --color-border:      #e8ecea;
+  --color-danger:      #ef4444;
+}
+
+/* ─── Dark ───────────────────────────────────────── */
+.theme-dark {
+  --color-bg:          #09090b;
+  --color-surface:     #09090b;
+  --color-surface-alt: #111113;
+  --color-primary:     #4ade80;
+  --color-primary-dim: rgba(74, 222, 128, 0.08);
+  --color-text:        #f4f4f5;
+  --color-text-muted:  #71717a;
+  --color-border:      #27272a;
+  --color-danger:      #f87171;
+}
+
+/* ─── Vivid ──────────────────────────────────────── */
+.theme-vivid {
+  --color-bg:          #ffffff;
+  --color-surface:     #ffffff;
+  --color-surface-alt: #faf8ff;
+  --color-primary:     #7c3aed;
+  --color-primary-dim: rgba(124, 58, 237, 0.07);
+  --color-text:        #1a1523;
+  --color-text-muted:  #7c6d9a;
+  --color-border:      #ede9f6;
+  --color-danger:      #ef4444;
+}
+
+/* ─── Minimal ────────────────────────────────────── */
+.theme-minimal {
+  --color-bg:          #fafafa;
+  --color-surface:     #fafafa;
+  --color-surface-alt: #f4f4f5;
+  --color-primary:     #18181b;
+  --color-primary-dim: rgba(24, 24, 27, 0.05);
+  --color-text:        #18181b;
+  --color-text-muted:  #a1a1aa;
+  --color-border:      #e4e4e7;
+  --color-danger:      #ef4444;
+}
+
+/* ─── Base ───────────────────────────────────────── */
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background 0.2s, color 0.2s;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+a { color: inherit; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 99px; }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::selection {
+  background: var(--color-primary-dim);
+  color: var(--color-primary);
+}
