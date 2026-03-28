@@ -86,13 +86,4 @@
   .icon { font-size: 0.9rem; width: 18px; text-align: center; flex-shrink: 0; }
 
   .cat-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .count {
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .link.active .count { color: var(--color-primary); opacity: 0.7; }
 </style>

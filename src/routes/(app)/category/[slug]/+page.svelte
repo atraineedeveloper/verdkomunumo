@@ -104,16 +104,6 @@
     margin: 0;
   }
 
-  .cat-count {
-    font-size: 0.75rem;
-    color: var(--color-primary);
-    background: var(--color-primary-dim);
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
-    font-weight: 500;
-    flex-shrink: 0;
-  }
-
   /* ── Empty ── */
   .empty {
     text-align: center;
