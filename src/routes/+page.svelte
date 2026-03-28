@@ -11,7 +11,7 @@
   <!-- Hero -->
   <section class="hero">
     <div class="hero-logo">★</div>
-    <h1 class="hero-title">Verdkomunumo</h1>
+    <h1 class="hero-title">Verdkomunumo <span class="beta">beta</span></h1>
     <p class="hero-tagline">La verda komunumo de Esperantujo</p>
     <p class="hero-desc">
       La socia reto por esperantistoj kaj lernantoj.<br />
@@ -82,6 +82,23 @@
     font-weight: 800;
     color: var(--color-primary);
     margin: 0 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .beta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    background: var(--color-primary-dim);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+    align-self: flex-start;
+    margin-top: 0.5rem;
   }
 
   .hero-tagline {

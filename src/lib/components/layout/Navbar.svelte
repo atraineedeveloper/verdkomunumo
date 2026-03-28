@@ -32,6 +32,7 @@
     <a href="/feed" class="logo">
       <span class="star">★</span>
       <span class="name">{APP_NAME}</span>
+      <span class="beta">beta</span>
     </a>
 
     <!-- Search -->
@@ -166,6 +167,20 @@
   }
 
   @media (min-width: 520px) { .name { display: block; } }
+
+  .beta {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    background: var(--color-primary-dim);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    padding: 0.1rem 0.35rem;
+    border-radius: 99px;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
 
   /* Search */
   .search-bar {
