@@ -136,11 +136,15 @@
   .inner {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 0 1.5rem;
+    padding: 0 0.75rem;
     height: 52px;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
+  }
+
+  @media (min-width: 480px) {
+    .inner { padding: 0 1.5rem; gap: 1rem; }
   }
 
   /* Logo */
@@ -184,9 +188,9 @@
 
   /* Search */
   .search-bar {
+    display: none;
     flex: 1;
     max-width: 260px;
-    display: flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.38rem 0.75rem;
@@ -198,6 +202,8 @@
     text-decoration: none;
     transition: border-color 0.15s;
   }
+
+  @media (min-width: 480px) { .search-bar { display: flex; } }
 
   .search-bar:hover { border-color: var(--color-primary); }
 

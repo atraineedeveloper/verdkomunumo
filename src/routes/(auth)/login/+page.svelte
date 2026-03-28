@@ -1,9 +1,11 @@
 <script lang="ts">
   import { enhance } from '$app/forms'
   import type { ActionData } from './$types'
+  import { PUBLIC_DEMO_MODE } from '$env/static/public'
 
   let { form }: { form: ActionData } = $props()
   let loading = $state(false)
+  const isDemo = PUBLIC_DEMO_MODE === 'true'
 </script>
 
 <svelte:head>
@@ -11,6 +13,13 @@
 </svelte:head>
 
 <h2 class="auth-title">Ensaluti</h2>
+
+{#if isDemo}
+  <a href="/feed" class="demo-banner">
+    <span>👁 Versio demo — eniru sen konto</span>
+    <span class="demo-cta">Esplori →</span>
+  </a>
+{/if}
 
 {#if form?.message}
   <div class="error-banner">{form.message}</div>
@@ -61,6 +70,25 @@
 </p>
 
 <style>
+  .demo-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background: var(--color-primary-dim);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    color: var(--color-primary);
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: opacity 0.15s;
+  }
+  .demo-banner:hover { opacity: 0.85; }
+  .demo-cta { font-weight: 700; white-space: nowrap; }
+
   .auth-title {
     font-size: 1.25rem;
     font-weight: 700;

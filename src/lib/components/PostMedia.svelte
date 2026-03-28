@@ -30,21 +30,21 @@
 
   /* 1 image — tall */
   .c1 { grid-template-columns: 1fr; }
-  .c1 .img { height: 320px; }
+  .c1 .img { height: clamp(180px, 45vw, 320px); }
 
   /* 2 images — side by side */
   .c2 { grid-template-columns: 1fr 1fr; }
-  .c2 .img { height: 220px; }
+  .c2 .img { height: clamp(120px, 28vw, 220px); }
 
   /* 3 images — first full width, two below */
   .c3 { grid-template-columns: 1fr 1fr; }
   .c3 .img-wrap:first-child { grid-column: 1 / -1; }
-  .c3 .img-wrap:first-child .img { height: 220px; }
-  .c3 .img-wrap:not(:first-child) .img { height: 160px; }
+  .c3 .img-wrap:first-child .img { height: clamp(140px, 32vw, 220px); }
+  .c3 .img-wrap:not(:first-child) .img { height: clamp(100px, 22vw, 160px); }
 
   /* 4 images — 2×2 grid */
   .c4 { grid-template-columns: 1fr 1fr; }
-  .c4 .img { height: 180px; }
+  .c4 .img { height: clamp(100px, 24vw, 180px); }
 
   .img-wrap { display: block; overflow: hidden; }
   .img-wrap:hover .img { opacity: 0.92; }

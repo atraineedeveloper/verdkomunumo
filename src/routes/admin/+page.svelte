@@ -173,7 +173,8 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 0.75rem;
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .data-table {
