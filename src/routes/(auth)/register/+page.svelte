@@ -38,7 +38,7 @@
   <div class="divider"><span>aŭ</span></div>
 {/if}
 
-<form method="POST" use:enhance={() => {
+<form method="POST" action="?/register" use:enhance={() => {
   loading = true
   return async ({ update }) => { loading = false; await update() }
 }}>

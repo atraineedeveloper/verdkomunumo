@@ -8,9 +8,9 @@ const DEMO = PUBLIC_DEMO_MODE === 'true'
 export const load: LayoutServerLoad = async ({ locals, url }) => {
   if (DEMO) return { categories: mockCategories }
 
-  const { session, user } = await locals.safeGetSession()
+  const { user } = await locals.safeGetSession()
 
-  if (!session || !user) {
+  if (!user) {
     throw redirect(303, `/login?next=${encodeURIComponent(url.pathname)}`)
   }
 

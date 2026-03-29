@@ -3,12 +3,25 @@
   import { themeStore } from '$lib/stores/theme'
   import { t, locale, LOCALE_LABELS, LOCALE_COUNTRY, type Locale } from '$lib/i18n'
   import { ESPERANTO_LEVELS } from '$lib/constants'
+  import { optimizeImageFiles, replaceInputFiles } from '$lib/browser/images'
   import { getAvatarUrl } from '$lib/utils'
   import type { PageData, ActionData } from './$types'
   import type { Theme } from '$lib/types'
 
   let { data, form }: { data: PageData; form: ActionData } = $props()
   let savingProfile = $state(false)
+  let avatarPreview = $state<string | null>(null)
+  const profileErrors = $derived((form?.errors ?? {}) as Partial<Record<'username' | 'display_name', string[]>>)
+
+  async function onAvatarChange(e: Event) {
+    const input = e.currentTarget as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+
+    const [optimized] = await optimizeImageFiles([file], { maxDimension: 1200, quality: 0.84 })
+    replaceInputFiles(input, optimized ? [optimized] : [])
+    avatarPreview = URL.createObjectURL(optimized ?? file)
+  }
 
   const themeValues: Theme[] = ['green', 'dark', 'vivid', 'minimal']
   const themeKeys = ['theme_green', 'theme_dark', 'theme_vivid', 'theme_minimal'] as const
@@ -38,15 +51,39 @@
     return async ({ update }) => { savingProfile = false; await update() }
   }}>
     <div class="avatar-field">
-      <img
-        class="avatar-preview"
-        src={getAvatarUrl(data.profile?.avatar_url ?? '', data.profile?.display_name ?? 'Verdkomunumo')}
-        alt={data.profile?.display_name ?? 'Avatar'}
-      />
-      <div class="avatar-copy">
-        <label for="avatar">Avatar</label>
-        <input id="avatar" name="avatar" type="file" accept="image/*" />
+      <label class="avatar-wrap" for="avatar" title={$t('settings_change_photo')}>
+        <img
+          class="avatar-preview"
+          src={avatarPreview ?? getAvatarUrl(data.profile?.avatar_url ?? '', data.profile?.display_name ?? 'Verdkomunumo')}
+          alt={data.profile?.display_name ?? 'Avatar'}
+        />
+        <div class="avatar-overlay">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>{$t('settings_change_photo')}</span>
+        </div>
+        <input id="avatar" name="avatar" type="file" accept="image/*" onchange={onAvatarChange} />
+      </label>
+      <div class="avatar-hint">
+        <span class="avatar-name">{data.profile?.display_name ?? ''}</span>
+        <span class="avatar-sub">@{data.profile?.username ?? ''}</span>
       </div>
+    </div>
+
+    <div class="field">
+      <label for="username">Uzantnomo</label>
+      <input
+        id="username"
+        name="username"
+        type="text"
+        value={data.profile?.username ?? ''}
+        minlength="3"
+        maxlength="30"
+        pattern="[a-z0-9_]+"
+        required
+      />
+      {#if profileErrors.username}
+        <span class="field-error">{profileErrors.username[0]}</span>
+      {/if}
     </div>
 
     <div class="field">
@@ -58,8 +95,8 @@
         value={data.profile?.display_name ?? ''}
         required
       />
-      {#if form?.errors?.display_name}
-        <span class="field-error">{form.errors.display_name[0]}</span>
+      {#if profileErrors.display_name}
+        <span class="field-error">{profileErrors.display_name[0]}</span>
       {/if}
     </div>
 
@@ -174,26 +211,76 @@
     flex: 1;
   }
 
+  .field-error {
+    color: #dc2626;
+    font-size: 0.8rem;
+  }
+
   .avatar-field {
     display: flex;
     align-items: center;
     gap: 1rem;
     margin-bottom: 1.25rem;
-    flex-wrap: wrap;
   }
 
+  .avatar-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 9999px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  .avatar-wrap input { display: none; }
+
   .avatar-preview {
-    width: 72px;
-    height: 72px;
+    width: 80px;
+    height: 80px;
     border-radius: 9999px;
     object-fit: cover;
     border: 2px solid var(--color-border);
     background: var(--color-surface-alt);
+    display: block;
+    transition: filter 0.15s;
   }
 
-  .avatar-copy {
-    min-width: 220px;
-    flex: 1;
+  .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .avatar-wrap:hover .avatar-overlay { opacity: 1; }
+  .avatar-wrap:hover .avatar-preview { filter: brightness(0.75); }
+
+  .avatar-hint {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .avatar-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .avatar-sub {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
   }
 
   .field-row {

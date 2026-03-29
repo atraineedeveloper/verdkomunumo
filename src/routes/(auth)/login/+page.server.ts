@@ -1,11 +1,11 @@
 import { redirect, fail } from '@sveltejs/kit'
-import { PUBLIC_GOOGLE_AUTH_ENABLED } from '$env/static/public'
+import { PUBLIC_APP_URL, PUBLIC_GOOGLE_AUTH_ENABLED } from '$env/static/public'
 import { loginSchema } from '$lib/validators'
 import type { Actions, PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const { session } = await locals.safeGetSession()
-  if (session) throw redirect(303, '/feed')
+  const { user } = await locals.safeGetSession()
+  if (user) throw redirect(303, '/feed')
   return {}
 }
 
@@ -32,7 +32,7 @@ export const actions: Actions = {
 
     const { data, error } = await locals.supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${process.env.PUBLIC_APP_URL ?? 'http://localhost:5173'}/auth/callback` }
+      options: { redirectTo: `${PUBLIC_APP_URL}/auth/callback` }
     })
     if (error) return fail(400, { message: error.message })
     throw redirect(303, data.url)

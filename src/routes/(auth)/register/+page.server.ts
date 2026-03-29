@@ -1,16 +1,16 @@
-import { PUBLIC_GOOGLE_AUTH_ENABLED } from '$env/static/public'
+import { PUBLIC_APP_URL, PUBLIC_GOOGLE_AUTH_ENABLED } from '$env/static/public'
 import { redirect, fail } from '@sveltejs/kit'
 import { registerSchema } from '$lib/validators'
 import type { Actions, PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const { session } = await locals.safeGetSession()
-  if (session) throw redirect(303, '/feed')
+  const { user } = await locals.safeGetSession()
+  if (user) throw redirect(303, '/feed')
   return {}
 }
 
 export const actions: Actions = {
-  default: async ({ request, locals }) => {
+  register: async ({ request, locals }) => {
     const formData = await request.formData()
     const raw = {
       email: formData.get('email'),
@@ -29,7 +29,7 @@ export const actions: Actions = {
       .from('profiles')
       .select('id')
       .eq('username', result.data.username)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       return fail(400, {
@@ -49,7 +49,7 @@ export const actions: Actions = {
       }
     })
 
-    if (error) return fail(400, { message: error.message, values: raw })
+    if (error) return fail(400, { message: error.message, values: raw, errors: {} })
 
     throw redirect(303, '/feed')
   },
@@ -61,7 +61,7 @@ export const actions: Actions = {
 
     const { data, error } = await locals.supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${process.env.PUBLIC_APP_URL ?? 'http://localhost:5173'}/auth/callback` }
+      options: { redirectTo: `${PUBLIC_APP_URL}/auth/callback` }
     })
     if (error) return fail(400, { message: error.message })
     throw redirect(303, data.url)

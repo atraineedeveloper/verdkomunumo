@@ -15,18 +15,33 @@ export const handle: Handle = async ({ event, resolve }) => {
   })
 
   event.locals.safeGetSession = async () => {
-    const {
-      data: { session }
-    } = await event.locals.supabase.auth.getSession()
-    if (!session) return { session: null, user: null }
+    const clearSupabaseCookies = () => {
+      for (const { name } of event.cookies.getAll()) {
+        if (name.startsWith('sb-')) {
+          event.cookies.delete(name, { path: '/' })
+        }
+      }
+    }
 
-    const {
-      data: { user },
-      error
-    } = await event.locals.supabase.auth.getUser()
-    if (error) return { session: null, user: null }
+    try {
+      const {
+        data: { user },
+        error
+      } = await event.locals.supabase.auth.getUser()
 
-    return { session, user }
+      if (error || !user) {
+        if (error?.code === 'refresh_token_not_found') {
+          clearSupabaseCookies()
+        }
+
+        return { session: null, user: null }
+      }
+
+      return { session: null, user }
+    } catch (error) {
+      clearSupabaseCookies()
+      return { session: null, user: null }
+    }
   }
 
   return resolve(event, {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Bell, MessageCircle, Palette, Languages, Settings, LogOut, Search } from 'lucide-svelte'
+  import { Bell, MessageCircle, Palette, Settings, LogOut, Search, User } from 'lucide-svelte'
   import { themeStore } from '$lib/stores/theme'
   import { currentProfile } from '$lib/stores/auth'
   import { unreadCount } from '$lib/stores/notifications'
@@ -105,7 +105,7 @@
               </div>
               <div class="sep"></div>
               <a href="/profile/{$currentProfile.username}" class="menu-row" onclick={() => showUserMenu = false}>
-                <Settings size={13} strokeWidth={1.75} /> {$t('nav_settings')}
+                <User size={13} strokeWidth={1.75} /> {$t('nav_profile')}
               </a>
               <a href="/settings" class="menu-row" onclick={() => showUserMenu = false}>
                 <Settings size={13} strokeWidth={1.75} /> {$t('nav_settings')}

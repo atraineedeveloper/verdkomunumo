@@ -5,9 +5,9 @@
   import { Heart, MessageSquare } from 'lucide-svelte'
   import PostComposer from '$lib/components/PostComposer.svelte'
   import PostMedia from '$lib/components/PostMedia.svelte'
-  import type { PageData } from './$types'
+  import type { ActionData, PageData } from './$types'
 
-  let { data }: { data: PageData } = $props()
+  let { data, form }: { data: PageData; form: ActionData } = $props()
   const category   = $derived(data.category)
   const posts      = $derived(data.posts)
   const categories = $derived(data.categories)
@@ -31,7 +31,7 @@
   </div>
 </div>
 
-<PostComposer {categories} defaultCategoryId={category.id} />
+<PostComposer {categories} defaultCategoryId={category.id} {form} />
 
 {#if posts.length === 0}
   <p class="empty">{$t('category_empty')}</p>

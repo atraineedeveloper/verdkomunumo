@@ -6,9 +6,9 @@
   import { Heart, MessageSquare } from 'lucide-svelte'
   import PostComposer from '$lib/components/PostComposer.svelte'
   import PostMedia from '$lib/components/PostMedia.svelte'
-  import type { PageData } from './$types'
+  import type { ActionData, PageData } from './$types'
 
-  let { data }: { data: PageData } = $props()
+  let { data, form }: { data: PageData; form: ActionData } = $props()
 </script>
 
 <svelte:head>
@@ -23,7 +23,7 @@
   </nav>
 </div>
 
-<PostComposer categories={data.categories} />
+<PostComposer categories={data.categories} {form} />
 
 {#if data.posts.length === 0}
   <p class="empty">{$t('feed_empty')}</p>

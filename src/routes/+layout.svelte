@@ -1,13 +1,16 @@
 <script lang="ts">
 	import '../app.css'
+	import { dev } from '$app/environment'
 	import { onMount } from 'svelte'
+	import { inject } from '@vercel/analytics'
 	import { themeStore } from '$lib/stores/theme'
 	import { locale } from '$lib/i18n'
 	import { currentUser, currentProfile } from '$lib/stores/auth'
 	import type { LayoutData } from './$types'
-	import favicon from '$lib/assets/favicon.svg'
 
 	let { data, children }: { data: LayoutData; children: any } = $props()
+
+	inject({ mode: dev ? 'development' : 'production', framework: 'sveltekit' })
 
 	$effect(() => {
 		currentUser.set(data.user ?? null)
@@ -26,9 +29,5 @@
 		}
 	})
 </script>
-
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
 
 {@render children()}

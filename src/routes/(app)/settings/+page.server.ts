@@ -29,6 +29,7 @@ export const actions: Actions = {
 
     const formData = await request.formData()
     const raw = {
+      username: formData.get('username'),
       display_name: formData.get('display_name'),
       bio: formData.get('bio'),
       website: formData.get('website'),
@@ -39,6 +40,23 @@ export const actions: Actions = {
     const result = profileEditSchema.safeParse(raw)
     if (!result.success) {
       return fail(400, { errors: result.error.flatten().fieldErrors })
+    }
+
+    const { data: existingUsername, error: usernameError } = await locals.supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', result.data.username)
+      .neq('id', user.id)
+      .maybeSingle()
+
+    if (usernameError) {
+      return fail(500, { message: usernameError.message })
+    }
+
+    if (existingUsername) {
+      return fail(400, {
+        errors: { username: ['Tiu uzantnomo jam estas uzata'] }
+      })
     }
 
     const avatar = formData.get('avatar')

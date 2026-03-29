@@ -4,7 +4,7 @@ import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (PUBLIC_DEMO_MODE === 'true') throw redirect(303, '/feed')
-  const { session } = await locals.safeGetSession()
-  if (session) throw redirect(303, '/feed')
+  const { user } = await locals.safeGetSession()
+  if (user) throw redirect(303, '/feed')
   return {}
 }

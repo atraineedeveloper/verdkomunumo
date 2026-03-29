@@ -3,7 +3,7 @@ import { mockPosts, mockCategories } from '$lib/mock'
 import { uploadPostImages } from '$lib/server/storage'
 import { postSchema } from '$lib/validators'
 import { applyXSystem } from '$lib/utils'
-import { fail, redirect } from '@sveltejs/kit'
+import { fail } from '@sveltejs/kit'
 import { requireUser } from '$lib/server/social'
 import type { Actions, PageServerLoad } from './$types'
 
@@ -74,7 +74,7 @@ export const actions: Actions = {
       formData.getAll('images').filter((value): value is File => value instanceof File)
     )
 
-    const { data: post, error } = await locals.supabase
+    const { error } = await locals.supabase
       .from('posts')
       .insert({
         user_id: user.id,
@@ -82,13 +82,11 @@ export const actions: Actions = {
         content: applyXSystem(result.data.content.trim()),
         image_urls: imageUrls
       })
-      .select('id')
-      .single()
 
-    if (error || !post) {
+    if (error) {
       return fail(500, { message: error?.message ?? 'Failed to create post' })
     }
 
-    throw redirect(303, `/post/${post.id}`)
+    return { success: true }
   }
 }

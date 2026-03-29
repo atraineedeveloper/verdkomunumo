@@ -37,6 +37,7 @@ const translations = {
     nav_search: 'Serĉi…',
     nav_notifications: 'Sciigoj',
     nav_messages: 'Mesaĝoj',
+    nav_profile: 'Mia profilo',
     nav_settings: 'Agordoj',
     nav_logout: 'Elsaluti',
     nav_change_theme: 'Ŝanĝi temon',
@@ -94,6 +95,7 @@ const translations = {
     settings_location: 'Loko',
     settings_website: 'Retejo',
     settings_level: 'Nivel de Esperanto',
+    settings_change_photo: 'Ŝanĝi foton',
 
     // Levels
     level_komencanto: 'Komencanto',
@@ -207,6 +209,7 @@ const translations = {
     nav_search: 'Buscar…',
     nav_notifications: 'Notificaciones',
     nav_messages: 'Mensajes',
+    nav_profile: 'Mi perfil',
     nav_settings: 'Ajustes',
     nav_logout: 'Cerrar sesión',
     nav_change_theme: 'Cambiar tema',
@@ -231,6 +234,7 @@ const translations = {
     auth_go_register: 'Registrarse',
     auth_go_login: 'Iniciar sesión',
     auth_loading: 'Espera…',
+    settings_change_photo: 'Cambiar foto',
 
     feed_title: 'Inicio',
     feed_all: 'Todos',
@@ -362,6 +366,7 @@ const translations = {
     nav_search: 'Search…',
     nav_notifications: 'Notifications',
     nav_messages: 'Messages',
+    nav_profile: 'My profile',
     nav_settings: 'Settings',
     nav_logout: 'Log out',
     nav_change_theme: 'Change theme',
@@ -485,6 +490,7 @@ const translations = {
     post_compose_category: 'Category',
     post_compose_btn: 'Post',
     post_compose_demo: 'Demo mode: posting is disabled.',
+    settings_change_photo: 'Change photo',
 
     category_empty: '🌱 No posts in this category yet.',
     category_posts: 'posts',
@@ -516,6 +522,7 @@ const translations = {
     nav_search: 'Pesquisar…',
     nav_notifications: 'Notificações',
     nav_messages: 'Mensagens',
+    nav_profile: 'Meu perfil',
     nav_settings: 'Configurações',
     nav_logout: 'Sair',
     nav_change_theme: 'Mudar tema',
@@ -639,6 +646,7 @@ const translations = {
     post_compose_category: 'Categoria',
     post_compose_btn: 'Publicar',
     post_compose_demo: 'Modo demo: publicação desativada.',
+    settings_change_photo: 'Alterar foto',
 
     category_empty: '🌱 Ainda não há publicações nesta categoria.',
     category_posts: 'publicações',
@@ -670,6 +678,7 @@ const translations = {
     nav_search: '検索…',
     nav_notifications: '通知',
     nav_messages: 'メッセージ',
+    nav_profile: 'マイプロフィール',
     nav_settings: '設定',
     nav_logout: 'ログアウト',
     nav_change_theme: 'テーマ変更',
@@ -793,6 +802,7 @@ const translations = {
     post_compose_category: 'カテゴリー',
     post_compose_btn: '投稿する',
     post_compose_demo: 'デモモード：投稿は無効です。',
+    settings_change_photo: '写真を変更',
 
     category_empty: '🌱 このカテゴリーにはまだ投稿がありません。',
     category_posts: '投稿',
@@ -824,6 +834,7 @@ const translations = {
     nav_search: 'Rechercher…',
     nav_notifications: 'Notifications',
     nav_messages: 'Messages',
+    nav_profile: 'Mon profil',
     nav_settings: 'Paramètres',
     nav_logout: 'Se déconnecter',
     nav_change_theme: 'Changer de thème',
@@ -947,6 +958,7 @@ const translations = {
     post_compose_category: 'Catégorie',
     post_compose_btn: 'Publier',
     post_compose_demo: 'Mode démo : la publication est désactivée.',
+    settings_change_photo: 'Changer la photo',
 
     category_empty: "🌱 Aucune publication dans cette catégorie pour l'instant.",
     category_posts: 'publications',
@@ -978,6 +990,7 @@ const translations = {
     nav_search: 'Suchen…',
     nav_notifications: 'Benachrichtigungen',
     nav_messages: 'Nachrichten',
+    nav_profile: 'Mein Profil',
     nav_settings: 'Einstellungen',
     nav_logout: 'Abmelden',
     nav_change_theme: 'Theme wechseln',
@@ -1101,6 +1114,7 @@ const translations = {
     post_compose_category: 'Kategorie',
     post_compose_btn: 'Posten',
     post_compose_demo: 'Demo-Modus: Posten ist deaktiviert.',
+    settings_change_photo: 'Foto ändern',
 
     category_empty: '🌱 Noch keine Beiträge in dieser Kategorie.',
     category_posts: 'Beiträge',
@@ -1132,6 +1146,7 @@ const translations = {
     nav_search: '검색…',
     nav_notifications: '알림',
     nav_messages: '메시지',
+    nav_profile: '내 프로필',
     nav_settings: '설정',
     nav_logout: '로그아웃',
     nav_change_theme: '테마 변경',
@@ -1255,6 +1270,7 @@ const translations = {
     post_compose_category: '카테고리',
     post_compose_btn: '게시하기',
     post_compose_demo: '데모 모드: 게시가 비활성화되어 있습니다.',
+    settings_change_photo: '사진 변경',
 
     category_empty: '🌱 이 카테고리에 아직 게시물이 없습니다.',
     category_posts: '게시물',
@@ -1286,6 +1302,7 @@ const translations = {
     nav_search: '搜索…',
     nav_notifications: '通知',
     nav_messages: '消息',
+    nav_profile: '我的主页',
     nav_settings: '设置',
     nav_logout: '退出登录',
     nav_change_theme: '切换主题',
@@ -1409,6 +1426,7 @@ const translations = {
     post_compose_category: '分类',
     post_compose_btn: '发布',
     post_compose_demo: '演示模式：发帖功能已禁用。',
+    settings_change_photo: '更换照片',
 
     category_empty: '🌱 该分类暂无帖子。',
     category_posts: '帖子',

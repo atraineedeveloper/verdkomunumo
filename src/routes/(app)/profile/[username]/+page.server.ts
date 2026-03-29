@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
   if (!profile) throw error(404, 'Uzanto ne trovita')
 
-  const { session, user } = await locals.safeGetSession()
+  const { user } = await locals.safeGetSession()
   const isOwn = user?.id === profile.id
 
   // Verificar si el usuario actual sigue a este perfil

@@ -41,6 +41,11 @@ export const messageSchema = z.object({
 })
 
 export const profileEditSchema = z.object({
+  username: z
+    .string()
+    .min(3, 'Mínimo 3 caracteres')
+    .max(30, 'Máximo 30 caracteres')
+    .regex(/^[a-z0-9_]+$/, 'Solo letras minúsculas, números y guión bajo'),
   display_name: z.string().min(1, 'Requerido').max(50, 'Máximo 50 caracteres'),
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   website: z.string().url('URL no válida').optional().or(z.literal('')),
