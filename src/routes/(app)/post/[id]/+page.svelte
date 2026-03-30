@@ -1,14 +1,74 @@
 <script lang="ts">
+  import { enhance } from '$app/forms'
+  import { invalidateAll } from '$app/navigation'
+  import { withPendingAction } from '$lib/forms/pending'
   import { t, type TranslationKey } from '$lib/i18n'
+  import { toastStore } from '$lib/stores/toasts'
   import { formatDate, getAvatarUrl } from '$lib/utils'
   import { CATEGORY_COLORS } from '$lib/icons'
-  import { Heart, MessageSquare } from 'lucide-svelte'
+  import { Heart, MessageSquare, Flag } from 'lucide-svelte'
   import PostMedia from '$lib/components/PostMedia.svelte'
   import type { PageData } from './$types'
 
   let { data }: { data: PageData } = $props()
   const post = $derived(data.post)
   const comments = $derived(data.comments)
+  let commentContent = $state('')
+  let submittingComment = $state(false)
+  const reportReasons = [
+    { value: 'spam', label: 'report_reason_spam' },
+    { value: 'harassment', label: 'report_reason_harassment' },
+    { value: 'hate', label: 'report_reason_hate' },
+    { value: 'nudity', label: 'report_reason_nudity' },
+    { value: 'violence', label: 'report_reason_violence' },
+    { value: 'misinformation', label: 'report_reason_misinformation' },
+    { value: 'other', label: 'report_reason_other' }
+  ] as const
+
+  function actionMessage(data: unknown) {
+    return (data ?? {}) as {
+      message?: string
+      errors?: {
+        content?: string[]
+      }
+    }
+  }
+
+  const enhanceLike = withPendingAction(() => async ({ result }: { result: any }) => {
+      if (result.type === 'success') {
+        await invalidateAll()
+        return
+      }
+
+      if (result.type === 'failure') {
+        toastStore.error(actionMessage(result.data).message ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    })
+
+  const enhanceReport = withPendingAction(() => {
+    return async ({ result, update }: { result: any; update: () => Promise<void> }) => {
+      await update()
+
+      if (result.type === 'success') {
+        toastStore.success(actionMessage(result.data).message ?? $t('report_submitted'))
+        return
+      }
+
+      if (result.type === 'failure') {
+        toastStore.error(actionMessage(result.data).message ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    }
+  })
 </script>
 
 <svelte:head>
@@ -51,24 +111,69 @@
     <span class="time">{formatDate(post.created_at)}</span>
     {#if post.is_edited}<span class="edited">{$t('post_edited')}</span>{/if}
     <div class="stats">
-      <form method="POST" action="?/toggleLike">
-        <button type="submit" class="act"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</button>
+      <form method="POST" action="?/toggleLike" use:enhance={enhanceLike}>
+        <button type="submit" class:liked={post.user_liked} class="act"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</button>
       </form>
       <span class="muted"><MessageSquare size={14} strokeWidth={1.75} /> {post.comments_count}</span>
     </div>
   </div>
+
+  <details class="report-box">
+    <summary><Flag size={14} strokeWidth={1.8} /> {$t('report_post')}</summary>
+    <form method="POST" action="?/reportPost" class="report-form" use:enhance={enhanceReport}>
+      <label>
+        <span>{$t('report_reason_label')}</span>
+        <select name="reason" required>
+          {#each reportReasons as reason}
+            <option value={reason.value}>{$t(reason.label as TranslationKey)}</option>
+          {/each}
+        </select>
+      </label>
+      <label>
+        <span>{$t('report_details_label')}</span>
+        <textarea name="details" rows={2} maxlength="500" placeholder={$t('report_details_placeholder')}></textarea>
+      </label>
+      <button type="submit" class="report-submit">{$t('report_send')}</button>
+    </form>
+  </details>
 </article>
 
 <!-- Comment composer -->
 <div class="compose">
-  <form method="POST" action="?/comment">
+  <form method="POST" action="?/comment" use:enhance={withPendingAction(() => {
+    submittingComment = true
+
+    return async ({ result }: { result: any }) => {
+      submittingComment = false
+
+      if (result.type === 'success') {
+        commentContent = ''
+        await invalidateAll()
+        document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        return
+      }
+
+      if (result.type === 'failure') {
+        const payload = actionMessage(result.data)
+        toastStore.error(payload.message ?? payload.errors?.content?.[0] ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    }
+  })}>
     <textarea
       name="content"
+      bind:value={commentContent}
       placeholder={$t('post_comment_placeholder')}
       rows={2}
     ></textarea>
     <div class="compose-footer">
-      <button type="submit" class="btn">{$t('post_comment_btn')}</button>
+      <button type="submit" class="btn" disabled={submittingComment}>
+        {submittingComment ? $t('messages_sending') : $t('post_comment_btn')}
+      </button>
     </div>
   </form>
 </div>
@@ -103,7 +208,28 @@
             {/if}
           </div>
           <p class="ccontent">{comment.content}</p>
-          <span class="act static"><Heart size={13} strokeWidth={1.75} /> {comment.likes_count}</span>
+          <div class="comment-footer">
+            <span class="act static"><Heart size={13} strokeWidth={1.75} /> {comment.likes_count}</span>
+            <details class="comment-report">
+              <summary><Flag size={12} strokeWidth={1.8} /> {$t('report_comment')}</summary>
+              <form method="POST" action="?/reportComment" class="report-form compact" use:enhance={enhanceReport}>
+                <input type="hidden" name="comment_id" value={comment.id} />
+                <label>
+                  <span>{$t('report_reason_label')}</span>
+                  <select name="reason" required>
+                    {#each reportReasons as reason}
+                      <option value={reason.value}>{$t(reason.label as TranslationKey)}</option>
+                    {/each}
+                  </select>
+                </label>
+                <label>
+                  <span>{$t('report_details_label')}</span>
+                  <textarea name="details" rows={2} maxlength="500" placeholder={$t('report_details_placeholder')}></textarea>
+                </label>
+                <button type="submit" class="report-submit">{$t('report_send')}</button>
+              </form>
+            </details>
+          </div>
         </div>
       </div>
     {/each}
@@ -203,6 +329,64 @@
   .stats { display: flex; gap: 0.5rem; margin-left: auto; }
   .stats form { margin: 0; }
 
+  .report-box,
+  .comment-report {
+    margin-top: 1rem;
+  }
+
+  .report-box summary,
+  .comment-report summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+
+  .report-form {
+    margin-top: 0.75rem;
+    display: grid;
+    gap: 0.7rem;
+    max-width: 420px;
+  }
+
+  .report-form.compact {
+    max-width: 360px;
+  }
+
+  .report-form label {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .report-form span {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+
+  .report-form select,
+  .report-form textarea {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    padding: 0.7rem 0.8rem;
+    font: inherit;
+  }
+
+  .report-submit {
+    width: fit-content;
+    border: 1px solid #dc2626;
+    background: transparent;
+    color: #dc2626;
+    border-radius: 0.7rem;
+    padding: 0.55rem 0.85rem;
+    font: inherit;
+    cursor: pointer;
+  }
+
   /* ── Compose ── */
   .compose {
     padding: 0.85rem 0;
@@ -284,6 +468,13 @@
     margin: 0 0 0.45rem;
   }
 
+  .comment-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+
   /* ── Shared ── */
   .act {
     display: inline-flex;
@@ -300,6 +491,7 @@
     font-family: inherit;
   }
   .act:hover { color: var(--color-primary); background: var(--color-primary-dim); }
+  .act.liked { color: #e11d48; background: #f43f5e18; }
   .act.static { cursor: default; }
   .act.static:hover { color: var(--color-text-muted); background: transparent; }
 

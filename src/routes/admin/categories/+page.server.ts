@@ -1,8 +1,8 @@
 import { PUBLIC_DEMO_MODE } from '$env/static/public'
 import { fail } from '@sveltejs/kit'
 import { mockCategories, mockProfile } from '$lib/mock'
-import { requireStaff } from '$lib/server/social'
-import { slugify } from '$lib/utils'
+import { requireAdmin } from '$lib/server/social'
+import { categoryAdminSchema } from '$lib/validators'
 import type { Actions, PageServerLoad } from './$types'
 
 const DEMO = PUBLIC_DEMO_MODE === 'true'
@@ -11,32 +11,78 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (DEMO) {
     return {
       staffProfile: { ...mockProfile, role: 'admin' },
-      categories: mockCategories,
-      suggestions: []
+      categories: mockCategories
     }
   }
 
-  await requireStaff(locals)
+  await requireAdmin(locals)
 
-  const [categoriesRes, suggestionsRes] = await Promise.all([
-    locals.supabase.from('categories').select('*').order('sort_order'),
-    locals.supabase
-      .from('category_suggestions')
-      .select('*, author:profiles!user_id(*)')
-      .order('created_at', { ascending: false })
-  ])
+  const categoriesRes = await locals.supabase.from('categories').select('*').order('sort_order')
 
   return {
-    categories: categoriesRes.data ?? [],
-    suggestions: suggestionsRes.data ?? []
+    categories: categoriesRes.data ?? []
   }
 }
 
 export const actions: Actions = {
+  createCategory: async ({ request, locals }) => {
+    if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
+
+    await requireAdmin(locals)
+    const formData = await request.formData()
+    const parsed = categoryAdminSchema.safeParse({
+      name: formData.get('name'),
+      slug: formData.get('slug'),
+      description: formData.get('description'),
+      icon: formData.get('icon') || '',
+      color: formData.get('color'),
+      sort_order: formData.get('sort_order')
+    })
+
+    if (!parsed.success) {
+      return fail(400, { message: parsed.error.flatten().formErrors[0] ?? 'Invalid category data' })
+    }
+
+    const { error } = await locals.supabase.from('categories').insert(parsed.data)
+
+    if (error) return fail(500, { message: error.message })
+    return { success: true, message: 'Category created.' }
+  },
+
+  updateCategory: async ({ request, locals }) => {
+    if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
+
+    await requireAdmin(locals)
+    const formData = await request.formData()
+    const categoryId = formData.get('category_id')?.toString()
+    if (!categoryId) return fail(400, { message: 'Missing category_id' })
+
+    const parsed = categoryAdminSchema.safeParse({
+      name: formData.get('name'),
+      slug: formData.get('slug'),
+      description: formData.get('description'),
+      icon: formData.get('icon') || '',
+      color: formData.get('color'),
+      sort_order: formData.get('sort_order')
+    })
+
+    if (!parsed.success) {
+      return fail(400, { message: parsed.error.flatten().formErrors[0] ?? 'Invalid category data' })
+    }
+
+    const { error } = await locals.supabase
+      .from('categories')
+      .update(parsed.data)
+      .eq('id', categoryId)
+
+    if (error) return fail(500, { message: error.message })
+    return { success: true, message: 'Category updated.' }
+  },
+
   toggleCategory: async ({ request, locals }) => {
     if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
 
-    await requireStaff(locals)
+    await requireAdmin(locals)
     const formData = await request.formData()
     const categoryId = formData.get('category_id')?.toString()
     const isActive = formData.get('is_active')?.toString() === 'true'
@@ -48,65 +94,31 @@ export const actions: Actions = {
       .eq('id', categoryId)
 
     if (error) return fail(500, { message: error.message })
-    return { success: true }
+    return { success: true, message: isActive ? 'Kategorio kaŝita.' : 'Kategorio aktivigita.' }
   },
 
-  approveSuggestion: async ({ request, locals }) => {
+  deleteCategory: async ({ request, locals }) => {
     if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
 
-    const { user } = await requireStaff(locals)
+    await requireAdmin(locals)
     const formData = await request.formData()
-    const suggestionId = formData.get('suggestion_id')?.toString()
-    if (!suggestionId) return fail(400, { message: 'Missing suggestion_id' })
+    const categoryId = formData.get('category_id')?.toString()
+    if (!categoryId) return fail(400, { message: 'Missing category_id' })
 
-    const { data: suggestion, error: suggestionError } = await locals.supabase
-      .from('category_suggestions')
-      .select('*')
-      .eq('id', suggestionId)
+    const { data: category, error: selectError } = await locals.supabase
+      .from('categories')
+      .select('id, post_count')
+      .eq('id', categoryId)
       .single()
 
-    if (suggestionError || !suggestion) return fail(404, { message: 'Suggestion not found' })
+    if (selectError || !category) return fail(404, { message: 'Category not found' })
+    if ((category.post_count ?? 0) > 0) {
+      return fail(400, { message: 'Only empty categories can be deleted.' })
+    }
 
-    const { error: categoryError } = await locals.supabase.from('categories').insert({
-      name: suggestion.name,
-      slug: slugify(suggestion.name),
-      description: suggestion.description,
-      sort_order: 999
-    })
-
-    if (categoryError) return fail(500, { message: categoryError.message })
-
-    const { error: updateError } = await locals.supabase
-      .from('category_suggestions')
-      .update({
-        status: 'approved',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString()
-      })
-      .eq('id', suggestionId)
-
-    if (updateError) return fail(500, { message: updateError.message })
-    return { success: true }
-  },
-
-  rejectSuggestion: async ({ request, locals }) => {
-    if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
-
-    const { user } = await requireStaff(locals)
-    const formData = await request.formData()
-    const suggestionId = formData.get('suggestion_id')?.toString()
-    if (!suggestionId) return fail(400, { message: 'Missing suggestion_id' })
-
-    const { error } = await locals.supabase
-      .from('category_suggestions')
-      .update({
-        status: 'rejected',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString()
-      })
-      .eq('id', suggestionId)
+    const { error } = await locals.supabase.from('categories').delete().eq('id', categoryId)
 
     if (error) return fail(500, { message: error.message })
-    return { success: true }
+    return { success: true, message: 'Category deleted.' }
   }
 }

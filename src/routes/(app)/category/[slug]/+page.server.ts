@@ -32,7 +32,25 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  return { category, posts: posts ?? [], categories: allCategories ?? [] }
+  const { user } = await locals.safeGetSession()
+  const postIds = (posts ?? []).map((post) => post.id)
+  let likedPostIds = new Set<string>()
+
+  if (user && postIds.length > 0) {
+    const { data: likes } = await locals.supabase
+      .from('likes')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .in('post_id', postIds)
+
+    likedPostIds = new Set((likes ?? []).map((like) => like.post_id))
+  }
+
+  return {
+    category,
+    posts: (posts ?? []).map((post) => ({ ...post, user_liked: likedPostIds.has(post.id) })),
+    categories: allCategories ?? []
+  }
 }
 
 export const actions: Actions = {

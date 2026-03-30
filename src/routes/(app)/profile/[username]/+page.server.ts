@@ -43,7 +43,25 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  return { profile, posts: posts ?? [], isOwn, isFollowing }
+  const postIds = (posts ?? []).map((post) => post.id)
+  let likedPostIds = new Set<string>()
+
+  if (user && postIds.length > 0) {
+    const { data: likes } = await locals.supabase
+      .from('likes')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .in('post_id', postIds)
+
+    likedPostIds = new Set((likes ?? []).map((like) => like.post_id))
+  }
+
+  return {
+    profile,
+    posts: (posts ?? []).map((post) => ({ ...post, user_liked: likedPostIds.has(post.id) })),
+    isOwn,
+    isFollowing
+  }
 }
 
 export const actions: Actions = {

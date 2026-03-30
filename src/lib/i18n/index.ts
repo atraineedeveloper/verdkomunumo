@@ -30,7 +30,10 @@ export const locale = createLocaleStore()
 
 // t() reactive translation function
 export const t = derived(locale, ($locale) => {
+  const localeTranslations = translations[$locale] as Record<string, string>
+  const defaultTranslations = translations[DEFAULT_LOCALE] as Record<string, string>
+
   return (key: TranslationKey): string => {
-    return translations[$locale][key] ?? translations[DEFAULT_LOCALE][key] ?? key
+    return localeTranslations[key] ?? defaultTranslations[key] ?? key
   }
 })

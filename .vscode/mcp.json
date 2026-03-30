@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "verdkomunumo-admin": {
+      "type": "stdio",
+      "command": "bun",
+      "args": [
+        "--env-file=.env.local",
+        "run",
+        "mcp:admin"
+      ]
+    }
+  }
+}

@@ -9,6 +9,7 @@ const SEARCH_LIMIT = 20
 export const load: PageServerLoad = async ({ locals, url }) => {
   const q = url.searchParams.get('q')?.trim() ?? ''
   const tab = url.searchParams.get('tab') === 'users' ? 'users' : 'posts'
+  const { user } = await locals.safeGetSession()
 
   if (DEMO) {
     const allUsers = [
@@ -72,10 +73,23 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
   const { data: posts } = await postQuery
 
+  const postIds = (posts ?? []).map((post) => post.id)
+  let likedPostIds = new Set<string>()
+
+  if (user && postIds.length > 0) {
+    const { data: likes } = await locals.supabase
+      .from('likes')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .in('post_id', postIds)
+
+    likedPostIds = new Set((likes ?? []).map((like) => like.post_id))
+  }
+
   return {
     q,
     tab,
-    posts: posts ?? [],
+    posts: (posts ?? []).map((post) => ({ ...post, user_liked: likedPostIds.has(post.id) })),
     users: users ?? []
   }
 }

@@ -1,6 +1,11 @@
 <script lang="ts">
-  import { t } from '$lib/i18n'
+  import { enhance } from '$app/forms'
+  import { invalidateAll } from '$app/navigation'
   import { page } from '$app/state'
+  import { withPendingAction } from '$lib/forms/pending'
+  import { t } from '$lib/i18n'
+  import { DEMO_MODE } from '$lib/mock'
+  import { toastStore } from '$lib/stores/toasts'
   import { formatDate, getAvatarUrl } from '$lib/utils'
   import type { Profile } from '$lib/types'
   import type { PageData } from './$types'
@@ -12,13 +17,44 @@
   const other = $derived(
     conversation.participants?.find((p: Profile) => p.id !== myId) ?? conversation.participants?.[0]
   )
+
+  let msgsEl = $state<HTMLElement | null>(null)
+  let textAreaEl = $state<HTMLTextAreaElement | null>(null)
+  let composing = $state('')
+  let sending = $state(false)
+
+  function scrollToBottom() {
+    msgsEl?.scrollTo({ top: msgsEl.scrollHeight, behavior: 'smooth' })
+  }
+
+  function resizeComposer() {
+    if (!textAreaEl) return
+    textAreaEl.style.height = '0px'
+    textAreaEl.style.height = `${Math.min(textAreaEl.scrollHeight, 140)}px`
+  }
+
+  function getResultPayload(data: unknown) {
+    return (data ?? {}) as {
+      message?: string
+      errors?: Record<string, string[] | undefined>
+    }
+  }
+
+  $effect(() => {
+    messages
+    setTimeout(scrollToBottom, 50)
+  })
+
+  $effect(() => {
+    composing
+    resizeComposer()
+  })
 </script>
 
 <svelte:head>
   <title>{other?.display_name ?? $t('nav_messages')} — Verdkomunumo</title>
 </svelte:head>
 
-<!-- Chat header -->
 <div class="chat-header">
   <a href="/messages" class="back">←</a>
   {#if other}
@@ -30,31 +66,84 @@
   {/if}
 </div>
 
-<!-- Messages -->
-<div class="msgs">
-  {#each messages as msg}
-    {@const isMe = msg.sender_id === myId}
-    <div class="row" class:me={isMe}>
-      {#if !isMe && msg.sender}
-        <img src={getAvatarUrl(msg.sender.avatar_url, msg.sender.display_name)}
-             alt={msg.sender.display_name} class="msg-ava" />
-      {/if}
-      <div class="bubble" class:bubble-me={isMe} class:bubble-them={!isMe}>
-        <p>{msg.content}</p>
-        <span class="ts">{formatDate(msg.created_at)}</span>
-      </div>
+<div class="msgs" bind:this={msgsEl}>
+  {#if messages.length === 0}
+    <div class="empty-thread">
+      <p class="empty-title">{$t('messages_thread_empty')}</p>
+      <p class="empty-copy">{$t('messages_thread_empty_hint')}</p>
     </div>
-  {/each}
+  {:else}
+    {#each messages as msg}
+      {@const isMe = msg.sender_id === myId}
+      <div class="row" class:me={isMe}>
+        {#if !isMe && msg.sender}
+          <img src={getAvatarUrl(msg.sender.avatar_url, msg.sender.display_name)}
+               alt={msg.sender.display_name} class="msg-ava" />
+        {/if}
+        <div class="bubble" class:bubble-me={isMe} class:bubble-them={!isMe}>
+          <p>{msg.content}</p>
+          <span class="ts">{formatDate(msg.created_at)}</span>
+        </div>
+      </div>
+    {/each}
+  {/if}
 </div>
 
-<!-- Compose -->
-<form method="POST" action="?/send" class="compose">
-  <input name="content" type="text" placeholder={$t('messages_placeholder')} autocomplete="off" />
-  <button type="submit">{$t('messages_send')}</button>
+<form method="POST" action="?/send" class="compose" use:enhance={withPendingAction((event) => {
+  if (DEMO_MODE) {
+    event.cancel()
+    toastStore.info($t('post_compose_demo'))
+    composing = ''
+    return
+  }
+
+  sending = true
+
+  return async ({ result, update }) => {
+    sending = false
+
+    if (result.type === 'success') {
+      composing = ''
+      await update({ reset: false })
+      await invalidateAll()
+      setTimeout(scrollToBottom, 80)
+      return
+    }
+
+    await update({ reset: false })
+
+    if (result.type === 'failure') {
+      const payload = getResultPayload(result.data)
+      toastStore.error(payload.message ?? payload.errors?.content?.[0] ?? $t('messages_send_error'))
+      return
+    }
+
+    if (result.type === 'error') {
+      toastStore.error($t('messages_send_error'))
+    }
+  }
+})}>
+  <textarea
+    bind:this={textAreaEl}
+    bind:value={composing}
+    name="content"
+    rows={1}
+    placeholder={$t('messages_placeholder')}
+    onkeydown={(event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault()
+        if (!sending && composing.trim()) {
+          (event.currentTarget as HTMLTextAreaElement).form?.requestSubmit()
+        }
+      }
+    }}
+  ></textarea>
+  <button type="submit" disabled={sending || composing.trim().length === 0}>
+    {sending ? $t('messages_sending') : $t('messages_send')}
+  </button>
 </form>
 
 <style>
-  /* ── Header ── */
   .chat-header {
     display: flex;
     align-items: center;
@@ -101,13 +190,33 @@
     color: var(--color-text-muted);
   }
 
-  /* ── Messages ── */
   .msgs {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     min-height: 320px;
+    max-height: 60vh;
+    overflow-y: auto;
     margin-bottom: 1rem;
+    scroll-behavior: smooth;
+  }
+
+  .empty-thread {
+    margin: auto 0;
+    padding: 2.5rem 1rem;
+    text-align: center;
+  }
+
+  .empty-title {
+    margin: 0 0 0.45rem;
+    color: var(--color-text);
+    font-weight: 700;
+  }
+
+  .empty-copy {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
   }
 
   .row {
@@ -160,19 +269,19 @@
   .bubble-them p  { color: var(--color-text); }
   .bubble-them .ts { color: var(--color-text-muted); }
 
-  /* ── Compose ── */
   .compose {
     display: flex;
     gap: 0.4rem;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 0.35rem 0.35rem 0.35rem 0.85rem;
-    align-items: center;
+    border-radius: 14px;
+    padding: 0.45rem;
+    align-items: flex-end;
     transition: border-color 0.12s;
+    background: color-mix(in srgb, var(--color-surface) 94%, white 6%);
   }
   .compose:focus-within { border-color: var(--color-primary); }
 
-  .compose input {
+  .compose textarea {
     flex: 1;
     border: none;
     background: transparent;
@@ -180,16 +289,21 @@
     color: var(--color-text);
     outline: none;
     font-family: inherit;
+    line-height: 1.5;
+    resize: none;
+    min-height: 1.5rem;
+    max-height: 8.75rem;
+    padding: 0.4rem 0.45rem 0.4rem 0.55rem;
   }
 
-  .compose input::placeholder { color: var(--color-text-muted); }
+  .compose textarea::placeholder { color: var(--color-text-muted); }
 
   .compose button {
     background: var(--color-primary);
     color: #fff;
     border: none;
-    border-radius: 6px;
-    padding: 0.38rem 0.85rem;
+    border-radius: 10px;
+    padding: 0.62rem 0.9rem;
     font-size: 0.825rem;
     font-weight: 600;
     cursor: pointer;
@@ -198,4 +312,5 @@
     flex-shrink: 0;
   }
   .compose button:hover { opacity: 0.85; }
+  .compose button:disabled { opacity: 0.55; cursor: not-allowed; }
 </style>

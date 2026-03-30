@@ -53,8 +53,39 @@ export const profileEditSchema = z.object({
   esperanto_level: z.enum(['komencanto', 'progresanto', 'flua'])
 })
 
-export const categorySuggestionSchema = z.object({
-  name: z.string().min(2, 'Mínimo 2 caracteres').max(50, 'Máximo 50 caracteres'),
-  description: z.string().min(10, 'Mínimo 10 caracteres').max(200, 'Máximo 200 caracteres'),
-  reason: z.string().max(500, 'Máximo 500 caracteres').optional()
+export const appSuggestionSchema = z.object({
+  title: z.string().min(4, 'Mínimo 4 caracteres').max(80, 'Máximo 80 caracteres'),
+  description: z.string().min(10, 'Mínimo 10 caracteres').max(500, 'Máximo 500 caracteres'),
+  context: z.string().max(500, 'Máximo 500 caracteres').optional()
+})
+
+export const contentReportSchema = z.object({
+  post_id: z.string().uuid().optional(),
+  comment_id: z.string().uuid().optional(),
+  reason: z.enum(['spam', 'harassment', 'hate', 'nudity', 'violence', 'misinformation', 'other']),
+  details: z.string().max(500, 'Máximo 500 caracteres').optional()
+}).superRefine((value, ctx) => {
+  const targets = Number(Boolean(value.post_id)) + Number(Boolean(value.comment_id))
+
+  if (targets !== 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Debes reportar exactamente una publicación o un comentario.'
+    })
+  }
+})
+
+export const categoryAdminSchema = z.object({
+  name: z.string().min(2, 'Mínimo 2 caracteres').max(40, 'Máximo 40 caracteres'),
+  slug: z
+    .string()
+    .min(2, 'Mínimo 2 caracteres')
+    .max(40, 'Máximo 40 caracteres')
+    .regex(/^[a-z0-9-]+$/, 'Solo letras minúsculas, números y guion'),
+  description: z.string().min(4, 'Mínimo 4 caracteres').max(140, 'Máximo 140 caracteres'),
+  icon: z.string().max(32, 'Máximo 32 caracteres').optional().or(z.literal('')),
+  color: z
+    .string()
+    .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, 'Color hexadecimal no válido'),
+  sort_order: z.coerce.number().int('Debe ser entero').min(0, 'Mínimo 0').max(999, 'Máximo 999')
 })

@@ -1,7 +1,16 @@
 <script lang="ts">
   import { Home, Search, Bell, MessageCircle, User } from 'lucide-svelte'
-  import { unreadCount } from '$lib/stores/notifications'
   import { page } from '$app/state'
+
+  interface Props {
+    unreadNotificationsCount?: number
+    unreadMessagesCount?: number
+  }
+
+  let {
+    unreadNotificationsCount = 0,
+    unreadMessagesCount = 0
+  }: Props = $props()
 
   const path = $derived(page.url?.pathname ?? '')
 </script>
@@ -15,12 +24,15 @@
   </a>
   <a href="/notifications" class="item notif" class:on={path === '/notifications'}>
     <Bell size={21} strokeWidth={path === '/notifications' ? 2.5 : 1.75} />
-    {#if $unreadCount > 0}
-      <span class="badge">{$unreadCount > 9 ? '9+' : $unreadCount}</span>
+    {#if unreadNotificationsCount > 0}
+      <span class="badge">{unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}</span>
     {/if}
   </a>
-  <a href="/messages"      class="item" class:on={path === '/messages'}>
+  <a href="/messages" class="item notif" class:on={path === '/messages'}>
     <MessageCircle size={21} strokeWidth={path === '/messages' ? 2.5 : 1.75} />
+    {#if unreadMessagesCount > 0}
+      <span class="badge">{unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}</span>
+    {/if}
   </a>
   <a href="/profile/me"    class="item" class:on={path.startsWith('/profile')}>
     <User size={21} strokeWidth={path.startsWith('/profile') ? 2.5 : 1.75} />

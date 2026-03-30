@@ -1,9 +1,9 @@
 import { PUBLIC_DEMO_MODE } from '$env/static/public'
 import { mockPosts, mockComments } from '$lib/mock'
-import { commentSchema } from '$lib/validators'
+import { commentSchema, contentReportSchema } from '$lib/validators'
 import { applyXSystem } from '$lib/utils'
 import { createNotification, requireUser } from '$lib/server/social'
-import { error, fail, redirect } from '@sveltejs/kit'
+import { error, fail } from '@sveltejs/kit'
 import type { Actions, PageServerLoad } from './$types'
 
 const DEMO = PUBLIC_DEMO_MODE === 'true'
@@ -16,6 +16,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     return { post, comments }
   }
 
+  const { user } = await locals.safeGetSession()
   const { data: post } = await locals.supabase
     .from('posts')
     .select('*, author:profiles!user_id(*), category:categories!category_id(*)')
@@ -25,6 +26,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
   if (!post) throw error(404, 'Afiŝo ne trovita')
 
+  let userLiked = false
+  if (user) {
+    const { data: like } = await locals.supabase
+      .from('likes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('post_id', params.id)
+      .maybeSingle()
+
+    userLiked = Boolean(like)
+  }
+
   const { data: comments } = await locals.supabase
     .from('comments')
     .select('*, author:profiles!user_id(*)')
@@ -32,7 +45,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     .eq('is_deleted', false)
     .order('created_at')
 
-  return { post, comments: comments ?? [] }
+  return { post: { ...post, user_liked: userLiked }, comments: comments ?? [] }
 }
 
 export const actions: Actions = {
@@ -85,10 +98,10 @@ export const actions: Actions = {
       comment_id: comment.id
     })
 
-    throw redirect(303, `/post/${params.id}#comments`)
+    return { success: true }
   },
 
-  toggleLike: async ({ request, locals, params }) => {
+  toggleLike: async ({ locals, params }) => {
     if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
 
     const user = await requireUser(locals)
@@ -137,12 +150,74 @@ export const actions: Actions = {
       })
     }
 
-    const referer = request.headers.get('referer')
-    const destination =
-      referer && referer.startsWith('http')
-        ? new URL(referer).pathname + new URL(referer).search + new URL(referer).hash
-        : `/post/${params.id}`
+    return { success: true }
+  },
 
-    throw redirect(303, destination)
+  reportPost: async ({ request, locals, params }) => {
+    if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
+
+    const user = await requireUser(locals)
+    const formData = await request.formData()
+    const result = contentReportSchema.safeParse({
+      post_id: params.id,
+      reason: formData.get('reason'),
+      details: formData.get('details') || ''
+    })
+
+    if (!result.success) {
+      return fail(400, { message: result.error.issues[0]?.message ?? 'Invalid report payload' })
+    }
+
+    const { error: insertError } = await locals.supabase.from('content_reports').insert({
+      user_id: user.id,
+      post_id: params.id,
+      reason: result.data.reason,
+      details: (result.data.details ?? '').trim()
+    })
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return fail(400, { message: 'You already reported this post.' })
+      }
+
+      return fail(500, { message: insertError.message })
+    }
+
+    return { success: true, message: 'Report submitted.' }
+  },
+
+  reportComment: async ({ request, locals }) => {
+    if (DEMO) return fail(400, { message: 'Demo mode is enabled' })
+
+    const user = await requireUser(locals)
+    const formData = await request.formData()
+    const commentId = formData.get('comment_id')?.toString()
+
+    const result = contentReportSchema.safeParse({
+      comment_id: commentId,
+      reason: formData.get('reason'),
+      details: formData.get('details') || ''
+    })
+
+    if (!result.success) {
+      return fail(400, { message: result.error.issues[0]?.message ?? 'Invalid report payload' })
+    }
+
+    const { error: insertError } = await locals.supabase.from('content_reports').insert({
+      user_id: user.id,
+      comment_id: commentId,
+      reason: result.data.reason,
+      details: (result.data.details ?? '').trim()
+    })
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return fail(400, { message: 'You already reported this comment.' })
+      }
+
+      return fail(500, { message: insertError.message })
+    }
+
+    return { success: true, message: 'Report submitted.' }
   }
 }

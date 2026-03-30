@@ -2,7 +2,7 @@ export type Theme = 'green' | 'dark' | 'vivid' | 'minimal'
 
 export type EsperantoLevel = 'komencanto' | 'progresanto' | 'flua'
 
-export type UserRole = 'user' | 'moderator' | 'admin'
+export type UserRole = 'user' | 'moderator' | 'admin' | 'owner'
 
 export type NotificationType =
   | 'like'
@@ -14,6 +14,16 @@ export type NotificationType =
   | 'category_rejected'
 
 export type CategorySuggestionStatus = 'pending' | 'approved' | 'rejected'
+export type AppSuggestionStatus = 'pending' | 'planned' | 'closed'
+export type ContentReportReason =
+  | 'spam'
+  | 'harassment'
+  | 'hate'
+  | 'nudity'
+  | 'violence'
+  | 'misinformation'
+  | 'other'
+export type ContentReportStatus = 'pending' | 'resolved' | 'dismissed'
 
 export interface Profile {
   id: string
@@ -132,4 +142,34 @@ export interface CategorySuggestion {
   reviewed_by: string | null
   reviewed_at: string | null
   created_at: string
+}
+
+export interface AppSuggestion {
+  id: string
+  user_id: string
+  title: string
+  description: string
+  context: string
+  status: AppSuggestionStatus
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
+  author?: Profile
+}
+
+export interface ContentReport {
+  id: string
+  user_id: string
+  post_id: string | null
+  comment_id: string | null
+  reason: ContentReportReason
+  details: string
+  status: ContentReportStatus
+  reviewed_by: string | null
+  reviewed_at: string | null
+  resolution_note: string
+  created_at: string
+  author?: Profile
+  post?: Post
+  comment?: Comment
 }

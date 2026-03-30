@@ -1,9 +1,11 @@
 <script lang="ts">
   import { enhance } from '$app/forms'
+  import { withPendingAction } from '$lib/forms/pending'
   import { themeStore } from '$lib/stores/theme'
   import { t, locale, LOCALE_LABELS, LOCALE_COUNTRY, type Locale } from '$lib/i18n'
   import { ESPERANTO_LEVELS } from '$lib/constants'
   import { optimizeImageFiles, replaceInputFiles } from '$lib/browser/images'
+  import { toastStore } from '$lib/stores/toasts'
   import { getAvatarUrl } from '$lib/utils'
   import type { PageData, ActionData } from './$types'
   import type { Theme } from '$lib/types'
@@ -12,6 +14,13 @@
   let savingProfile = $state(false)
   let avatarPreview = $state<string | null>(null)
   const profileErrors = $derived((form?.errors ?? {}) as Partial<Record<'username' | 'display_name', string[]>>)
+
+  function getResultPayload(data: unknown) {
+    return (data ?? {}) as {
+      message?: string
+      errors?: Record<string, string[] | undefined>
+    }
+  }
 
   async function onAvatarChange(e: Event) {
     const input = e.currentTarget as HTMLInputElement
@@ -46,10 +55,28 @@
 <section class="section">
   <h2 class="section-title">{$t('settings_profile')}</h2>
 
-  <form method="POST" action="?/updateProfile" enctype="multipart/form-data" use:enhance={() => {
+  <form method="POST" action="?/updateProfile" enctype="multipart/form-data" use:enhance={withPendingAction(() => {
     savingProfile = true
-    return async ({ update }) => { savingProfile = false; await update() }
-  }}>
+    return async ({ result, update }) => {
+      savingProfile = false
+      await update()
+
+      if (result.type === 'success') {
+        toastStore.success($t('toast_profile_saved'))
+        return
+      }
+
+      if (result.type === 'failure') {
+        const payload = getResultPayload(result.data)
+        toastStore.error(payload.message ?? payload.errors?.username?.[0] ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    }
+  })}>
     <div class="avatar-field">
       <label class="avatar-wrap" for="avatar" title={$t('settings_change_photo')}>
         <img
@@ -138,9 +165,27 @@
   <h2 class="section-title">{$t('settings_theme')}</h2>
   <div class="theme-grid">
     {#each themeValues as themeVal, i}
-      <form method="POST" action="?/updateTheme" use:enhance={() => {
-        return async ({ update }) => { applyTheme(themeVal); await update() }
-      }}>
+      <form method="POST" action="?/updateTheme" use:enhance={withPendingAction(() => {
+        return async ({ result, update }) => {
+          applyTheme(themeVal)
+          await update()
+
+          if (result.type === 'success') {
+            toastStore.success($t('toast_theme_saved'))
+            return
+          }
+
+          if (result.type === 'failure') {
+            const payload = getResultPayload(result.data)
+            toastStore.error(payload.message ?? $t('toast_action_failed'))
+            return
+          }
+
+          if (result.type === 'error') {
+            toastStore.error($t('toast_action_failed'))
+          }
+        }
+      })}>
         <input type="hidden" name="theme" value={themeVal} />
         <button class="theme-btn theme-{themeVal}" type="submit">
           {$t(themeKeys[i])}

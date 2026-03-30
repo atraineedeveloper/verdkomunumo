@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { enhance } from '$app/forms'
+  import { withPendingAction } from '$lib/forms/pending'
   import { t } from '$lib/i18n'
   import { Bell } from 'lucide-svelte'
   import { formatDate, getAvatarUrl } from '$lib/utils'
@@ -23,6 +25,7 @@
     if (notif.type === 'message') return '/messages'
     return '#'
   }
+
 </script>
 
 <svelte:head>
@@ -32,7 +35,7 @@
 <div class="header">
   <h1>{$t('notif_title')}</h1>
   {#if data.notifications.some((n) => !n.is_read)}
-    <form method="POST" action="?/markAll">
+    <form method="POST" action="?/markAll" use:enhance={withPendingAction()}>
       <button class="mark-all">{$t('notif_mark_all')}</button>
     </form>
   {/if}

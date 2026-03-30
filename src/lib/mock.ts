@@ -33,7 +33,7 @@ export const mockCategories: Category[] = [
   { id: 'cat-8', name: 'Ludoj', slug: 'ludoj', description: 'Ludoj kaj amuzaĵoj', icon: '🎮', color: '#dc2626', post_count: 31, sort_order: 8, is_active: true, created_at: '2024-01-01T00:00:00Z' },
 ]
 
-const mockAuthors: Profile[] = [
+export const mockAuthors: Profile[] = [
   {
     id: 'user-002', username: 'saraflua', display_name: 'Sara González',
     bio: 'Hispana esperantistino. Mi instruas Esperanton en Madrido.',

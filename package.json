@@ -9,7 +9,8 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"mcp:admin": "bun run src/mcp/admin-server.ts"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-vercel": "^6.3.1",
@@ -20,9 +21,11 @@
 		"svelte-check": "^4.4.2",
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3",
-		"vite": "^7.3.1"
+		"vite": "^7.3.1",
+		"vite-plugin-devtools-json": "^1.0.0"
 	},
 	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.28.0",
 		"@supabase/ssr": "^0.9.0",
 		"@supabase/supabase-js": "^2.100.1",
 		"@vercel/analytics": "^2.0.1",

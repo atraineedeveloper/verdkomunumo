@@ -1,7 +1,10 @@
 <script lang="ts">
   import { enhance } from '$app/forms'
+  import { invalidateAll } from '$app/navigation'
+  import { withPendingAction } from '$lib/forms/pending'
   import { ESPERANTO_LEVELS } from '$lib/constants'
   import { t, type TranslationKey } from '$lib/i18n'
+  import { toastStore } from '$lib/stores/toasts'
   import { Heart, MessageSquare, MapPin, ExternalLink } from 'lucide-svelte'
   import { CATEGORY_ICONS, CATEGORY_COLORS, LEVEL_ICONS, LEVEL_COLORS } from '$lib/icons'
   import type { PageData } from './$types'
@@ -10,6 +13,28 @@
   let { data }: { data: PageData } = $props()
 
   const levelInfo = $derived(ESPERANTO_LEVELS[data.profile.esperanto_level as EsperantoLevel])
+
+  function getResultPayload(data: unknown) {
+    return (data ?? {}) as {
+      message?: string
+    }
+  }
+
+  const enhanceLike = withPendingAction(() => async ({ result }: { result: any }) => {
+      if (result.type === 'success') {
+        await invalidateAll()
+        return
+      }
+
+      if (result.type === 'failure') {
+        toastStore.error(getResultPayload(result.data).message ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    })
 </script>
 
 <svelte:head>
@@ -34,11 +59,38 @@
       {#if data.isOwn}
         <a href="/settings" class="btn-outline">Redakti profilon</a>
       {:else}
-        <form method="POST" action={data.isFollowing ? '?/unfollow' : '?/follow'} use:enhance>
+        <div class="profile-actions">
+        <a href="/messages?new={data.profile.username}" class="btn-outline btn-msg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          {$t('messages_new')}
+        </a>
+        <form method="POST" action={data.isFollowing ? '?/unfollow' : '?/follow'} use:enhance={withPendingAction(() => {
+          const message = data.isFollowing ? $t('toast_unfollowed') : $t('toast_followed')
+
+          return async ({ result, update }) => {
+            await update()
+
+            if (result.type === 'success') {
+              toastStore.success(message)
+              await invalidateAll()
+              return
+            }
+
+            if (result.type === 'failure') {
+              toastStore.error(getResultPayload(result.data).message ?? $t('toast_action_failed'))
+              return
+            }
+
+            if (result.type === 'error') {
+              toastStore.error($t('toast_action_failed'))
+            }
+          }
+        })}>
           <button class="btn-follow {data.isFollowing ? 'following' : ''}">
             {data.isFollowing ? 'Malsekvi' : 'Sekvi'}
           </button>
         </form>
+        </div>
       {/if}
     </div>
 
@@ -91,8 +143,8 @@
             </span>
           {/if}
           <span class="post-date">{new Date(post.created_at).toLocaleDateString('eo')}</span>
-          <form method="POST" action={`/post/${post.id}?/toggleLike`}>
-            <button type="submit" class="stat-btn rose"><Heart size={12} strokeWidth={1.75} /> {post.likes_count}</button>
+          <form method="POST" action={`/post/${post.id}?/toggleLike`} use:enhance={enhanceLike}>
+            <button type="submit" class:active={post.user_liked} class="stat-btn rose"><Heart size={12} strokeWidth={1.75} /> {post.likes_count}</button>
           </form>
           <span class="stat blue"><MessageSquare size={12} strokeWidth={1.75} /> {post.comments_count}</span>
         </div>
@@ -211,6 +263,20 @@
 
   .btn-outline:hover { border-color: var(--color-primary); }
 
+  .profile-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-msg {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--color-text-muted);
+  }
+
   .btn-follow {
     padding: 0.4rem 1.1rem;
     background: var(--color-primary);
@@ -298,6 +364,11 @@
     color: inherit;
   }
   .stat-btn.rose { color: #f43f5e; }
+  .stat-btn.rose.active {
+    background: #f43f5e18;
+    border-radius: 999px;
+    padding: 0.18rem 0.45rem;
+  }
 
   .empty {
     color: var(--color-text-muted);

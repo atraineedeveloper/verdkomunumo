@@ -1,14 +1,46 @@
 <script lang="ts">
+  import { enhance } from '$app/forms'
+  import { invalidateAll } from '$app/navigation'
   import { page } from '$app/state'
+  import { onMount } from 'svelte'
+  import { withPendingAction } from '$lib/forms/pending'
   import { t, type TranslationKey } from '$lib/i18n'
+  import { toastStore } from '$lib/stores/toasts'
   import { formatDate } from '$lib/utils'
   import { CATEGORY_COLORS } from '$lib/icons'
-  import { Heart, MessageSquare } from 'lucide-svelte'
+  import { Heart, MessageSquare, TriangleAlert, X } from 'lucide-svelte'
   import PostComposer from '$lib/components/PostComposer.svelte'
   import PostMedia from '$lib/components/PostMedia.svelte'
   import type { ActionData, PageData } from './$types'
 
   let { data, form }: { data: PageData; form: ActionData } = $props()
+  let showBetaNotice = $state(true)
+  const BETA_NOTICE_KEY = 'verdkomunumo-beta-notice-dismissed'
+
+  const enhanceLike = withPendingAction(() => async ({ result }: { result: any }) => {
+      if (result.type === 'success') {
+        await invalidateAll()
+        return
+      }
+
+      if (result.type === 'failure') {
+        toastStore.error(result.data?.message ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    })
+
+  onMount(() => {
+    showBetaNotice = localStorage.getItem(BETA_NOTICE_KEY) !== 'true'
+  })
+
+  function dismissBetaNotice() {
+    showBetaNotice = false
+    localStorage.setItem(BETA_NOTICE_KEY, 'true')
+  }
 </script>
 
 <svelte:head>
@@ -22,6 +54,21 @@
     <a href="/feed?filter=following" class="tab">{$t('feed_following')}</a>
   </nav>
 </div>
+
+{#if showBetaNotice}
+  <aside class="beta-banner" role="status" aria-live="polite">
+    <div class="beta-icon">
+      <TriangleAlert size={24} strokeWidth={2.15} />
+    </div>
+    <div class="beta-copy">
+      <strong>{$t('beta_banner_title')}</strong>
+      <span>{$t('beta_banner_body')}</span>
+    </div>
+    <button type="button" class="beta-close" onclick={dismissBetaNotice} aria-label={$t('beta_banner_close')}>
+      <X size={18} strokeWidth={2.15} />
+    </button>
+  </aside>
+{/if}
 
 <PostComposer categories={data.categories} {form} />
 
@@ -68,8 +115,8 @@
           {/if}
 
           <div class="actions">
-            <form method="POST" action={`/post/${post.id}?/toggleLike`}>
-              <button type="submit" class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
+            <form method="POST" action={`/post/${post.id}?/toggleLike`} use:enhance={enhanceLike}>
+              <button type="submit" class:liked={post.user_liked} class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
             </form>
             <a href="/post/{post.id}" class="act"><MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span></a>
           </div>
@@ -124,6 +171,69 @@
 
   /* ── Timeline ── */
   .timeline { display: flex; flex-direction: column; }
+
+  .beta-banner {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding: 0.95rem 1rem;
+    border-radius: 0.4rem;
+    border: 1px solid #d97706;
+    background: linear-gradient(180deg, #fde047 0%, #facc15 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 16px rgba(146, 64, 14, 0.18);
+    color: #4a2c00;
+  }
+
+  .beta-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    padding-right: 0.85rem;
+    border-right: 1px solid rgba(122, 53, 0, 0.22);
+    color: #7c2d12;
+  }
+
+  .beta-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    text-align: center;
+  }
+
+  .beta-copy strong {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #5b3200;
+  }
+
+  .beta-copy span {
+    font-size: 0.87rem;
+    line-height: 1.35;
+    color: #6b3b00;
+  }
+
+  .beta-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #6b3b00;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.12s ease;
+  }
+
+  .beta-close:hover {
+    background: rgba(255, 255, 255, 0.32);
+    transform: translateY(-1px);
+  }
 
   .entry {
     display: flex;
@@ -231,7 +341,26 @@
   }
 
   button.act:hover { color: #f43f5e; background: #f43f5e18; }
+  button.act.liked {
+    color: #e11d48;
+    background: #f43f5e18;
+  }
   a.act:hover { color: #60a5fa; background: #60a5fa18; }
 
   .act span { font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 640px) {
+    .beta-banner {
+      grid-template-columns: 1fr auto;
+      align-items: start;
+    }
+
+    .beta-icon {
+      display: none;
+    }
+
+    .beta-copy {
+      text-align: left;
+    }
+  }
 </style>

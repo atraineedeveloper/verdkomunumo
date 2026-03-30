@@ -3,10 +3,12 @@
   import { invalidateAll } from '$app/navigation'
   import { t, type TranslationKey } from '$lib/i18n'
   import { DEMO_MODE } from '$lib/mock'
+  import { withPendingAction } from '$lib/forms/pending'
   import { POST_MAX_IMAGES } from '$lib/constants'
   import { optimizeImageFiles, replaceInputFiles } from '$lib/browser/images'
+  import { toastStore } from '$lib/stores/toasts'
   import type { Category } from '$lib/types'
-  import { onDestroy, onMount } from 'svelte'
+  import { onDestroy } from 'svelte'
 
   interface Props {
     categories: Category[]
@@ -22,7 +24,6 @@
 
   let content    = $state('')
   let categoryId = $state('')
-  let toast      = $state(false)
   let focused    = $state(false)
   let fileInput = $state<HTMLInputElement | null>(null)
   let submitting = $state(false)
@@ -31,6 +32,13 @@
   let imagePreviews = $state<string[]>([])
   let selectedFiles = $state<File[]>([])
   const formErrors = $derived((form?.errors ?? {}) as Record<string, string[] | undefined>)
+
+  function getResultPayload(data: unknown) {
+    return (data ?? {}) as {
+      message?: string
+      errors?: Record<string, string[] | undefined>
+    }
+  }
 
   $effect(() => {
     const nextCategoryId = defaultCategoryId || (categories[0]?.id ?? '')
@@ -95,8 +103,7 @@
   function handleSubmit(e: SubmitEvent) {
     if (DEMO_MODE) {
       e.preventDefault()
-      toast = true
-      setTimeout(() => (toast = false), 2500)
+      toastStore.info($t('post_compose_demo'))
       return
     }
   }
@@ -107,10 +114,6 @@
 </script>
 
 <div class="composer">
-  {#if toast}
-    <div class="toast" role="status">{$t('post_compose_demo')}</div>
-  {/if}
-
   {#if form?.message}
     <div class="error-banner" role="alert">{form.message}</div>
   {/if}
@@ -120,7 +123,7 @@
   {/if}
 
   <form method="POST" action="?/createPost" enctype="multipart/form-data" onsubmit={handleSubmit}
-    use:enhance={() => {
+    use:enhance={withPendingAction(() => {
       if (DEMO_MODE) return
       submitting = true
 
@@ -130,10 +133,27 @@
 
         if (result.type === 'success') {
           resetComposer()
+          toastStore.success($t('toast_post_created'))
           await invalidateAll()
+          return
+        }
+
+        if (result.type === 'failure') {
+          const payload = getResultPayload(result.data)
+          const message =
+            payload.message ??
+            payload.errors?.content?.[0] ??
+            payload.errors?.category_id?.[0] ??
+            $t('toast_action_failed')
+          toastStore.error(message)
+          return
+        }
+
+        if (result.type === 'error') {
+          toastStore.error($t('toast_action_failed'))
         }
       }
-    }}
+    })}
     onfocusin={() => (focused = true)}
     onfocusout={(e) => {
       if (!e.currentTarget.contains(e.relatedTarget as Node) && !content.trim() && imagePreviews.length === 0) focused = false
@@ -213,20 +233,6 @@
     border-bottom: 1px solid var(--color-border);
     padding: 0.85rem 0 0.85rem;
     margin-bottom: 0.25rem;
-  }
-
-  .toast {
-    position: absolute;
-    top: -2.25rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--color-text);
-    color: var(--color-bg);
-    font-size: 0.78rem;
-    padding: 0.35rem 0.85rem;
-    border-radius: 5px;
-    white-space: nowrap;
-    pointer-events: none;
   }
 
   .error-banner,

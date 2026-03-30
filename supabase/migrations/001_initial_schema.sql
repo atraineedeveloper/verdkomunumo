@@ -12,7 +12,7 @@ CREATE TABLE public.profiles (
   avatar_url TEXT DEFAULT '',
   esperanto_level TEXT DEFAULT 'komencanto' CHECK (esperanto_level IN ('komencanto', 'progresanto', 'flua')),
   theme TEXT DEFAULT 'green' CHECK (theme IN ('green', 'dark', 'vivid', 'minimal')),
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'moderator', 'admin')),
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'moderator', 'admin', 'owner')),
   website TEXT DEFAULT '',
   location TEXT DEFAULT '',
   followers_count INTEGER DEFAULT 0,
@@ -174,7 +174,7 @@ CREATE POLICY "posts_update_own" ON public.posts FOR UPDATE USING (auth.uid() = 
 CREATE POLICY "posts_admin_update" ON public.posts FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    WHERE id = auth.uid() AND role IN ('owner', 'admin', 'moderator')
   )
 );
 CREATE POLICY "posts_delete_own" ON public.posts FOR DELETE USING (auth.uid() = user_id);
@@ -185,7 +185,7 @@ CREATE POLICY "comments_insert_own" ON public.comments FOR INSERT WITH CHECK (au
 CREATE POLICY "comments_admin_update" ON public.comments FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    WHERE id = auth.uid() AND role IN ('owner', 'admin', 'moderator')
   )
 );
 CREATE POLICY "comments_delete_own" ON public.comments FOR DELETE USING (auth.uid() = user_id);
@@ -205,19 +205,19 @@ CREATE POLICY "categories_select" ON public.categories FOR SELECT USING (is_acti
 CREATE POLICY "categories_admin_select" ON public.categories FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    WHERE id = auth.uid() AND role IN ('owner', 'admin')
   )
 );
 CREATE POLICY "categories_admin_insert" ON public.categories FOR INSERT WITH CHECK (
   EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    WHERE id = auth.uid() AND role IN ('owner', 'admin')
   )
 );
 CREATE POLICY "categories_admin_update" ON public.categories FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    WHERE id = auth.uid() AND role IN ('owner', 'admin')
   )
 );
 
@@ -225,12 +225,12 @@ CREATE POLICY "categories_admin_update" ON public.categories FOR UPDATE USING (
 CREATE POLICY "suggestions_insert" ON public.category_suggestions FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "suggestions_select" ON public.category_suggestions FOR SELECT USING (
   auth.uid() = user_id OR
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'moderator'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin', 'moderator'))
 );
 CREATE POLICY "suggestions_update_staff" ON public.category_suggestions FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    WHERE id = auth.uid() AND role IN ('owner', 'admin', 'moderator')
   )
 );
 

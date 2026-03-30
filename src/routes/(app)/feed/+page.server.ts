@@ -46,10 +46,28 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     locals.supabase.from('categories').select('*').eq('is_active', true).order('sort_order')
   ])
 
-  const nextCursor =
-    posts && posts.length === 20 ? posts[posts.length - 1].created_at : null
+  const postIds = (posts ?? []).map((post) => post.id)
+  let likedPostIds = new Set<string>()
 
-  return { posts: posts ?? [], categories: categories ?? [], nextCursor }
+  if (user && postIds.length > 0) {
+    const { data: likes } = await locals.supabase
+      .from('likes')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .in('post_id', postIds)
+
+    likedPostIds = new Set((likes ?? []).map((like) => like.post_id))
+  }
+
+  const hydratedPosts = (posts ?? []).map((post) => ({
+    ...post,
+    user_liked: likedPostIds.has(post.id)
+  }))
+
+  const nextCursor =
+    hydratedPosts.length === 20 ? hydratedPosts[hydratedPosts.length - 1].created_at : null
+
+  return { posts: hydratedPosts, categories: categories ?? [], nextCursor }
 }
 
 export const actions: Actions = {

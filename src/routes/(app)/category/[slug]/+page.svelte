@@ -1,5 +1,9 @@
 <script lang="ts">
+  import { enhance } from '$app/forms'
+  import { invalidateAll } from '$app/navigation'
+  import { withPendingAction } from '$lib/forms/pending'
   import { t, type TranslationKey } from '$lib/i18n'
+  import { toastStore } from '$lib/stores/toasts'
   import { formatDate, getAvatarUrl } from '$lib/utils'
   import { CATEGORY_ICONS, CATEGORY_COLORS } from '$lib/icons'
   import { Heart, MessageSquare } from 'lucide-svelte'
@@ -11,6 +15,22 @@
   const category   = $derived(data.category)
   const posts      = $derived(data.posts)
   const categories = $derived(data.categories)
+
+  const enhanceLike = withPendingAction(() => async ({ result }: { result: any }) => {
+      if (result.type === 'success') {
+        await invalidateAll()
+        return
+      }
+
+      if (result.type === 'failure') {
+        toastStore.error(result.data?.message ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    })
 </script>
 
 <svelte:head>
@@ -66,8 +86,8 @@
             <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />
           {/if}
           <div class="actions">
-            <form method="POST" action={`/post/${post.id}?/toggleLike`}>
-              <button type="submit" class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
+            <form method="POST" action={`/post/${post.id}?/toggleLike`} use:enhance={enhanceLike}>
+              <button type="submit" class:liked={post.user_liked} class="act"><Heart size={14} strokeWidth={1.75} /> <span>{post.likes_count}</span></button>
             </form>
             <a href="/post/{post.id}" class="act"><MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span></a>
           </div>
@@ -201,5 +221,6 @@
   }
 
   .act:hover { color: var(--color-primary); background: var(--color-primary-dim); }
+  button.act.liked { color: #e11d48; background: #f43f5e18; }
   .act span { font-variant-numeric: tabular-nums; }
 </style>

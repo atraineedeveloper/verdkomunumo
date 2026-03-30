@@ -1,6 +1,10 @@
 <script lang="ts">
+  import { enhance } from '$app/forms'
+  import { invalidateAll } from '$app/navigation'
   import { page } from '$app/state'
+  import { withPendingAction } from '$lib/forms/pending'
   import { t, type TranslationKey } from '$lib/i18n'
+  import { toastStore } from '$lib/stores/toasts'
   import { formatDate, getAvatarUrl } from '$lib/utils'
   import { CATEGORY_COLORS } from '$lib/icons'
   import { Heart, MessageSquare } from 'lucide-svelte'
@@ -23,6 +27,22 @@
   $effect(() => {
     query = data.q
   })
+
+  const enhanceLike = withPendingAction(() => async ({ result }: { result: any }) => {
+      if (result.type === 'success') {
+        await invalidateAll()
+        return
+      }
+
+      if (result.type === 'failure') {
+        toastStore.error(result.data?.message ?? $t('toast_action_failed'))
+        return
+      }
+
+      if (result.type === 'error') {
+        toastStore.error($t('toast_action_failed'))
+      }
+    })
 </script>
 
 <svelte:head>
@@ -91,8 +111,8 @@
               <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />
             {/if}
             <div class="acts">
-              <form method="POST" action={`/post/${post.id}?/toggleLike`}>
-                <button type="submit" class="act act-btn"><Heart size={13} strokeWidth={1.75} /> {post.likes_count}</button>
+              <form method="POST" action={`/post/${post.id}?/toggleLike`} use:enhance={enhanceLike}>
+                <button type="submit" class:liked={post.user_liked} class="act act-btn"><Heart size={13} strokeWidth={1.75} /> {post.likes_count}</button>
               </form>
               <span class="act"><MessageSquare size={13} strokeWidth={1.75} /> {post.comments_count}</span>
             </div>
@@ -261,6 +281,10 @@
     color: inherit;
     font: inherit;
     cursor: pointer;
+  }
+
+  .act-btn.liked {
+    color: #e11d48;
   }
 
   /* ── Users ── */

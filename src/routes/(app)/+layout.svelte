@@ -2,17 +2,16 @@
   import Navbar from '$lib/components/layout/Navbar.svelte'
   import Sidebar from '$lib/components/layout/Sidebar.svelte'
   import MobileNav from '$lib/components/layout/MobileNav.svelte'
-  import { navigating } from '$app/state'
+  import FloatingSuggestionButton from '$lib/components/FloatingSuggestionButton.svelte'
   import type { LayoutData } from './$types'
 
   let { data, children }: { data: LayoutData; children: any } = $props()
 </script>
 
-{#if navigating}
-  <div class="nav-bar"></div>
-{/if}
-
-<Navbar />
+<Navbar
+  unreadNotificationsCount={data.unreadNotificationsCount ?? 0}
+  unreadMessagesCount={data.unreadMessagesCount ?? 0}
+/>
 
 <div class="app-layout">
   <div class="app-sidebar">
@@ -24,26 +23,13 @@
   </main>
 </div>
 
-<MobileNav />
+<MobileNav
+  unreadNotificationsCount={data.unreadNotificationsCount ?? 0}
+  unreadMessagesCount={data.unreadMessagesCount ?? 0}
+/>
+<FloatingSuggestionButton />
 
 <style>
-  .nav-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 999;
-    height: 2px;
-    background: var(--color-primary);
-    animation: nav-progress 1.2s ease-out forwards;
-    transform-origin: left;
-  }
-
-  @keyframes nav-progress {
-    from { width: 0%; opacity: 1; }
-    80%  { width: 85%; opacity: 1; }
-    to   { width: 95%; opacity: 0.8; }
-  }
-
   .app-layout {
     max-width: 1100px;
     margin: 0 auto;

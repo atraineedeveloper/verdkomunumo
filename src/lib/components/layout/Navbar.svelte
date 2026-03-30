@@ -1,11 +1,22 @@
 <script lang="ts">
+  import { enhance } from '$app/forms'
   import { Bell, MessageCircle, Palette, Settings, LogOut, Search, User } from 'lucide-svelte'
+  import { withPendingAction } from '$lib/forms/pending'
   import { themeStore } from '$lib/stores/theme'
   import { currentProfile } from '$lib/stores/auth'
-  import { unreadCount } from '$lib/stores/notifications'
   import { t, locale, LOCALE_LABELS, LOCALE_COUNTRY, type Locale } from '$lib/i18n'
   import { APP_NAME } from '$lib/constants'
   import type { Theme } from '$lib/types'
+
+  interface Props {
+    unreadNotificationsCount?: number
+    unreadMessagesCount?: number
+  }
+
+  let {
+    unreadNotificationsCount = 0,
+    unreadMessagesCount = 0
+  }: Props = $props()
 
   const themes: Theme[] = ['green', 'dark', 'vivid', 'minimal']
   const locales = Object.keys(LOCALE_LABELS) as Locale[]
@@ -77,13 +88,16 @@
 
       <a href="/notifications" class="btn-icon rel" title={$t('nav_notifications')}>
         <Bell size={16} strokeWidth={1.75} />
-        {#if $unreadCount > 0}
-          <span class="dot">{$unreadCount > 9 ? '9+' : $unreadCount}</span>
+        {#if unreadNotificationsCount > 0}
+          <span class="dot">{unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}</span>
         {/if}
       </a>
 
-      <a href="/messages" class="btn-icon" title={$t('nav_messages')}>
+      <a href="/messages" class="btn-icon rel" title={$t('nav_messages')}>
         <MessageCircle size={16} strokeWidth={1.75} />
+        {#if unreadMessagesCount > 0}
+          <span class="dot">{unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}</span>
+        {/if}
       </a>
 
       <!-- Avatar -->
@@ -111,7 +125,7 @@
                 <Settings size={13} strokeWidth={1.75} /> {$t('nav_settings')}
               </a>
               <div class="sep"></div>
-              <form method="POST" action="/auth/logout">
+              <form method="POST" action="/auth/logout" use:enhance={withPendingAction()}>
                 <button class="menu-row menu-danger" type="submit">
                   <LogOut size={13} strokeWidth={1.75} /> {$t('nav_logout')}
                 </button>
