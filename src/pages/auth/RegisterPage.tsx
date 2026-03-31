@@ -12,7 +12,9 @@ import type { z } from 'zod'
 type RegisterInput = z.infer<typeof registerSchema>
 
 const GOOGLE_ENABLED = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
-const APP_URL = import.meta.env.VITE_APP_URL
+const APP_URL =
+  import.meta.env.VITE_APP_URL ||
+  (typeof window !== 'undefined' ? window.location.origin : '')
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
