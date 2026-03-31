@@ -1,0 +1,6 @@
+{
+  "framework": "vite",
+  "installCommand": "cd react-app && bun install",
+  "buildCommand": "cd react-app && bun run build",
+  "outputDirectory": "react-app/dist"
+}

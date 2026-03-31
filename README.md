@@ -1,193 +1,109 @@
 # Verdkomunumo
 
-Verdkomunumo is a social network for the Esperanto community, built with SvelteKit, Supabase, and Vercel.
+Verdkomunumo is a social network for the Esperanto community. The active frontend is now the React app under [`react-app/`](/home/otilio/projects/verdkomunumo/react-app), backed by Supabase and intended for Vercel deployment.
 
-It includes a real authenticated app, image uploads, private messaging, notifications, admin tools, multilingual UI, and a demo mode for frontend work without a live backend.
+The legacy SvelteKit app is still present in the repository during migration cleanup, but it should now be treated as reference code, not the primary frontend.
 
-## Highlights
+## Active Frontend
 
-- Chronological social feed with categories
-- Posts with up to 4 images
-- Comments, likes, follows, and user profiles
-- Private messaging with unread counts
-- Notifications for social activity
-- Search for users and posts
-- Admin area for moderation and app feedback
-- 9 UI languages: `eo`, `es`, `en`, `pt`, `ja`, `fr`, `de`, `ko`, `zh`
-- Demo mode for local UI development
+- Framework: React 18 + Vite
+- Routing: React Router
+- Data layer: TanStack Query + Supabase
+- Styling: Tailwind CSS 4 + app theme variables
+- Deployment target: Vercel static build from `react-app/dist`
 
-## Tech Stack
+## Current Product Surface
 
-- Framework: SvelteKit 2 + Svelte 5
-- Runtime / package manager: Bun
-- Database / auth / storage: Supabase
-- Deployment: Vercel
-- Styling: CSS variables with multiple themes
-- Validation: Zod
-- Icons: Lucide Svelte + flag-icons
-- Analytics: Vercel Analytics
+The React app includes:
+
+- public landing page
+- email and Google auth
+- feed, categories, search, post detail, profiles
+- messages and notifications
+- settings
+- floating suggestion flow
+- admin dashboard, moderation reports, category management
 
 ## Local Development
 
-Install dependencies and start the dev server:
+Run the React app:
 
 ```bash
+cd react-app
 bun install
 bun run dev
 ```
 
-Useful scripts:
+Useful commands:
 
 ```bash
+cd react-app
 bun run dev
+bun run test
+bun run typecheck
 bun run build
-bun run preview
-bun run check
+```
+
+The dev server runs on:
+
+```text
+http://localhost:5174
 ```
 
 ## Environment Variables
 
-Create `.env.local` from `.env.local.example`.
+For the React app, use variables with the `VITE_` prefix.
 
-Required values for a real backend:
+Example:
 
 ```env
-PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_APP_URL=http://localhost:5174
+VITE_APP_NAME=Verdkomunumo
+VITE_DEMO_MODE=false
+VITE_GOOGLE_AUTH_ENABLED=true
+```
+
+If you also use the local MCP admin server, add:
+
+```env
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-PUBLIC_APP_URL=http://localhost:5173
-PUBLIC_APP_NAME=Verdkomunumo
-PUBLIC_DEMO_MODE=false
-PUBLIC_GOOGLE_AUTH_ENABLED=true
 ```
 
-For demo mode:
-
-```env
-PUBLIC_DEMO_MODE=true
-PUBLIC_SUPABASE_URL=
-PUBLIC_SUPABASE_ANON_KEY=
-```
-
-## MCP Admin Server
-
-This repo includes a local MCP server focused on product suggestions and moderation workflows.
-
-Run it with:
-
-```bash
-bun run mcp:admin
-```
-
-Available tools include:
-
-- `admin_snapshot`
-- `list_app_suggestions`
-- `update_app_suggestion_status`
-- `list_content_reports`
-- `update_content_report_status`
-
-The server reads `PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. A starter editor config is included in [`/.vscode/mcp.json`](/home/otilio/projects/verdkomunumo/.vscode/mcp.json).
-
-## Supabase Setup
-
-This repo includes SQL migrations under [`supabase/migrations`](/home/otilio/projects/verdkomunumo/supabase/migrations).
-
-Typical setup flow:
-
-```bash
-supabase link --project-ref <your-project-ref>
-supabase db push
-```
-
-Notes:
-
-- `001_initial_schema.sql` creates the base schema, RLS, triggers, storage buckets, and core policies.
-- Later migrations include messaging and notification fixes, plus app feedback tables.
-- If you want starter data such as categories, apply the seed flow used in this repo.
-
-## Authentication
-
-Verdkomunumo supports:
-
-- Email/password authentication
-- Google OAuth through Supabase Auth
-
-For local development, make sure your Supabase Auth settings allow:
-
-- `http://localhost:5173`
-- `http://127.0.0.1:5173`
-- your production Vercel URL
-
-Google OAuth also requires the Supabase callback URL in Google Cloud:
-
-```text
-https://<your-project-ref>.supabase.co/auth/v1/callback
-```
+The root [`.env.local.example`](/home/otilio/projects/verdkomunumo/.env.local.example) now includes both the React variables and optional legacy Svelte variables for migration overlap.
 
 ## Deployment
 
-The app is designed for Vercel using `@sveltejs/adapter-vercel`.
+This repository now includes [`vercel.json`](/home/otilio/projects/verdkomunumo/vercel.json) so Vercel builds the React app from the repo root using:
 
-Production setup usually needs these environment variables in Vercel:
+- install: `cd react-app && bun install`
+- build: `cd react-app && bun run build`
+- output: `react-app/dist`
 
-- `PUBLIC_SUPABASE_URL`
-- `PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `PUBLIC_APP_URL`
-- `PUBLIC_DEMO_MODE`
-- `PUBLIC_GOOGLE_AUTH_ENABLED`
+Production environment variables should be the React ones:
 
-## Project Structure
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_APP_URL`
+- `VITE_APP_NAME`
+- `VITE_DEMO_MODE`
+- `VITE_GOOGLE_AUTH_ENABLED`
 
-```text
-src/
-├── lib/
-│   ├── browser/              # Client-side helpers such as image optimization
-│   ├── components/           # Reusable UI
-│   │   └── layout/           # Navbar, sidebar, mobile nav
-│   ├── i18n/                 # Translations and locale helpers
-│   ├── server/               # Server-side helpers for social logic and storage
-│   ├── stores/               # Client stores
-│   ├── mock.ts               # Demo-mode data
-│   ├── types.ts              # Shared TypeScript types
-│   └── validators.ts         # Zod schemas
-├── routes/
-│   ├── (auth)/               # Login and register
-│   ├── (app)/                # Authenticated app routes
-│   │   ├── feed/
-│   │   ├── category/[slug]/
-│   │   ├── post/[id]/
-│   │   ├── profile/[username]/
-│   │   ├── messages/
-│   │   ├── notifications/
-│   │   ├── search/
-│   │   └── settings/
-│   ├── admin/                # Staff tools
-│   └── api/                  # Internal endpoints
-└── app.css                   # Global theme and layout styles
-```
+Only add `SUPABASE_SERVICE_ROLE_KEY` if you need the local/admin MCP tooling.
 
-## Current State
+## Legacy Svelte Code
 
-The project is past the mock-only stage and already uses the real Supabase backend for:
+The old SvelteKit frontend remains in [`src/`](/home/otilio/projects/verdkomunumo/src) with its own `package.json`, `vite.config.ts`, and `svelte.config.js`. It is useful as migration reference, but it should not be considered the canonical app anymore.
 
-- authentication
-- posts, comments, likes, and follows
+Before deleting it entirely, do a final production smoke test of:
+
+- login and Google OAuth callback
+- feed and post interactions
 - messaging and notifications
-- profile settings and uploads
-- admin workflows
-- app feedback suggestions
+- admin access by role
+- Vercel deployment with React env vars only
 
-There is still room to improve realtime behavior, polish, and moderation depth, but the core product flows are already connected to the backend.
+## Supabase
 
-## Development Notes
-
-- The app uses Svelte 5 runes.
-- Demo mode is useful for visual work when Supabase is not available.
-- Chrome may request `/.well-known/appspecific/com.chrome.devtools.json` in development; this repo already includes devtools support for that.
-- Messaging and notifications rely on Supabase RLS, so schema drift between local code and remote DB can break features quickly.
-
-## License
-
-No license has been added yet. If this project is meant to be open source, add one before publishing broadly.
+SQL migrations still live under [`supabase/migrations`](/home/otilio/projects/verdkomunumo/supabase/migrations). The backend remains shared; only the frontend stack is changing.

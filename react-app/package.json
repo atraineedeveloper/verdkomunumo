@@ -1,0 +1,45 @@
+{
+  "name": "verdkomunumo-react",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.1",
+    "@tanstack/react-query": "^5.51.23",
+    "@tanstack/react-query-devtools": "^5.51.23",
+    "zustand": "^5.0.0",
+    "i18next": "^24.0.0",
+    "react-i18next": "^15.0.0",
+    "react-hook-form": "^7.52.2",
+    "@hookform/resolvers": "^3.9.0",
+    "react-helmet-async": "^2.0.4",
+    "lucide-react": "^0.446.0",
+    "@supabase/supabase-js": "^2.100.1",
+    "@vercel/analytics": "^2.0.1",
+    "date-fns": "^4.1.0",
+    "flag-icons": "^7.5.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "jsdom": "^29.0.1",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.1",
+    "vitest": "^4.1.2"
+  }
+}
