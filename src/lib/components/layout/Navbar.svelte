@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { enhance } from '$app/forms'
   import { Bell, MessageCircle, Palette, Settings, LogOut, Search, User } from 'lucide-svelte'
-  import { withPendingAction } from '$lib/forms/pending'
   import { themeStore } from '$lib/stores/theme'
   import { currentProfile } from '$lib/stores/auth'
   import { t, locale, LOCALE_LABELS, LOCALE_COUNTRY, type Locale } from '$lib/i18n'
@@ -125,7 +123,7 @@
                 <Settings size={13} strokeWidth={1.75} /> {$t('nav_settings')}
               </a>
               <div class="sep"></div>
-              <form method="POST" action="/auth/logout" use:enhance={withPendingAction()}>
+              <form method="POST" action="/auth/logout">
                 <button class="menu-row menu-danger" type="submit">
                   <LogOut size={13} strokeWidth={1.75} /> {$t('nav_logout')}
                 </button>
