@@ -1,21 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { X } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
+import { isOptionalPostFeaturesError } from '@/lib/postFeatures'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import { optimizeImageFiles, replaceInputFiles } from '@/lib/browser/images'
 import { queryKeys } from '@/lib/query/keys'
 import { POST_MAX_IMAGES } from '@/lib/constants'
-import type { Category } from '@/lib/types'
+import type { Category, LinkPreview, Post } from '@/lib/types'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
+import { QuotedPostCard } from '@/components/QuotedPostCard'
+import { LinkPreviewCard } from '@/components/LinkPreviewCard'
+import { extractFirstUrl, fetchLinkPreview } from '@/lib/linkPreview'
 
 interface Props {
   categories: Category[]
   defaultCategoryId?: string
+  quotedPost?: Post | null
+  onQuoteClear?: () => void
 }
 
-export default function PostComposer({ categories, defaultCategoryId = '' }: Props) {
+export default function PostComposer({ categories, defaultCategoryId = '', quotedPost, onQuoteClear }: Props) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const profile = useAuthStore(s => s.profile)
@@ -27,9 +34,13 @@ export default function PostComposer({ categories, defaultCategoryId = '' }: Pro
   const [preparingImages, setPreparingImages] = useState(false)
   const [selectedFiles, setSelectedFilesState] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null)
+  const [previewDismissed, setPreviewDismissed] = useState(false)
+  const [fetchingPreview, setFetchingPreview] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastFetchedUrl = useRef<string | null>(null)
 
-  // Sync default category
   useEffect(() => {
     const next = defaultCategoryId || (categories[0]?.id ?? '')
     if (!categoryId || !categories.some(c => c.id === categoryId)) {
@@ -37,10 +48,41 @@ export default function PostComposer({ categories, defaultCategoryId = '' }: Pro
     }
   }, [defaultCategoryId, categories])
 
-  // Cleanup previews on unmount
   useEffect(() => {
     return () => { imagePreviews.forEach(URL.revokeObjectURL) }
   }, [])
+
+  // Auto-focus when quotedPost is set
+  useEffect(() => {
+    if (quotedPost) setFocused(true)
+  }, [quotedPost])
+
+  // Link preview detection
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    const url = extractFirstUrl(content)
+
+    if (url !== lastFetchedUrl.current) {
+      setPreviewDismissed(false)
+    }
+
+    if (!url || previewDismissed) {
+      if (!url) { setLinkPreview(null); lastFetchedUrl.current = null }
+      return
+    }
+    if (url === lastFetchedUrl.current) return
+
+    debounceRef.current = setTimeout(async () => {
+      lastFetchedUrl.current = url
+      setFetchingPreview(true)
+      const preview = await fetchLinkPreview(url)
+      setLinkPreview(preview)
+      setFetchingPreview(false)
+    }, 800)
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [content, previewDismissed])
 
   const remaining = 5000 - content.length
   const canPost = content.trim().length > 0 && categoryId !== '' && remaining >= 0
@@ -88,7 +130,6 @@ export default function PostComposer({ categories, defaultCategoryId = '' }: Pro
     mutationFn: async () => {
       if (!profile) throw new Error('Not authenticated')
 
-      // Upload images
       let imageUrls: string[] = []
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
@@ -101,12 +142,29 @@ export default function PostComposer({ categories, defaultCategoryId = '' }: Pro
         }
       }
 
-      const { error } = await supabase.from('posts').insert({
+      const payload = {
         user_id: profile.id,
         category_id: categoryId,
         content: content.trim(),
         image_urls: imageUrls,
-      })
+        quoted_post_id: quotedPost?.id ?? null,
+        link_preview: linkPreview ?? null,
+      }
+
+      let { error } = await supabase.from('posts').insert(payload as never)
+
+      if (error && isOptionalPostFeaturesError(error)) {
+        const fallbackPayload = {
+          user_id: profile.id,
+          category_id: categoryId,
+          content: content.trim(),
+          image_urls: imageUrls,
+        }
+
+        const fallback = await supabase.from('posts').insert(fallbackPayload as never)
+        error = fallback.error
+      }
+
       if (error) throw error
     },
     onSuccess: () => {
@@ -114,6 +172,10 @@ export default function PostComposer({ categories, defaultCategoryId = '' }: Pro
       setContent('')
       setFocused(false)
       applyFiles([])
+      setLinkPreview(null)
+      setPreviewDismissed(false)
+      lastFetchedUrl.current = null
+      onQuoteClear?.()
       queryClient.invalidateQueries({ queryKey: queryKeys.feed() })
     },
     onError: (err: any) => {
@@ -121,26 +183,53 @@ export default function PostComposer({ categories, defaultCategoryId = '' }: Pro
     },
   })
 
-  const showBar = focused || content.trim().length > 0 || imagePreviews.length > 0
+  const showBar = focused || content.trim().length > 0 || imagePreviews.length > 0 || !!quotedPost
 
   return (
     <div
       className="composer"
       onFocus={() => setFocused(true)}
       onBlur={e => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node) && !content.trim() && imagePreviews.length === 0) {
+        if (!e.currentTarget.contains(e.relatedTarget as Node) && !content.trim() && imagePreviews.length === 0 && !quotedPost) {
           setFocused(false)
         }
       }}
     >
+      {quotedPost && (
+        <div className="quote-wrap">
+          <div className="quote-label">
+            <span>Citante</span>
+            <button type="button" className="quote-clear" onClick={onQuoteClear} aria-label="Forigu citaĵon">
+              <X size={12} />
+            </button>
+          </div>
+          <QuotedPostCard post={quotedPost} />
+        </div>
+      )}
+
       <textarea
         value={content}
         onChange={e => setContent(e.target.value)}
-        placeholder={t('post_compose_placeholder')}
+        placeholder={quotedPost ? 'Aldonu vian komenton...' : t('post_compose_placeholder')}
         maxLength={5000}
-        rows={focused ? 4 : 2}
+        rows={focused || !!quotedPost ? 4 : 2}
         className="composer-textarea"
       />
+
+      {(linkPreview || fetchingPreview) && !previewDismissed && (
+        <div className="preview-wrap">
+          {fetchingPreview ? (
+            <div className="preview-loading"><InlineSpinner size={13} /> <span>Serĉante antaŭvidon...</span></div>
+          ) : linkPreview ? (
+            <>
+              <LinkPreviewCard preview={linkPreview} />
+              <button type="button" className="preview-dismiss" onClick={() => { setPreviewDismissed(true); setLinkPreview(null) }}>
+                <X size={12} /> Forigi antaŭvidon
+              </button>
+            </>
+          ) : null}
+        </div>
+      )}
 
       {imagePreviews.length > 0 && (
         <div className="img-previews">
@@ -211,6 +300,14 @@ export default function PostComposer({ categories, defaultCategoryId = '' }: Pro
         .composer { position: relative; border-bottom: 1px solid var(--color-border); padding: 0.85rem 0; margin-bottom: 0.25rem; }
         .composer-textarea { width: 100%; background: transparent; border: none; outline: none; resize: none; font-size: 0.9375rem; line-height: 1.6; color: var(--color-text); font-family: inherit; display: block; box-sizing: border-box; }
         .composer-textarea::placeholder { color: var(--color-text-muted); }
+        .quote-wrap { margin-bottom: 0.35rem; }
+        .quote-label { display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--color-primary); font-weight: 600; margin-bottom: 0.2rem; }
+        .quote-clear { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 0.1rem; border-radius: 4px; display: flex; align-items: center; }
+        .quote-clear:hover { color: var(--color-danger); }
+        .preview-wrap { margin: 0.2rem 0; }
+        .preview-loading { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--color-text-muted); padding: 0.5rem 0; }
+        .preview-dismiss { background: none; border: none; font-size: 0.73rem; color: var(--color-text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1rem 0; font-family: inherit; margin-top: -0.4rem; }
+        .preview-dismiss:hover { color: var(--color-danger); }
         .bar { display: flex; align-items: center; gap: 0.65rem; padding-top: 0.6rem; border-top: 1px solid var(--color-border); margin-top: 0.5rem; animation: fadeIn 0.12s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
         .cat-select { background: var(--color-surface-alt); border: 1px solid var(--color-border); border-radius: 5px; color: var(--color-text); font-size: 0.8rem; font-family: inherit; padding: 0.28rem 0.55rem; cursor: pointer; transition: border-color 0.12s; }

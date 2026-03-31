@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Flag, Heart, MessageSquare, Pencil, Trash2 } from 'lucide-react'
+import { Flag, Heart, MessageSquare, Pencil, Quote, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { supabase } from '@/lib/supabase/client'
 import { CATEGORY_COLORS } from '@/lib/icons'
+import { fetchPostDetailWithFallback, normalizeQuotedPost } from '@/lib/postFeatures'
 import { formatDate, getAvatarUrl } from '@/lib/utils'
 import { queryKeys } from '@/lib/query/keys'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import PostMedia from '@/components/PostMedia'
+import { QuotedPostCard } from '@/components/QuotedPostCard'
+import { LinkPreviewCard } from '@/components/LinkPreviewCard'
+import { RichText } from '@/components/RichText'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import type { Comment, ContentReportReason, Post } from '@/lib/types'
@@ -36,24 +40,22 @@ const reportReasons: { value: ContentReportReason; label: string }[] = [
 ]
 
 async function fetchPostDetail(postId: string, userId?: string | null) {
-  const [{ data: post, error }, { data: categories }] = await Promise.all([
-    supabase
-      .from('posts')
-      .select('*, author:profiles!user_id(*), category:categories!category_id(*)')
-      .eq('id', postId)
-      .eq('is_deleted', false)
-      .single(),
+  const [{ data: post, error }, categoriesRes] = await Promise.all([
+    fetchPostDetailWithFallback(postId),
     supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
   ])
 
   if (error || !post) throw new Error('Afiŝo ne trovita')
+  if (categoriesRes.error) throw categoriesRes.error
 
-  const { data: comments } = await supabase
+  const { data: comments, error: commentsError } = await supabase
     .from('comments')
     .select('*, author:profiles!user_id(*)')
     .eq('post_id', postId)
     .eq('is_deleted', false)
     .order('created_at')
+
+  if (commentsError) throw commentsError
 
   let userLiked = false
   if (userId) {
@@ -67,9 +69,9 @@ async function fetchPostDetail(postId: string, userId?: string | null) {
   }
 
   return {
-    post: { ...post, user_liked: userLiked } as Post,
+    post: { ...normalizeQuotedPost(post as Post), user_liked: userLiked } as Post,
     comments: (comments ?? []) as Comment[],
-    categories: categories ?? [],
+    categories: categoriesRes.data ?? [],
   }
 }
 
@@ -422,9 +424,15 @@ export default function PostDetailPage() {
             </div>
           </form>
         ) : (
-          <p className="content">{post.content}</p>
+          <p className="content"><RichText content={post.content} /></p>
         )}
         {!!post.image_urls?.length && <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />}
+        {post.quoted_post && (
+          <QuotedPostCard post={post.quoted_post} />
+        )}
+        {post.link_preview && (
+          <LinkPreviewCard preview={post.link_preview} />
+        )}
 
         <div className="post-footer">
           <span className="time">{formatDate(post.created_at)}</span>
@@ -582,6 +590,8 @@ export default function PostDetailPage() {
         .ghost-btn { border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); border-radius: 5px; padding: 0.35rem 0.75rem; font: inherit; cursor: pointer; }
         .btn { background: var(--color-primary); color: #fff; border: none; border-radius: 5px; padding: 0.35rem 0.9rem; font-size: 0.825rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.12s; }
         .btn:hover { opacity: 0.85; }
+        .post-link { color: var(--color-primary); text-decoration: none; }
+        .post-link:hover { text-decoration: underline; }
       `}</style>
     </>
   )

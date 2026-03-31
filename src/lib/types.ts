@@ -57,6 +57,13 @@ export interface Category {
   created_at: string
 }
 
+export interface LinkPreview {
+  url: string
+  title?: string
+  description?: string
+  image?: string
+}
+
 export interface Post {
   id: string
   user_id: string
@@ -72,6 +79,9 @@ export interface Post {
   author?: Profile
   category?: Category
   user_liked?: boolean
+  quoted_post_id?: string | null
+  quoted_post?: Post | null
+  link_preview?: LinkPreview | null
 }
 
 export interface Comment {

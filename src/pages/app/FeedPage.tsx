@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
-import { Heart, MessageSquare, Pencil, Trash2, TriangleAlert, X } from 'lucide-react'
+import { Heart, MessageSquare, Pencil, Quote, Trash2, TriangleAlert, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import { queryKeys } from '@/lib/query/keys'
 import { formatDate, getAvatarUrl } from '@/lib/utils'
 import { CATEGORY_COLORS } from '@/lib/icons'
+import { fetchFeedPostsWithFallback, normalizeQuotedPost } from '@/lib/postFeatures'
 import PostComposer from '@/components/PostComposer'
 import PostMedia from '@/components/PostMedia'
+import { QuotedPostCard } from '@/components/QuotedPostCard'
+import { LinkPreviewCard } from '@/components/LinkPreviewCard'
+import { RichText } from '@/components/RichText'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import type { Post, Category } from '@/lib/types'
@@ -32,6 +36,8 @@ export default function FeedPage() {
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [editedContent, setEditedContent] = useState('')
   const [editedCategoryId, setEditedCategoryId] = useState('')
+  const [quotingPost, setQuotingPost] = useState<Post | null>(null)
+  const composerRef = useRef<HTMLDivElement>(null)
   const filter = searchParams.get('filter') === 'following' ? 'following' : 'all'
 
   useEffect(() => {
@@ -43,37 +49,29 @@ export default function FeedPage() {
     localStorage.setItem(BETA_KEY, 'true')
   }
 
-  const { data: feedData, isLoading, isFetching } = useQuery({
+  const { data: feedData, isLoading, isFetching, error } = useQuery({
     queryKey: queryKeys.feed({ filter }),
     queryFn: async () => {
-      let query = supabase
-        .from('posts')
-        .select(`
-          *,
-          author:profiles!posts_user_id_fkey(id,username,display_name,avatar_url),
-          category:categories(id,slug,name),
-          likes:likes(user_id)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50)
-
+      let followedIds: string[] | undefined
       if (filter === 'following' && profile) {
         const { data: follows } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', profile.id)
-        const ids = (follows ?? []).map((f: any) => f.following_id)
-        if (ids.length === 0) return { posts: [], categories: [] }
-        query = query.in('user_id', ids)
+        followedIds = (follows ?? []).map((f: any) => f.following_id)
+        if (followedIds.length === 0) return { posts: [], categories: [] }
       }
 
       const [postsRes, catsRes] = await Promise.all([
-        query,
+        fetchFeedPostsWithFallback(followedIds),
         supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
       ])
 
+      if (postsRes.error) throw postsRes.error
+      if (catsRes.error) throw catsRes.error
+
       const posts = (postsRes.data ?? []).map((p: any) => ({
-        ...p,
+        ...normalizeQuotedPost(p),
         user_liked: (p.likes ?? []).some((l: any) => l.user_id === profile?.id),
         likes_count: p.likes?.length ?? 0,
       }))
@@ -227,10 +225,18 @@ export default function FeedPage() {
         </aside>
       )}
 
-      <PostComposer categories={categories} />
+      <div ref={composerRef}>
+        <PostComposer
+          categories={categories}
+          quotedPost={quotingPost}
+          onQuoteClear={() => setQuotingPost(null)}
+        />
+      </div>
 
       {isLoading ? (
         <TimelineSkeleton items={4} />
+      ) : error ? (
+        <p className="empty">{error instanceof Error ? error.message : t('toast_action_failed')}</p>
       ) : posts.length === 0 ? (
         <p className="empty">{t('feed_empty')}</p>
       ) : (
@@ -306,8 +312,14 @@ export default function FeedPage() {
                   </form>
                 ) : (
                   <Link to={routes.post(post.id)} className="body">
-                    <p className="content">{post.content}</p>
+                    <p className="content"><RichText content={post.content} /></p>
                   </Link>
+                )}
+                {post.quoted_post && (
+                  <QuotedPostCard post={post.quoted_post} />
+                )}
+                {post.link_preview && (
+                  <LinkPreviewCard preview={post.link_preview} />
                 )}
                 {!!post.image_urls?.length && (
                   <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />
@@ -341,6 +353,17 @@ export default function FeedPage() {
                       </button>
                     </>
                   )}
+                  <button
+                    type="button"
+                    className="act"
+                    onClick={() => {
+                      setQuotingPost(post)
+                      composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
+                    }}
+                  >
+                    <Quote size={14} strokeWidth={1.75} /> <span>Citi</span>
+                  </button>
                   <button
                     type="button"
                     className={`act${post.user_liked ? ' liked' : ''}`}
@@ -407,6 +430,8 @@ export default function FeedPage() {
         .act.danger:hover { color: #dc2626; background: #dc262615; }
         button.act.liked { color: #e11d48; background: #f43f5e18; }
         .act span { font-variant-numeric: tabular-nums; }
+        .post-link { color: var(--color-primary); text-decoration: none; }
+        .post-link:hover { text-decoration: underline; }
       `}</style>
     </>
   )
