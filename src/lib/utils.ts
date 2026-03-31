@@ -1,4 +1,5 @@
 import { X_SYSTEM_MAP } from './constants'
+import type { UserRole } from './types'
 
 export function applyXSystem(text: string): string {
   return text.replace(/[cCgGhHjJsStTuU]x/g, (match) => X_SYSTEM_MAP[match] ?? match)
@@ -47,4 +48,15 @@ export function slugify(text: string): string {
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength) + '…'
+}
+
+const ROLE_HIERARCHY: Record<UserRole, number> = {
+  user: 0,
+  moderator: 1,
+  admin: 2,
+  owner: 3
+}
+
+export function hasRequiredRole(userRole: UserRole, minRole: UserRole): boolean {
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[minRole]
 }

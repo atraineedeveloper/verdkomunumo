@@ -23,20 +23,9 @@ export const MESSAGE_MAX_LENGTH = 5000
 export const POST_MAX_IMAGES = 4
 export const FEED_PAGE_SIZE = 20
 
-// X-system supersignoj conversions
 export const X_SYSTEM_MAP: Record<string, string> = {
-  cx: 'ĉ',
-  gx: 'ĝ',
-  hx: 'ĥ',
-  jx: 'ĵ',
-  sx: 'ŝ',
-  ux: 'ŭ',
-  Cx: 'Ĉ',
-  Gx: 'Ĝ',
-  Hx: 'Ĥ',
-  Jx: 'Ĵ',
-  Sx: 'Ŝ',
-  Ux: 'Ŭ'
+  cx: 'ĉ', gx: 'ĝ', hx: 'ĥ', jx: 'ĵ', sx: 'ŝ', ux: 'ŭ',
+  Cx: 'Ĉ', Gx: 'Ĝ', Hx: 'Ĥ', Jx: 'Ĵ', Sx: 'Ŝ', Ux: 'Ŭ'
 }
 
 export const SUPERSIGNOJ = ['ĉ', 'ĝ', 'ĥ', 'ĵ', 'ŝ', 'ŭ', 'Ĉ', 'Ĝ', 'Ĥ', 'Ĵ', 'Ŝ', 'Ŭ']

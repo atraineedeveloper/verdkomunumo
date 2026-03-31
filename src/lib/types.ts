@@ -27,6 +27,7 @@ export type ContentReportStatus = 'pending' | 'resolved' | 'dismissed'
 
 export interface Profile {
   id: string
+  email?: string
   username: string
   display_name: string
   bio: string
@@ -68,7 +69,6 @@ export interface Post {
   is_deleted: boolean
   created_at: string
   updated_at: string
-  // Joined
   author?: Profile
   category?: Category
   user_liked?: boolean
@@ -81,12 +81,14 @@ export interface Comment {
   parent_id: string | null
   content: string
   likes_count: number
+  is_edited: boolean
   is_deleted: boolean
   created_at: string
-  // Joined
+  updated_at?: string
   author?: Profile
   user_liked?: boolean
   replies?: Comment[]
+  post?: Post
 }
 
 export interface Follow {
@@ -100,7 +102,6 @@ export interface Conversation {
   id: string
   created_at: string
   updated_at: string
-  // Joined
   participants?: Profile[]
   last_message?: Message
   unread_count?: number
@@ -113,7 +114,6 @@ export interface Message {
   content: string
   is_read: boolean
   created_at: string
-  // Joined
   sender?: Profile
 }
 
@@ -127,7 +127,6 @@ export interface Notification {
   message: string
   is_read: boolean
   created_at: string
-  // Joined
   actor?: Profile
   post?: Post
 }

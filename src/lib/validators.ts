@@ -66,7 +66,6 @@ export const contentReportSchema = z.object({
   details: z.string().max(500, 'Máximo 500 caracteres').optional()
 }).superRefine((value, ctx) => {
   const targets = Number(Boolean(value.post_id)) + Number(Boolean(value.comment_id))
-
   if (targets !== 1) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

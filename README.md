@@ -1,35 +1,35 @@
 # Verdkomunumo
 
-Verdkomunumo is a social network for the Esperanto community. The active frontend is now the React app under [`react-app/`](/home/otilio/projects/verdkomunumo/react-app), backed by Supabase and intended for Vercel deployment.
+Verdkomunumo is a social network for the Esperanto community, now built as a React + Vite application backed by Supabase.
 
-The legacy SvelteKit app is still present in the repository during migration cleanup, but it should now be treated as reference code, not the primary frontend.
+## Stack
 
-## Active Frontend
+- React 18
+- Vite
+- React Router
+- TanStack Query
+- Supabase
+- Tailwind CSS 4
+- Zod
+- Vercel Analytics
 
-- Framework: React 18 + Vite
-- Routing: React Router
-- Data layer: TanStack Query + Supabase
-- Styling: Tailwind CSS 4 + app theme variables
-- Deployment target: Vercel static build from `react-app/dist`
+## Product Surface
 
-## Current Product Surface
-
-The React app includes:
+The app currently includes:
 
 - public landing page
-- email and Google auth
-- feed, categories, search, post detail, profiles
+- email and Google authentication
+- feed, profiles, categories, search, post detail
 - messages and notifications
 - settings
 - floating suggestion flow
-- admin dashboard, moderation reports, category management
+- admin dashboard, category management, moderation reports
 
 ## Local Development
 
-Run the React app:
+Install dependencies and start the app from the repository root:
 
 ```bash
-cd react-app
 bun install
 bun run dev
 ```
@@ -37,14 +37,16 @@ bun run dev
 Useful commands:
 
 ```bash
-cd react-app
 bun run dev
 bun run test
 bun run typecheck
 bun run build
+bun run db:push
+bun run db:types
+bun run db:sync
 ```
 
-The dev server runs on:
+The Vite dev server runs on:
 
 ```text
 http://localhost:5174
@@ -52,9 +54,7 @@ http://localhost:5174
 
 ## Environment Variables
 
-For the React app, use variables with the `VITE_` prefix.
-
-Example:
+Use Vite-prefixed variables in [`.env.local.example`](/home/otilio/projects/verdkomunumo/.env.local.example):
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
@@ -63,25 +63,16 @@ VITE_APP_URL=http://localhost:5174
 VITE_APP_NAME=Verdkomunumo
 VITE_DEMO_MODE=false
 VITE_GOOGLE_AUTH_ENABLED=true
-```
-
-If you also use the local MCP admin server, add:
-
-```env
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-The root [`.env.local.example`](/home/otilio/projects/verdkomunumo/.env.local.example) now includes both the React variables and optional legacy Svelte variables for migration overlap.
+`SUPABASE_SERVICE_ROLE_KEY` is only needed for the local MCP admin tooling.
 
 ## Deployment
 
-This repository now includes [`vercel.json`](/home/otilio/projects/verdkomunumo/vercel.json) so Vercel builds the React app from the repo root using:
+[`vercel.json`](/home/otilio/projects/verdkomunumo/vercel.json) is configured so Vercel builds the React app directly from the repository root.
 
-- install: `cd react-app && bun install`
-- build: `cd react-app && bun run build`
-- output: `react-app/dist`
-
-Production environment variables should be the React ones:
+Production variables should be:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
@@ -90,20 +81,36 @@ Production environment variables should be the React ones:
 - `VITE_DEMO_MODE`
 - `VITE_GOOGLE_AUTH_ENABLED`
 
-Only add `SUPABASE_SERVICE_ROLE_KEY` if you need the local/admin MCP tooling.
+## MCP Admin Server
 
-## Legacy Svelte Code
+The local MCP admin server now lives at [`mcp/admin-server.ts`](/home/otilio/projects/verdkomunumo/mcp/admin-server.ts) and can be started with:
 
-The old SvelteKit frontend remains in [`src/`](/home/otilio/projects/verdkomunumo/src) with its own `package.json`, `vite.config.ts`, and `svelte.config.js`. It is useful as migration reference, but it should not be considered the canonical app anymore.
+```bash
+bun run mcp:admin
+```
 
-Before deleting it entirely, do a final production smoke test of:
-
-- login and Google OAuth callback
-- feed and post interactions
-- messaging and notifications
-- admin access by role
-- Vercel deployment with React env vars only
+It supports the same moderation and product suggestion workflows as before while reading the current environment format.
 
 ## Supabase
 
-SQL migrations still live under [`supabase/migrations`](/home/otilio/projects/verdkomunumo/supabase/migrations). The backend remains shared; only the frontend stack is changing.
+Database migrations remain under [`supabase/migrations`](/home/otilio/projects/verdkomunumo/supabase/migrations). The backend is unchanged; the frontend stack is now fully React.
+
+Useful Supabase workflows:
+
+```bash
+bun run db:push
+```
+
+Pushes pending local migrations to the linked Supabase project.
+
+```bash
+bun run db:types
+```
+
+Regenerates [`database.types.ts`](/home/otilio/projects/verdkomunumo/src/lib/supabase/database.types.ts) from the linked Supabase schema.
+
+```bash
+bun run db:sync
+```
+
+Pushes migrations first and then refreshes the local TypeScript schema snapshot.

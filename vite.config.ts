@@ -1,17 +1,12 @@
-import { resolve } from 'node:path';
-import tailwindcss from '@tailwindcss/vite';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
-import devtoolsJson from 'vite-plugin-devtools-json';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { resolve } from 'node:path'
 
-export default defineConfig(({ command }) => ({
-	plugins: [
-		tailwindcss(),
-		sveltekit(),
-		command === 'serve'
-			? devtoolsJson({
-					projectRoot: resolve('.')
-				})
-			: null
-	].filter(Boolean)
-}));
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: { '@': resolve(__dirname, 'src') }
+  },
+  server: { port: 5174 }
+})
