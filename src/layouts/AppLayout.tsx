@@ -8,6 +8,7 @@ import { FloatingSuggestionButton } from '@/components/FloatingSuggestionButton'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth'
 import { queryKeys } from '@/lib/query/keys'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import type { Category } from '@/lib/types'
 
 async function fetchAppLayoutData(userId: string) {
@@ -53,6 +54,8 @@ async function fetchAppLayoutData(userId: string) {
 
 export function AppLayout() {
   const user = useAuthStore((s) => s.user)
+
+  usePushNotifications(user?.id)
 
   const { data } = useQuery({
     queryKey: queryKeys.appLayout(),

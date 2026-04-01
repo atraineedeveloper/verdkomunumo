@@ -15,6 +15,7 @@ import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { QuotedPostCard } from '@/components/QuotedPostCard'
 import { LinkPreviewCard } from '@/components/LinkPreviewCard'
 import { extractFirstUrl, fetchLinkPreview } from '@/lib/linkPreview'
+import { getAvatarUrl } from '@/lib/utils'
 
 interface Props {
   categories: Category[]
@@ -45,6 +46,12 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastFetchedUrl = useRef<string | null>(null)
 
+  const [suggestion, setSuggestion] = useState<{ type: '@' | '#'; partial: string; start: number; end: number } | null>(null)
+  const [mentionResults, setMentionResults] = useState<Array<{ id: string; username: string; display_name: string; avatar_url: string }>>([])
+  const [hashtagResults, setHashtagResults] = useState<string[]>([])
+  const [suggestionIndex, setSuggestionIndex] = useState(0)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
   useEffect(() => {
     const next = defaultCategoryId || (categories[0]?.id ?? '')
     if (!categoryId || !categories.some(c => c.id === categoryId)) {
@@ -65,6 +72,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
       if (!content.trim() && imagePreviews.length === 0 && !quotedPost) {
         setFocused(false)
       }
+      setSuggestion(null)
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
@@ -173,6 +181,9 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
     lastFetchedUrl.current = null
     setFilePickerOpen(false)
     onQuoteClear?.()
+    setSuggestion(null)
+    setMentionResults([])
+    setHashtagResults([])
   }
 
   function maybeCancelComposer() {
@@ -182,6 +193,87 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
 
   function extractImageFiles(files: File[]) {
     return files.filter((file) => file.type.startsWith('image/'))
+  }
+
+  function detectTrigger(text: string, cursor: number): { type: '@' | '#'; partial: string; start: number; end: number } | null {
+    // Walk back from cursor to find @ or # not preceded by word char
+    let i = cursor - 1
+    while (i >= 0 && /[\w\u0100-\u024F]/.test(text[i])) i--
+    if (i < 0) return null
+    const ch = text[i]
+    if (ch !== '@' && ch !== '#') return null
+    // Ensure it's not mid-word (char before @ or # must be space, newline, or start)
+    if (i > 0 && /[\w\u0100-\u024F]/.test(text[i - 1])) return null
+    const partial = text.slice(i + 1, cursor)
+    return { type: ch as '@' | '#', partial, start: i, end: cursor }
+  }
+
+  function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value
+    setContent(val)
+    const cursor = e.target.selectionStart ?? val.length
+    const trigger = detectTrigger(val, cursor)
+    if (!trigger) {
+      setSuggestion(null)
+      return
+    }
+    setSuggestion(trigger)
+    setSuggestionIndex(0)
+    if (trigger.type === '@') {
+      fetchMentionSuggestions(trigger.partial)
+    } else {
+      fetchHashtagSuggestions(trigger.partial)
+    }
+  }
+
+  async function fetchMentionSuggestions(partial: string) {
+    if (partial.length === 0) { setMentionResults([]); return }
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .ilike('username', `${partial}%`)
+      .neq('id', profile?.id ?? '')
+      .limit(6)
+    setMentionResults(data ?? [])
+  }
+
+  async function fetchHashtagSuggestions(partial: string) {
+    if (partial.length < 2) { setHashtagResults([]); return }
+    const { data } = await supabase
+      .from('posts')
+      .select('content')
+      .ilike('content', `%#${partial}%`)
+      .eq('is_deleted', false)
+      .limit(30)
+
+    const tagRegex = new RegExp(`#(${partial}[\\w\\u0100-\\u024F]*)`, 'gi')
+    const seen = new Set<string>()
+    for (const row of data ?? []) {
+      let m
+      tagRegex.lastIndex = 0
+      while ((m = tagRegex.exec(row.content)) !== null) {
+        seen.add(m[1].toLowerCase())
+      }
+    }
+    setHashtagResults([...seen].slice(0, 6))
+  }
+
+  function insertSuggestion(value: string) {
+    if (!suggestion || !textareaRef.current) return
+    const before = content.slice(0, suggestion.start)
+    const after = content.slice(suggestion.end)
+    const insertion = suggestion.type === '@' ? `@${value} ` : `#${value} `
+    const next = before + insertion + after
+    setContent(next)
+    setSuggestion(null)
+    setMentionResults([])
+    setHashtagResults([])
+    // Restore focus and move cursor after insertion
+    setTimeout(() => {
+      const pos = before.length + insertion.length
+      textareaRef.current?.focus()
+      textareaRef.current?.setSelectionRange(pos, pos)
+    }, 0)
   }
 
   const mutation = useMutation({
@@ -209,7 +301,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
         link_preview: linkPreview ?? null,
       }
 
-      let { error } = await supabase.from('posts').insert(payload as never)
+      let { data: insertedPost, error } = await supabase.from('posts').insert(payload as never).select('id').single()
 
       if (error && isOptionalPostFeaturesError(error)) {
         const fallbackPayload = {
@@ -224,6 +316,29 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
       }
 
       if (error) throw error
+
+      // Create mention notifications
+      const mentionRegex = /@([\w]+)/g
+      const mentionedUsernames = [...content.matchAll(mentionRegex)].map(m => m[1])
+      if (mentionedUsernames.length > 0 && insertedPost?.id) {
+        const { data: mentionedUsers } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('username', mentionedUsernames)
+          .neq('id', profile.id)
+
+        if (mentionedUsers?.length) {
+          await supabase.from('notifications').insert(
+            mentionedUsers.map(u => ({
+              user_id: u.id,
+              actor_id: profile.id,
+              type: 'mention',
+              post_id: insertedPost.id,
+              message: `${profile.display_name} menciis vin`,
+            }))
+          )
+        }
+      }
     },
     onSuccess: () => {
       toast.success(t('toast_post_created'))
@@ -289,18 +404,33 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
       )}
 
       <textarea
+        ref={textareaRef}
         value={content}
-        onChange={e => setContent(e.target.value)}
+        onChange={handleContentChange}
         placeholder={quotedPost ? 'Aldonu vian komenton...' : t('post_compose_placeholder')}
         maxLength={5000}
         rows={focused || !!quotedPost ? 4 : 2}
         className="composer-textarea"
         onKeyDown={(event) => {
+          if (suggestion) {
+            const results = suggestion.type === '@' ? mentionResults : hashtagResults
+            const count = results.length
+            if (event.key === 'ArrowDown') { event.preventDefault(); setSuggestionIndex(i => (i + 1) % Math.max(count, 1)); return }
+            if (event.key === 'ArrowUp') { event.preventDefault(); setSuggestionIndex(i => (i - 1 + Math.max(count, 1)) % Math.max(count, 1)); return }
+            if ((event.key === 'Enter' || event.key === 'Tab') && count > 0) {
+              event.preventDefault()
+              const selected = suggestion.type === '@' ? (mentionResults[suggestionIndex] as any).username : hashtagResults[suggestionIndex]
+              insertSuggestion(selected)
+              return
+            }
+            if (event.key === 'Escape') { setSuggestion(null); return }
+          }
+          // existing handlers:
           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canPost && !mutation.isPending && !preparingImages) {
             event.preventDefault()
             mutation.mutate()
           }
-          if (event.key === 'Escape') {
+          if (event.key === 'Escape' && !suggestion) {
             event.preventDefault()
             maybeCancelComposer()
           }
@@ -312,6 +442,41 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
           void handleIncomingFiles(pastedImages)
         }}
       />
+
+      {suggestion && (
+        <div className="suggest-drop" role="listbox">
+          {suggestion.type === '@' && mentionResults.length === 0 && suggestion.partial.length > 0 && (
+            <div className="suggest-empty">Neniu trovita</div>
+          )}
+          {suggestion.type === '@' && mentionResults.map((u, i) => (
+            <button
+              key={u.id}
+              type="button"
+              role="option"
+              aria-selected={i === suggestionIndex}
+              className={`suggest-item${i === suggestionIndex ? ' active' : ''}`}
+              onMouseDown={e => { e.preventDefault(); insertSuggestion(u.username) }}
+            >
+              <img src={getAvatarUrl(u.avatar_url, u.display_name)} alt="" className="suggest-ava" />
+              <span className="suggest-name">{u.display_name}</span>
+              <span className="suggest-user">@{u.username}</span>
+            </button>
+          ))}
+          {suggestion.type === '#' && hashtagResults.map((tag, i) => (
+            <button
+              key={tag}
+              type="button"
+              role="option"
+              aria-selected={i === suggestionIndex}
+              className={`suggest-item${i === suggestionIndex ? ' active' : ''}`}
+              onMouseDown={e => { e.preventDefault(); insertSuggestion(tag) }}
+            >
+              <span className="suggest-hash">#</span>
+              <span className="suggest-name">{tag}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {isDraggingFiles && (
         <div className="drop-hint">
@@ -450,6 +615,14 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
         .post-btn:not(:disabled):active { transform: translateY(1px); }
         .post-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
         .post-btn { display: inline-flex; align-items: center; justify-content: center; }
+        .suggest-drop { position: absolute; left: 0; right: 0; z-index: 50; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; margin-top: 0.2rem; }
+        .suggest-item { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.55rem 0.85rem; background: none; border: none; cursor: pointer; font-family: inherit; text-align: left; transition: background 0.1s; }
+        .suggest-item:hover, .suggest-item.active { background: var(--color-primary-dim); }
+        .suggest-ava { width: 22px; height: 22px; border-radius: 99px; object-fit: cover; flex-shrink: 0; }
+        .suggest-name { font-size: 0.84rem; font-weight: 600; color: var(--color-text); }
+        .suggest-user { font-size: 0.78rem; color: var(--color-text-muted); }
+        .suggest-hash { font-size: 0.9rem; font-weight: 700; color: var(--color-primary); }
+        .suggest-empty { padding: 0.55rem 0.85rem; font-size: 0.82rem; color: var(--color-text-muted); }
         @media (max-width: 720px) {
           .bar { flex-wrap: wrap; align-items: stretch; }
           .bar-main { width: 100%; }
