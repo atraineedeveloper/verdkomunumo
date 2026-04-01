@@ -234,7 +234,7 @@ export default function ProfilePage() {
 
             {isOwn ? (
               <Link to={routes.settings} className="btn-outline">{t('profile_edit')}</Link>
-            ) : (
+            ) : user ? (
               <div className="profile-actions">
                 <Link to={`${routes.messages}?new=${profile.username}`} className="btn-outline btn-msg">
                   <MessageSquare size={13} strokeWidth={2} />
@@ -245,6 +245,8 @@ export default function ProfilePage() {
                   {isFollowing ? t('profile_unfollow') : t('profile_follow')}
                 </button>
               </div>
+            ) : (
+              <Link to={routes.login} className="btn-follow">{t('nav_login')}</Link>
             )}
           </div>
 

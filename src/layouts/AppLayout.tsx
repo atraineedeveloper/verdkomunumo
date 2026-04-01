@@ -11,9 +11,18 @@ import { queryKeys } from '@/lib/query/keys'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import type { Category } from '@/lib/types'
 
-async function fetchAppLayoutData(userId: string) {
-  const [categoriesRes, notifRes, membershipsRes] = await Promise.all([
-    supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
+async function fetchAppLayoutData(userId: string | undefined) {
+  const categoriesRes = await supabase.from('categories').select('*').eq('is_active', true).order('sort_order')
+
+  if (!userId) {
+    return {
+      categories: (categoriesRes.data ?? []) as Category[],
+      unreadNotificationsCount: 0,
+      unreadMessagesCount: 0,
+    }
+  }
+
+  const [notifRes, membershipsRes] = await Promise.all([
     supabase
       .from('notifications')
       .select('id', { count: 'exact', head: true })
@@ -58,9 +67,8 @@ export function AppLayout() {
   usePushNotifications(user?.id)
 
   const { data } = useQuery({
-    queryKey: queryKeys.appLayout(),
-    queryFn: () => fetchAppLayoutData(user!.id),
-    enabled: !!user,
+    queryKey: [...queryKeys.appLayout(), user?.id ?? 'guest'],
+    queryFn: () => fetchAppLayoutData(user?.id),
     staleTime: 1000 * 30,
   })
 

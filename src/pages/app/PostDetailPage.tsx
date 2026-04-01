@@ -442,9 +442,13 @@ export default function PostDetailPage() {
             </div>
           )}
           <div className="stats">
-            <button type="button" className={`act${post.user_liked ? ' liked' : ''}`} onClick={() => likeMutation.mutate()} disabled={likeMutation.isPending}>
-              {likeMutation.isPending ? <InlineSpinner size={14} /> : <Heart size={14} strokeWidth={1.75} />} {post.likes_count}
-            </button>
+            {user ? (
+              <button type="button" className={`act${post.user_liked ? ' liked' : ''}`} onClick={() => likeMutation.mutate()} disabled={likeMutation.isPending}>
+                {likeMutation.isPending ? <InlineSpinner size={14} /> : <Heart size={14} strokeWidth={1.75} />} {post.likes_count}
+              </button>
+            ) : (
+              <span className="muted stat-line"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</span>
+            )}
             <span className="muted stat-line"><MessageSquare size={14} strokeWidth={1.75} /> {post.comments_count}</span>
           </div>
         </div>
@@ -472,22 +476,29 @@ export default function PostDetailPage() {
         </details>
       </article>
 
-      <div className="compose">
-        <form onSubmit={(e) => { e.preventDefault(); commentMutation.mutate() }}>
-          <textarea
-            name="content"
-            value={commentContent}
-            onChange={(e) => setCommentContent(e.target.value)}
-            placeholder={t('post_comment_placeholder')}
-            rows={2}
-          />
-          <div className="compose-footer">
-            <button type="submit" className="btn" disabled={commentMutation.isPending}>
-              {commentMutation.isPending ? t('messages_sending') : t('post_comment_btn')}
-            </button>
-          </div>
-        </form>
-      </div>
+      {user ? (
+        <div className="compose">
+          <form onSubmit={(e) => { e.preventDefault(); commentMutation.mutate() }}>
+            <textarea
+              name="content"
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+              placeholder={t('post_comment_placeholder')}
+              rows={2}
+            />
+            <div className="compose-footer">
+              <button type="submit" className="btn" disabled={commentMutation.isPending}>
+                {commentMutation.isPending ? t('messages_sending') : t('post_comment_btn')}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="guest-comment-cta">
+          <Link to={`${routes.login}?next=${encodeURIComponent(window.location.pathname)}`} className="btn">{t('nav_login')}</Link>
+          <span>{t('post_guest_comment_cta')}</span>
+        </div>
+      )}
 
       <section className="comments" id="comments">
         <h2>{t('post_comments')} <span className="count">({comments.length})</span></h2>

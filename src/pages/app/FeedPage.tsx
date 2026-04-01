@@ -226,13 +226,21 @@ export default function FeedPage() {
         </aside>
       )}
 
-      <div ref={composerRef}>
-        <PostComposer
-          categories={categories}
-          quotedPost={quotingPost}
-          onQuoteClear={() => setQuotingPost(null)}
-        />
-      </div>
+      {profile ? (
+        <div ref={composerRef}>
+          <PostComposer
+            categories={categories}
+            quotedPost={quotingPost}
+            onQuoteClear={() => setQuotingPost(null)}
+          />
+        </div>
+      ) : (
+        <div className="guest-cta">
+          <span>{t('feed_guest_cta')}</span>
+          <Link to={routes.login} className="guest-cta-btn">{t('nav_login')}</Link>
+          <Link to={routes.register} className="guest-cta-btn secondary">{t('nav_register')}</Link>
+        </div>
+      )}
 
       {isLoading ? (
         <TimelineSkeleton items={4} />
@@ -341,26 +349,32 @@ export default function FeedPage() {
                       </button>
                     </>
                   )}
-                  <button
-                    type="button"
-                    className="act"
-                    onClick={() => {
-                      setQuotingPost(post)
-                      composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                      setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
-                    }}
-                  >
-                    <Quote size={14} strokeWidth={1.75} /> <span>Citi</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`act${post.user_liked ? ' liked' : ''}`}
-                    onClick={() => likeMutation.mutate(post)}
-                    disabled={likePending}
-                    aria-busy={likePending}
-                  >
-                    {likePending ? <InlineSpinner size={14} /> : <Heart size={14} strokeWidth={1.75} />} <span>{post.likes_count}</span>
-                  </button>
+                  {profile && (
+                    <button
+                      type="button"
+                      className="act"
+                      onClick={() => {
+                        setQuotingPost(post)
+                        composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
+                      }}
+                    >
+                      <Quote size={14} strokeWidth={1.75} /> <span>Citi</span>
+                    </button>
+                  )}
+                  {profile ? (
+                    <button
+                      type="button"
+                      className={`act${post.user_liked ? ' liked' : ''}`}
+                      onClick={() => likeMutation.mutate(post)}
+                      disabled={likePending}
+                      aria-busy={likePending}
+                    >
+                      {likePending ? <InlineSpinner size={14} /> : <Heart size={14} strokeWidth={1.75} />} <span>{post.likes_count}</span>
+                    </button>
+                  ) : (
+                    <span className="act-count"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</span>
+                  )}
                   <Link to={routes.post(post.id)} className="act">
                     <MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span>
                   </Link>
@@ -413,6 +427,12 @@ export default function FeedPage() {
         .act span { font-variant-numeric: tabular-nums; }
         .post-link { color: var(--color-primary); text-decoration: none; }
         .post-link:hover { text-decoration: underline; }
+        .guest-cta { display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border); margin-bottom: 0.25rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--color-text-muted); }
+        .guest-cta-btn { padding: 0.35rem 0.9rem; border-radius: 6px; font-size: 0.825rem; font-weight: 600; text-decoration: none; background: var(--color-primary); color: #fff; transition: opacity 0.12s; }
+        .guest-cta-btn:hover { opacity: 0.85; }
+        .guest-cta-btn.secondary { background: var(--color-surface-alt); color: var(--color-text); border: 1px solid var(--color-border); }
+        .act-count { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; font-size: 0.8rem; color: var(--color-text-muted); }
+        .act-count svg { opacity: 0.6; }
       `}</style>
     </>
   )

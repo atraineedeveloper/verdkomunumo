@@ -42,6 +42,10 @@ const translations = {
     nav_logout: 'Elsaluti',
     nav_change_theme: 'Ŝanĝi temon',
     nav_change_lang: 'Lingvo',
+    nav_login: 'Ensaluti',
+    nav_register: 'Registriĝi',
+    feed_guest_cta: 'Aliĝu por afiŝi kaj interagi.',
+    post_guest_comment_cta: 'por aldoni komenton',
 
     // Auth
     auth_login_title: 'Ensaluti',

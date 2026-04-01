@@ -41,15 +41,20 @@ export default function App() {
           <Route path={routes.register} element={<RegisterPage />} />
         </Route>
 
-        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        {/* Public routes — readable without login */}
+        <Route element={<AppLayout />}>
           <Route path={routes.feed} element={<FeedPage />} />
           <Route path={routes.search} element={<SearchPage />} />
-          <Route path={routes.notifications} element={<NotificationsPage />} />
-          <Route path={routes.messages} element={<MessagesPage />} />
-          <Route path={routes.conversationPattern} element={<ConversationPage />} />
           <Route path={routes.profilePattern} element={<ProfilePage />} />
           <Route path={routes.categoryPattern} element={<CategoryPage />} />
           <Route path={routes.postPattern} element={<PostDetailPage />} />
+        </Route>
+
+        {/* Private routes — require login */}
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path={routes.notifications} element={<NotificationsPage />} />
+          <Route path={routes.messages} element={<MessagesPage />} />
+          <Route path={routes.conversationPattern} element={<ConversationPage />} />
           <Route path={routes.settings} element={<SettingsPage />} />
         </Route>
 

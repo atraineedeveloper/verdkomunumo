@@ -126,33 +126,47 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
             <Palette size={16} strokeWidth={1.75} />
           </button>
 
-          {/* Notifications */}
-          <Link
-            to={routes.notifications}
-            title={t('nav_notifications')}
-            className="relative flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
-          >
-            <Bell size={16} strokeWidth={1.75} />
-            {unreadNotificationsCount > 0 && (
-              <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.58rem] font-bold min-w-[14px] h-[14px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
-                {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-              </span>
-            )}
-          </Link>
+          {/* Notifications — logged-in only */}
+          {activeProfile && (
+            <Link
+              to={routes.notifications}
+              title={t('nav_notifications')}
+              className="relative flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
+            >
+              <Bell size={16} strokeWidth={1.75} />
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.58rem] font-bold min-w-[14px] h-[14px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
+                  {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                </span>
+              )}
+            </Link>
+          )}
 
-          {/* Messages */}
-          <Link
-            to={routes.messages}
-            title={t('nav_messages')}
-            className="relative flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
-          >
-            <MessageCircle size={16} strokeWidth={1.75} />
-            {unreadMessagesCount > 0 && (
-              <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.58rem] font-bold min-w-[14px] h-[14px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
-                {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
-              </span>
-            )}
-          </Link>
+          {/* Messages — logged-in only */}
+          {activeProfile && (
+            <Link
+              to={routes.messages}
+              title={t('nav_messages')}
+              className="relative flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
+            >
+              <MessageCircle size={16} strokeWidth={1.75} />
+              {unreadMessagesCount > 0 && (
+                <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.58rem] font-bold min-w-[14px] h-[14px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
+                  {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                </span>
+              )}
+            </Link>
+          )}
+
+          {/* Guest CTA */}
+          {!activeProfile && (
+            <Link
+              to={routes.login}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-primary)] text-white text-[0.8rem] font-semibold rounded-[6px] no-underline hover:opacity-85 transition-opacity"
+            >
+              {t('nav_login')}
+            </Link>
+          )}
 
           {/* Avatar / user menu */}
           {activeProfile && (
