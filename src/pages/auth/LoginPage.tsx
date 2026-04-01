@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { supabase } from '@/lib/supabase/client'
+import { resolveLoginEmail } from '@/lib/auth'
 import { loginSchema } from '@/lib/validators'
 import { routes } from '@/lib/routes'
 import type { z } from 'zod'
@@ -37,7 +38,11 @@ export function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginInput) => {
-      const { error } = await supabase.auth.signInWithPassword(data)
+      const email = await resolveLoginEmail(data.email)
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: data.password,
+      })
       if (error) throw new Error(error.message)
     },
     onSuccess: () => navigate(next),
@@ -90,12 +95,13 @@ export function LoginPage() {
       <form onSubmit={handleSubmit((data) => { setServerError(null); loginMutation.mutate(data) })}>
         <div className="flex flex-col gap-1.5 mb-4">
           <label htmlFor="email" className="text-[0.875rem] font-medium text-[var(--color-text)]">
-            Retpoŝto
+            Retpoŝto aŭ uzantnomo
           </label>
           <input
             id="email"
-            type="email"
-            autoComplete="email"
+            type="text"
+            autoComplete="username"
+            placeholder="vi@ekzemplo.com aŭ via_nomo"
             {...register('email')}
             className="px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-bg)] text-[var(--color-text)] text-[0.9rem] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
           />

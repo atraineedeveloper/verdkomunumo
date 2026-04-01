@@ -669,6 +669,12 @@ export type Database = {
         Args: { conversation_uuid: string }
         Returns: boolean
       }
+      resolve_login_email: {
+        Args: { login_identifier: string }
+        Returns: string
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never
