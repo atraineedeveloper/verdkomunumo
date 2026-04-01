@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bell, MessageCircle, Palette, Settings, LogOut, Search, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -10,7 +10,7 @@ import { APP_NAME } from '@/lib/constants'
 import type { Theme } from '@/lib/types'
 import i18n from '@/lib/i18n'
 import { routes } from '@/lib/routes'
-import { hasRequiredRole } from '@/lib/utils'
+import { getAvatarUrl, hasRequiredRole } from '@/lib/utils'
 
 const THEMES: Theme[] = ['green', 'dark', 'vivid', 'minimal']
 const LOCALES = Object.keys(LOCALE_LABELS) as Locale[]
@@ -24,12 +24,20 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
   const { t } = useTranslation()
   const { theme, setTheme } = useThemeStore()
   const profile = useAuthStore((s) => s.profile)
+  const [stableProfile, setStableProfile] = useState(profile)
   const clearAuth = useAuthStore((s) => s.clear)
   const navigate = useNavigate()
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const locale = i18n.language as Locale
-  const canAccessAdmin = profile ? hasRequiredRole(profile.role, 'moderator') : false
+  const activeProfile = profile ?? stableProfile
+  const canAccessAdmin = activeProfile ? hasRequiredRole(activeProfile.role, 'moderator') : false
+
+  useEffect(() => {
+    if (profile) {
+      setStableProfile(profile)
+    }
+  }, [profile])
 
   function cycleTheme() {
     const idx = THEMES.indexOf(theme)
@@ -147,15 +155,15 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           </Link>
 
           {/* Avatar / user menu */}
-          {profile && (
+          {activeProfile && (
             <div className="relative">
               <button
                 className="p-0 border-0 bg-transparent cursor-pointer rounded-full flex"
                 onClick={() => { setShowUserMenu(!showUserMenu); setShowLangMenu(false) }}
               >
                 <img
-                  src={profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.display_name)}&background=16a34a&color=fff`}
-                  alt={profile.display_name}
+                  src={getAvatarUrl(activeProfile.avatar_url, activeProfile.display_name)}
+                  alt={activeProfile.display_name}
                   className="w-[30px] h-[30px] rounded-full object-cover border-[1.5px] border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
                 />
               </button>
@@ -164,11 +172,11 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
                   <button className="fixed inset-0 z-[90] bg-transparent border-0 cursor-default p-0" onClick={() => setShowUserMenu(false)} tabIndex={-1} aria-hidden />
                   <div className="absolute top-[calc(100%+8px)] right-0 z-[100] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[10px] min-w-[168px] p-1.5 shadow-lg animate-[pop_0.12s_ease]">
                     <div className="px-2.5 py-2 pb-1.5 flex flex-col gap-px">
-                      <span className="text-[0.825rem] font-semibold text-[var(--color-text)]">{profile.display_name}</span>
-                      <span className="text-[0.75rem] text-[var(--color-text-muted)]">@{profile.username}</span>
+                      <span className="text-[0.825rem] font-semibold text-[var(--color-text)]">{activeProfile.display_name}</span>
+                      <span className="text-[0.75rem] text-[var(--color-text-muted)]">@{activeProfile.username}</span>
                     </div>
                     <div className="h-px bg-[var(--color-border)] my-1.5" />
-                    <Link to={routes.profile(profile.username)} onClick={() => setShowUserMenu(false)}
+                    <Link to={routes.profile(activeProfile.username)} onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2 w-full px-2.5 py-[0.42rem] text-[var(--color-text-muted)] text-[0.825rem] no-underline rounded-[6px] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all">
                       <User size={13} strokeWidth={1.75} /> {t('nav_profile')}
                     </Link>

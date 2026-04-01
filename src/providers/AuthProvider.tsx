@@ -9,14 +9,18 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const { setUser, setProfile, setInitialized, clear } = useAuthStore()
-  const { setTheme, init: initTheme } = useThemeStore()
+  const { init: initTheme } = useThemeStore()
 
   useEffect(() => {
     // Init theme from localStorage first
     initTheme()
 
-    async function syncProfile(userId: string) {
+    async function syncProfile(userId: string, options?: { preserveProfile?: boolean }) {
       try {
+        if (!options?.preserveProfile) {
+          setProfile(null)
+        }
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -25,17 +29,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (profile) {
           setProfile(profile)
-          if (profile.theme) setTheme(profile.theme)
         }
       } catch (error) {
         console.error('Profile sync failed', error)
       }
     }
 
-    function bootstrapSession(userId: string) {
-      setProfile(null)
+    function bootstrapSession(userId: string, options?: { preserveProfile?: boolean }) {
       setInitialized(true)
-      void syncProfile(userId)
+      void syncProfile(userId, options)
     }
 
     async function initAuth() {
@@ -64,14 +66,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
 
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_IN') {
         setUser(session.user)
         bootstrapSession(session.user.id)
+      }
+
+      if (event === 'TOKEN_REFRESHED') {
+        setUser(session.user)
+        bootstrapSession(session.user.id, { preserveProfile: true })
       }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [initTheme, setProfile, setUser, setInitialized, clear])
 
   return <>{children}</>
 }
