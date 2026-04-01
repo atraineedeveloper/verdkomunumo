@@ -12,6 +12,7 @@ import { formatDate, getAvatarUrl } from '@/lib/utils'
 import { CATEGORY_COLORS } from '@/lib/icons'
 import { fetchFeedPostsWithFallback, normalizeQuotedPost } from '@/lib/postFeatures'
 import PostComposer from '@/components/PostComposer'
+import { PostEditCard } from '@/components/PostEditCard'
 import PostMedia from '@/components/PostMedia'
 import { QuotedPostCard } from '@/components/QuotedPostCard'
 import { LinkPreviewCard } from '@/components/LinkPreviewCard'
@@ -279,41 +280,28 @@ export default function FeedPage() {
                   )}
                 </div>
                 {isEditing ? (
-                  <form
-                    className="inline-edit"
-                    onSubmit={(event) => {
-                      event.preventDefault()
-                      editPostMutation.mutate({ postId: post.id })
+                  <PostEditCard
+                    categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as any) }))}
+                    content={editedContent}
+                    categoryId={editedCategoryId}
+                    initialContent={post.content}
+                    initialCategoryId={post.category_id}
+                    pending={editPostMutation.isPending}
+                    saveLabel={t('settings_save')}
+                    cancelLabel={t('suggestion_cancel')}
+                    onContentChange={setEditedContent}
+                    onCategoryChange={setEditedCategoryId}
+                    onCancel={() => {
+                      setEditingPostId(null)
+                      setEditedContent('')
+                      setEditedCategoryId('')
                     }}
-                  >
-                    <textarea
-                      value={editedContent}
-                      onChange={(event) => setEditedContent(event.target.value)}
-                      rows={4}
-                      maxLength={5000}
-                    />
-                    <div className="inline-edit-bar">
-                      <select value={editedCategoryId} onChange={(event) => setEditedCategoryId(event.target.value)}>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>{t(`cat_name_${category.slug}` as any)}</option>
-                        ))}
-                      </select>
-                      <span className="chars-inline">{5000 - editedContent.length}</span>
-                      <button type="button" className="edit-btn ghost" onClick={() => {
-                        setEditingPostId(null)
-                        setEditedContent('')
-                        setEditedCategoryId('')
-                      }}>{t('suggestion_cancel')}</button>
-                      <button type="submit" className="edit-btn solid" disabled={editPostMutation.isPending}>
-                        {editPostMutation.isPending ? <InlineSpinner size={13} /> : null}
-                        {t('settings_save')}
-                      </button>
-                    </div>
-                  </form>
+                    onSubmit={() => editPostMutation.mutate({ postId: post.id })}
+                  />
                 ) : (
-                  <Link to={routes.post(post.id)} className="body">
+                  <div className="body">
                     <p className="content"><RichText content={post.content} /></p>
-                  </Link>
+                  </div>
                 )}
                 {post.quoted_post && (
                   <QuotedPostCard post={post.quoted_post} />
@@ -416,13 +404,6 @@ export default function FeedPage() {
         .cat-tag { margin-left: auto; font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 99px; font-weight: 500; text-decoration: none; flex-shrink: 0; white-space: nowrap; }
         .body { text-decoration: none; display: block; }
         .content { font-size: 0.9375rem; line-height: 1.6; color: var(--color-text); margin: 0 0 0.65rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; -webkit-box-orient: vertical; }
-        .inline-edit { display: grid; gap: 0.6rem; margin-bottom: 0.65rem; }
-        .inline-edit textarea,.inline-edit select { width: 100%; border-radius: 0.75rem; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); padding: 0.75rem 0.85rem; font: inherit; }
-        .inline-edit-bar { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
-        .chars-inline { margin-left: auto; font-size: 0.74rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
-        .edit-btn { border-radius: 6px; padding: 0.35rem 0.8rem; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; }
-        .edit-btn.ghost { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
-        .edit-btn.solid { background: var(--color-primary); color: #fff; border: none; }
         .actions { display: flex; gap: 0.15rem; align-items: center; }
         .act { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; background: transparent; border: none; font-size: 0.8rem; color: var(--color-text-muted); border-radius: 5px; cursor: pointer; transition: color 0.12s, background 0.12s; text-decoration: none; font-family: inherit; }
         .act:hover { color: var(--color-primary); background: var(--color-primary-dim); }

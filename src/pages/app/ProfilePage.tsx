@@ -14,6 +14,7 @@ import { queryKeys } from '@/lib/query/keys'
 import { getAvatarUrl } from '@/lib/utils'
 import type { EsperantoLevel, Post, Profile } from '@/lib/types'
 import { routes } from '@/lib/routes'
+import { PostEditCard } from '@/components/PostEditCard'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import { updatePostLikeInData } from '@/lib/query/optimisticPosts'
@@ -281,30 +282,24 @@ export default function ProfilePage() {
             return (
               <article key={post.id} className="post-card">
                 {isEditing ? (
-                  <form
-                    className="inline-edit"
-                    onSubmit={(event) => {
-                      event.preventDefault()
-                      editPostMutation.mutate({ postId: post.id })
+                  <PostEditCard
+                    categories={post.category ? [{ ...post.category, name: categoryName(t, post.category.slug) }] : []}
+                    content={editedContent}
+                    categoryId={editedCategoryId}
+                    initialContent={post.content}
+                    initialCategoryId={post.category_id}
+                    pending={editPostMutation.isPending}
+                    saveLabel={t('settings_save')}
+                    cancelLabel={t('suggestion_cancel')}
+                    onContentChange={setEditedContent}
+                    onCategoryChange={setEditedCategoryId}
+                    onCancel={() => {
+                      setEditingPostId(null)
+                      setEditedContent('')
+                      setEditedCategoryId('')
                     }}
-                  >
-                    <textarea value={editedContent} onChange={(event) => setEditedContent(event.target.value)} rows={4} maxLength={5000} />
-                    <div className="inline-edit-bar">
-                      <select value={editedCategoryId} onChange={(event) => setEditedCategoryId(event.target.value)}>
-                        {post.category ? <option value={post.category.id}>{categoryName(t, post.category.slug)}</option> : null}
-                      </select>
-                      <span className="chars-inline">{5000 - editedContent.length}</span>
-                      <button type="button" className="edit-btn ghost" onClick={() => {
-                        setEditingPostId(null)
-                        setEditedContent('')
-                        setEditedCategoryId('')
-                      }}>{t('suggestion_cancel')}</button>
-                      <button type="submit" className="edit-btn solid" disabled={editPostMutation.isPending}>
-                        {editPostMutation.isPending ? <InlineSpinner size={12} /> : null}
-                        {t('settings_save')}
-                      </button>
-                    </div>
-                  </form>
+                    onSubmit={() => editPostMutation.mutate({ postId: post.id })}
+                  />
                 ) : (
                   <Link to={routes.post(post.id)} className="post-content">{post.content}</Link>
                 )}
@@ -377,13 +372,6 @@ export default function ProfilePage() {
         .posts-heading { font-size: 1rem; font-weight: 600; color: var(--color-text); margin: 0 0 1rem; }
         .post-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; }
         .post-content { display: block; color: var(--color-text); font-size: 0.9rem; text-decoration: none; margin-bottom: 0.5rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; }
-        .inline-edit { display: grid; gap: 0.6rem; margin-bottom: 0.6rem; }
-        .inline-edit textarea,.inline-edit select { width: 100%; border-radius: 0.75rem; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); padding: 0.75rem 0.85rem; font: inherit; }
-        .inline-edit-bar { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
-        .chars-inline { margin-left: auto; font-size: 0.74rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
-        .edit-btn { border-radius: 6px; padding: 0.35rem 0.8rem; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; }
-        .edit-btn.ghost { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
-        .edit-btn.solid { background: var(--color-primary); color: #fff; border: none; }
         .post-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); align-items: center; }
         .post-category { display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 500; padding: 0.15rem 0.45rem; border-radius: 999px; }
         .stat { display: inline-flex; align-items: center; gap: 0.25rem; }

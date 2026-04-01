@@ -12,12 +12,14 @@ import { formatDate, getAvatarUrl } from '@/lib/utils'
 import { queryKeys } from '@/lib/query/keys'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
+import { PostEditCard } from '@/components/PostEditCard'
 import PostMedia from '@/components/PostMedia'
 import { QuotedPostCard } from '@/components/QuotedPostCard'
 import { LinkPreviewCard } from '@/components/LinkPreviewCard'
 import { RichText } from '@/components/RichText'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
+import { hasCommentEditChanges } from '@/lib/editor'
 import type { Comment, ContentReportReason, Post } from '@/lib/types'
 import { routes } from '@/lib/routes'
 import {
@@ -388,41 +390,24 @@ export default function PostDetailPage() {
         </div>
 
         {isEditingPost ? (
-          <form
-            className="edit-form"
-            onSubmit={(event) => {
-              event.preventDefault()
-              editPostMutation.mutate()
+          <PostEditCard
+            categories={categories.map((category) => ({ ...category, name: categoryLabel(t, category.slug) }))}
+            content={editedPostContent}
+            categoryId={editedPostCategoryId}
+            initialContent={post.content}
+            initialCategoryId={post.category_id}
+            pending={editPostMutation.isPending}
+            saveLabel={t('settings_save')}
+            cancelLabel={t('suggestion_cancel')}
+            onContentChange={setEditedPostContent}
+            onCategoryChange={setEditedPostCategoryId}
+            onCancel={() => {
+              setIsEditingPost(false)
+              setEditedPostContent(post.content)
+              setEditedPostCategoryId(post.category_id)
             }}
-          >
-            <textarea
-              value={editedPostContent}
-              onChange={(event) => setEditedPostContent(event.target.value)}
-              rows={5}
-              maxLength={5000}
-            />
-            <div className="edit-bar">
-              <select value={editedPostCategoryId} onChange={(event) => setEditedPostCategoryId(event.target.value)}>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {categoryLabel(t, category.slug)}
-                  </option>
-                ))}
-              </select>
-              <span className="char-counter">{5000 - editedPostContent.length}</span>
-              <button type="button" className="ghost-btn" onClick={() => {
-                setIsEditingPost(false)
-                setEditedPostContent(post.content)
-                setEditedPostCategoryId(post.category_id)
-              }}>
-                {t('suggestion_cancel')}
-              </button>
-              <button type="submit" className="btn" disabled={editPostMutation.isPending}>
-                {editPostMutation.isPending ? <InlineSpinner size={13} className="mr-1.5" /> : null}
-                {t('settings_save')}
-              </button>
-            </div>
-          </form>
+            onSubmit={() => editPostMutation.mutate()}
+          />
         ) : (
           <p className="content"><RichText content={post.content} /></p>
         )}
@@ -555,10 +540,6 @@ export default function PostDetailPage() {
         .cat-tag { margin-left: auto; font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 99px; font-weight: 500; text-decoration: none; flex-shrink: 0; white-space: nowrap; transition: opacity 0.12s; }
         .cat-tag:hover { opacity: 0.75; }
         .content { font-size: 1rem; line-height: 1.7; color: var(--color-text); white-space: pre-wrap; margin: 0 0 1.25rem; }
-        .edit-form { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
-        .edit-form textarea,.edit-form select { width: 100%; border-radius: 0.85rem; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); padding: 0.8rem 0.9rem; font: inherit; }
-        .edit-bar { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
-        .char-counter { margin-left: auto; font-size: 0.78rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
         .post-footer { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.8rem; }
         .time { color: var(--color-text-muted); }
         .edited { color: var(--color-text-muted); font-style: italic; }
@@ -587,9 +568,6 @@ export default function PostDetailPage() {
         .act:disabled { opacity: 0.7; cursor: wait; }
         .act.liked { color: #e11d48; background: #f43f5e18; }
         .act.danger:hover { color: #dc2626; background: #dc262615; }
-        .ghost-btn { border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); border-radius: 5px; padding: 0.35rem 0.75rem; font: inherit; cursor: pointer; }
-        .btn { background: var(--color-primary); color: #fff; border: none; border-radius: 5px; padding: 0.35rem 0.9rem; font-size: 0.825rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.12s; }
-        .btn:hover { opacity: 0.85; }
         .post-link { color: var(--color-primary); text-decoration: none; }
         .post-link:hover { text-decoration: underline; }
       `}</style>
@@ -627,6 +605,7 @@ function CommentRow({
   const { t } = useTranslation()
   const [reason, setReason] = useState<ContentReportReason>('spam')
   const [details, setDetails] = useState('')
+  const canSaveEdit = hasCommentEditChanges(comment.content, editingValue) && editingValue.trim().length > 0 && editingValue.length <= 2000
 
   return (
     <div className="comment">
@@ -656,11 +635,27 @@ function CommentRow({
         </div>
         {isEditing ? (
           <form className="comment-edit-form" onSubmit={(event) => { event.preventDefault(); onSaveEdit() }}>
-            <textarea rows={3} maxLength={2000} value={editingValue} onChange={(event) => onChangeEditingValue(event.target.value)} />
+            <textarea
+              rows={3}
+              maxLength={2000}
+              autoFocus
+              value={editingValue}
+              onChange={(event) => onChangeEditingValue(event.target.value)}
+              onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canSaveEdit && !isSaving) {
+                  event.preventDefault()
+                  onSaveEdit()
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  onCancelEdit()
+                }
+              }}
+            />
             <div className="comment-edit-actions">
               <span className="muted small">{2000 - editingValue.length}</span>
               <button type="button" className="ghost-btn" onClick={onCancelEdit}>{t('suggestion_cancel')}</button>
-              <button type="submit" className="btn" disabled={isSaving}>
+              <button type="submit" className="btn" disabled={isSaving || !canSaveEdit}>
                 {isSaving ? <InlineSpinner size={13} className="mr-1.5" /> : null}
                 {t('settings_save')}
               </button>

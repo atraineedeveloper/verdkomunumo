@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { isOptionalPostFeaturesError, normalizeQuotedPost } from '@/lib/postFeatures'
+
+beforeEach(() => {
+  window.localStorage.clear()
+})
 
 describe('isOptionalPostFeaturesError', () => {
   it('detects missing optional column errors', () => {
     expect(isOptionalPostFeaturesError({ message: 'column posts.quoted_post_id does not exist' })).toBe(true)
     expect(isOptionalPostFeaturesError({ details: 'Could not find the relation posts_quoted_post_id_fkey in the schema cache' })).toBe(true)
+    expect(isOptionalPostFeaturesError({ status: 400, message: 'Bad Request' })).toBe(true)
   })
 
   it('ignores unrelated errors', () => {

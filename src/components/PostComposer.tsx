@@ -10,6 +10,7 @@ import { optimizeImageFiles, replaceInputFiles } from '@/lib/browser/images'
 import { queryKeys } from '@/lib/query/keys'
 import { POST_MAX_IMAGES } from '@/lib/constants'
 import type { Category, LinkPreview, Post } from '@/lib/types'
+import { mergeUniqueFiles } from '@/lib/editor'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { QuotedPostCard } from '@/components/QuotedPostCard'
 import { LinkPreviewCard } from '@/components/LinkPreviewCard'
@@ -37,7 +38,10 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
   const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null)
   const [previewDismissed, setPreviewDismissed] = useState(false)
   const [fetchingPreview, setFetchingPreview] = useState(false)
+  const [filePickerOpen, setFilePickerOpen] = useState(false)
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const composerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastFetchedUrl = useRef<string | null>(null)
 
@@ -51,6 +55,32 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
   useEffect(() => {
     return () => { imagePreviews.forEach(URL.revokeObjectURL) }
   }, [])
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node | null
+      if (!target) return
+      if (composerRef.current?.contains(target)) return
+      if (filePickerOpen) return
+      if (!content.trim() && imagePreviews.length === 0 && !quotedPost) {
+        setFocused(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [content, imagePreviews.length, quotedPost, filePickerOpen])
+
+  useEffect(() => {
+    if (!filePickerOpen) return
+
+    const handleWindowFocus = () => {
+      window.setTimeout(() => setFilePickerOpen(false), 0)
+    }
+
+    window.addEventListener('focus', handleWindowFocus, { once: true })
+    return () => window.removeEventListener('focus', handleWindowFocus)
+  }, [filePickerOpen])
 
   // Auto-focus when quotedPost is set
   useEffect(() => {
@@ -85,7 +115,12 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
   }, [content, previewDismissed])
 
   const remaining = 5000 - content.length
-  const canPost = content.trim().length > 0 && categoryId !== '' && remaining >= 0
+  const hasContent =
+    content.trim().length > 0 ||
+    selectedFiles.length > 0 ||
+    imagePreviews.length > 0 ||
+    Boolean(quotedPost)
+  const canPost = hasContent && categoryId !== '' && remaining >= 0
 
   function revokePreviews(previews: string[]) {
     previews.forEach(URL.revokeObjectURL)
@@ -99,31 +134,54 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
     replaceInputFiles(fileInputRef.current, files)
   }
 
-  function mergeFiles(existing: File[], next: File[]): File[] {
-    const merged = [...existing]
-    const seen = new Set(existing.map(f => `${f.name}:${f.size}:${f.lastModified}`))
-    for (const f of next) {
-      const key = `${f.name}:${f.size}:${f.lastModified}`
-      if (seen.has(key)) continue
-      merged.push(f)
-      seen.add(key)
-      if (merged.length >= POST_MAX_IMAGES) break
+  async function handleIncomingFiles(files: File[]) {
+    setPreparingImages(true)
+    try {
+      const optimized = await optimizeImageFiles(files.slice(0, POST_MAX_IMAGES))
+      const merged = mergeUniqueFiles(selectedFiles, optimized, POST_MAX_IMAGES)
+      if (merged.length < selectedFiles.length + optimized.length) {
+        toast.info(`Vi povas aldoni gxis ${POST_MAX_IMAGES} bildojn.`)
+      }
+      applyFiles(merged)
+      setFocused(true)
+    } finally {
+      setPreparingImages(false)
     }
-    return merged
   }
 
   async function onFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.currentTarget.files
     if (!files) return
-    setPreparingImages(true)
-    const optimized = await optimizeImageFiles(Array.from(files).slice(0, POST_MAX_IMAGES))
-    applyFiles(mergeFiles(selectedFiles, optimized).slice(0, POST_MAX_IMAGES))
-    setPreparingImages(false)
-    setFocused(true)
+    try {
+      await handleIncomingFiles(Array.from(files))
+    } finally {
+      setFilePickerOpen(false)
+      e.currentTarget.value = ''
+    }
   }
 
   function removeImage(index: number) {
     applyFiles(selectedFiles.filter((_, i) => i !== index))
+  }
+
+  function resetComposer() {
+    setContent('')
+    setFocused(false)
+    applyFiles([])
+    setLinkPreview(null)
+    setPreviewDismissed(false)
+    lastFetchedUrl.current = null
+    setFilePickerOpen(false)
+    onQuoteClear?.()
+  }
+
+  function maybeCancelComposer() {
+    if (!content.trim() && imagePreviews.length === 0 && !quotedPost && !linkPreview) return
+    resetComposer()
+  }
+
+  function extractImageFiles(files: File[]) {
+    return files.filter((file) => file.type.startsWith('image/'))
   }
 
   const mutation = useMutation({
@@ -169,13 +227,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
     },
     onSuccess: () => {
       toast.success(t('toast_post_created'))
-      setContent('')
-      setFocused(false)
-      applyFiles([])
-      setLinkPreview(null)
-      setPreviewDismissed(false)
-      lastFetchedUrl.current = null
-      onQuoteClear?.()
+      resetComposer()
       queryClient.invalidateQueries({ queryKey: queryKeys.feed() })
     },
     onError: (err: any) => {
@@ -183,18 +235,47 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
     },
   })
 
-  const showBar = focused || content.trim().length > 0 || imagePreviews.length > 0 || !!quotedPost
+  const showBar = focused || filePickerOpen || content.trim().length > 0 || imagePreviews.length > 0 || !!quotedPost
 
   return (
     <div
-      className="composer"
+      ref={composerRef}
+      className={`composer${isDraggingFiles ? ' drag-active' : ''}`}
       onFocus={() => setFocused(true)}
-      onBlur={e => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node) && !content.trim() && imagePreviews.length === 0 && !quotedPost) {
-          setFocused(false)
-        }
+      onDragEnter={(event) => {
+        if (!extractImageFiles(Array.from(event.dataTransfer.items).map((item) => item.getAsFile()).filter(Boolean) as File[]).length) return
+        event.preventDefault()
+        setFocused(true)
+        setIsDraggingFiles(true)
+      }}
+      onDragOver={(event) => {
+        const hasImages = Array.from(event.dataTransfer.items).some((item) => item.kind === 'file' && item.type.startsWith('image/'))
+        if (!hasImages) return
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'copy'
+        if (!isDraggingFiles) setIsDraggingFiles(true)
+      }}
+      onDragLeave={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return
+        setIsDraggingFiles(false)
+      }}
+      onDrop={(event) => {
+        const droppedFiles = extractImageFiles(Array.from(event.dataTransfer.files))
+        if (!droppedFiles.length) return
+        event.preventDefault()
+        setIsDraggingFiles(false)
+        void handleIncomingFiles(droppedFiles)
       }}
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={onFilesChange}
+      />
+
       {quotedPost && (
         <div className="quote-wrap">
           <div className="quote-label">
@@ -214,7 +295,29 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
         maxLength={5000}
         rows={focused || !!quotedPost ? 4 : 2}
         className="composer-textarea"
+        onKeyDown={(event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canPost && !mutation.isPending && !preparingImages) {
+            event.preventDefault()
+            mutation.mutate()
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault()
+            maybeCancelComposer()
+          }
+        }}
+        onPaste={(event) => {
+          const pastedImages = Array.from(event.clipboardData.files).filter((file) => file.type.startsWith('image/'))
+          if (!pastedImages.length) return
+          event.preventDefault()
+          void handleIncomingFiles(pastedImages)
+        }}
       />
+
+      {isDraggingFiles && (
+        <div className="drop-hint">
+          <span>{t('post_compose_drop_images')}</span>
+        </div>
+      )}
 
       {(linkPreview || fetchingPreview) && !previewDismissed && (
         <div className="preview-wrap">
@@ -250,38 +353,48 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
 
       {showBar && (
         <div className="bar">
-          <select
-            value={categoryId}
-            onChange={e => setCategoryId(e.target.value)}
-            className="cat-select"
-          >
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{t(`cat_name_${cat.slug}` as any)}</option>
-            ))}
-          </select>
+          <div className="bar-main">
+            <label className="bar-chip category-chip">
+              <span className="chip-label">{t('post_compose_category')}</span>
+              <span className="cat-select-wrap">
+                <select
+                  value={categoryId}
+                  onChange={e => setCategoryId(e.target.value)}
+                  className="cat-select"
+                >
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{t(`cat_name_${cat.slug}` as any)}</option>
+                  ))}
+                </select>
+                <svg className="cat-chevron" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
+            </label>
 
-          <button
-            type="button"
-            className="file-btn"
-            title="Adjuntar imágenes"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => { setFocused(true); fileInputRef.current?.click() }}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              style={{ display: 'none' }}
-              onChange={onFilesChange}
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            {selectedFiles.length > 0 && <span className="file-count">{selectedFiles.length}/{POST_MAX_IMAGES}</span>}
-          </button>
+            <button
+              type="button"
+              className="bar-chip file-btn"
+              title={t('post_compose_images')}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => {
+                setFocused(true)
+                setFilePickerOpen(true)
+                if (fileInputRef.current) fileInputRef.current.value = ''
+                fileInputRef.current?.click()
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span>{selectedFiles.length > 0 ? `${selectedFiles.length}/${POST_MAX_IMAGES} ${t('post_compose_images_count')}` : t('post_compose_images')}</span>
+            </button>
+          </div>
 
-          <span
-            className={`chars${remaining < 200 ? ' warn' : ''}${remaining < 0 ? ' over' : ''}`}
-          >{remaining}</span>
+          <div className="bar-meta">
+            <span className="hint">{selectedFiles.length > 0 ? t('post_compose_images_only') : t('post_compose_images_limit', { count: POST_MAX_IMAGES })}</span>
+            <span
+              className={`chars${remaining < 200 ? ' warn' : ''}${remaining < 0 ? ' over' : ''}`}
+            >{remaining}</span>
+          </div>
 
           <button
             type="button"
@@ -291,30 +404,39 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
             aria-busy={mutation.isPending || preparingImages}
           >
             {preparingImages || mutation.isPending ? <InlineSpinner size={13} className="mr-1.5" /> : null}
-            {preparingImages ? 'Preparando...' : mutation.isPending ? 'Publicando...' : t('post_compose_btn')}
+            {preparingImages ? t('post_compose_preparing') : mutation.isPending ? t('post_compose_posting') : t('post_compose_btn')}
           </button>
         </div>
       )}
 
       <style>{`
-        .composer { position: relative; border-bottom: 1px solid var(--color-border); padding: 0.85rem 0; margin-bottom: 0.25rem; }
-        .composer-textarea { width: 100%; background: transparent; border: none; outline: none; resize: none; font-size: 0.9375rem; line-height: 1.6; color: var(--color-text); font-family: inherit; display: block; box-sizing: border-box; }
+        .composer { position: relative; border-bottom: 1px solid var(--color-border); padding: 0.85rem 0; margin-bottom: 0.25rem; transition: background 0.12s ease, box-shadow 0.12s ease; }
+        .composer.drag-active { background: color-mix(in srgb, var(--color-primary) 4%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 30%, transparent); border-radius: 1rem; }
+        .composer-textarea { width: 100%; background: transparent; border: none; outline: none; resize: none; font-size: 0.9375rem; line-height: 1.6; color: var(--color-text); font-family: inherit; display: block; box-sizing: border-box; padding: 0.15rem 0; }
         .composer-textarea::placeholder { color: var(--color-text-muted); }
-        .quote-wrap { margin-bottom: 0.35rem; }
+        .drop-hint { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0.35rem 0 0.15rem; padding: 0.4rem 0.75rem; border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-alt)); color: var(--color-primary); font-size: 0.78rem; font-weight: 600; }
+        .quote-wrap { margin-bottom: 0.55rem; }
         .quote-label { display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--color-primary); font-weight: 600; margin-bottom: 0.2rem; }
         .quote-clear { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 0.1rem; border-radius: 4px; display: flex; align-items: center; }
         .quote-clear:hover { color: var(--color-danger); }
-        .preview-wrap { margin: 0.2rem 0; }
+        .preview-wrap { margin: 0.35rem 0 0.2rem; }
         .preview-loading { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--color-text-muted); padding: 0.5rem 0; }
         .preview-dismiss { background: none; border: none; font-size: 0.73rem; color: var(--color-text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1rem 0; font-family: inherit; margin-top: -0.4rem; }
         .preview-dismiss:hover { color: var(--color-danger); }
-        .bar { display: flex; align-items: center; gap: 0.65rem; padding-top: 0.6rem; border-top: 1px solid var(--color-border); margin-top: 0.5rem; animation: fadeIn 0.12s ease; }
+        .bar { display: flex; align-items: center; gap: 0.8rem; padding-top: 0.75rem; border-top: 1px solid var(--color-border); margin-top: 0.55rem; animation: fadeIn 0.12s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
-        .cat-select { background: var(--color-surface-alt); border: 1px solid var(--color-border); border-radius: 5px; color: var(--color-text); font-size: 0.8rem; font-family: inherit; padding: 0.28rem 0.55rem; cursor: pointer; transition: border-color 0.12s; }
-        .cat-select:hover { border-color: var(--color-primary); }
-        .file-btn { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--color-surface-alt); border: 1px solid var(--color-border); border-radius: 5px; color: var(--color-text-muted); font-size: 0.8rem; padding: 0.28rem 0.55rem; cursor: pointer; transition: border-color 0.12s, color 0.12s; white-space: nowrap; }
-        .file-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
-        .file-count { font-size: 0.73rem; font-weight: 600; color: var(--color-primary); }
+        .bar-main { display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex: 1; flex-wrap: wrap; }
+        .bar-meta { display: flex; align-items: center; gap: 0.55rem; margin-left: auto; }
+        .bar-chip { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.4rem; padding: 0.35rem 0.75rem; border: 1px solid var(--color-border); border-radius: 999px; background: color-mix(in srgb, var(--color-surface-alt) 78%, white 22%); color: var(--color-text-muted); transition: border-color 0.12s, color 0.12s, background 0.12s, box-shadow 0.12s; }
+        .bar-chip:focus-within, .bar-chip:hover { border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border)); color: var(--color-text); background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-alt)); }
+        .chip-label { font-size: 0.68rem; font-weight: 700; color: var(--color-text-muted); letter-spacing: 0.02em; text-transform: uppercase; }
+        .category-chip { gap: 0.6rem; padding-right: 0.5rem; }
+        .cat-select-wrap { position: relative; display: inline-flex; align-items: center; min-width: 9.5rem; max-width: 13rem; padding: 0.2rem 1.8rem 0.2rem 0.2rem; border-radius: 999px; background: color-mix(in srgb, var(--color-surface) 72%, white 28%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 75%, transparent); }
+        .cat-select { appearance: none; -webkit-appearance: none; background: transparent; border: none; color: var(--color-text); font-size: 0.84rem; font-weight: 600; font-family: inherit; padding: 0 0.2rem; cursor: pointer; min-width: 100%; width: 100%; outline: none; text-overflow: ellipsis; }
+        .cat-chevron { position: absolute; right: 0.55rem; color: var(--color-text-muted); pointer-events: none; }
+        .file-btn { cursor: pointer; font-size: 0.82rem; font-family: inherit; white-space: nowrap; }
+        .file-btn svg { color: var(--color-primary); flex-shrink: 0; }
+        .hint { font-size: 0.74rem; color: var(--color-text-muted); white-space: nowrap; }
         .img-previews { display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 0.5rem 0 0.25rem; }
         .img-thumb { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid var(--color-border); flex-shrink: 0; }
         .img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -323,10 +445,18 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
         .chars { font-size: 0.75rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
         .chars.warn { color: #d97706; }
         .chars.over { color: var(--color-danger); font-weight: 600; }
-        .post-btn { margin-left: auto; background: var(--color-primary); color: #fff; border: none; border-radius: 5px; padding: 0.35rem 0.9rem; font-size: 0.825rem; font-weight: 600; cursor: pointer; transition: opacity 0.12s; font-family: inherit; }
+        .post-btn { background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 88%, white 12%), var(--color-primary)); color: #fff; border: none; border-radius: 999px; padding: 0.62rem 1rem; font-size: 0.825rem; font-weight: 700; cursor: pointer; transition: opacity 0.12s, transform 0.12s; font-family: inherit; box-shadow: 0 10px 18px -14px color-mix(in srgb, var(--color-primary) 60%, black 40%); }
         .post-btn:not(:disabled):hover { opacity: 0.85; }
-        .post-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .post-btn:not(:disabled):active { transform: translateY(1px); }
+        .post-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
         .post-btn { display: inline-flex; align-items: center; justify-content: center; }
+        @media (max-width: 720px) {
+          .bar { flex-wrap: wrap; align-items: stretch; }
+          .bar-main { width: 100%; }
+          .bar-meta { margin-left: 0; justify-content: space-between; width: 100%; }
+          .post-btn { width: 100%; }
+          .hint { white-space: normal; }
+        }
       `}</style>
     </div>
   )
