@@ -92,6 +92,34 @@ export function updateCommentInPostDetail<T>(data: T, commentId: string, patch: 
   return next as T
 }
 
+export function toggleCommentLikeState(comment: Comment): Comment {
+  const nextLiked = !comment.user_liked
+  const baseCount = Number(comment.likes_count ?? 0)
+
+  return {
+    ...comment,
+    user_liked: nextLiked,
+    likes_count: Math.max(0, baseCount + (nextLiked ? 1 : -1)),
+  }
+}
+
+export function updateCommentLikeInPostDetail<T>(data: T, commentId: string): T {
+  if (!data || typeof data !== 'object') return data
+
+  const record = data as Record<string, unknown>
+  const next = { ...record }
+
+  if (Array.isArray(record.comments)) {
+    next.comments = record.comments.map((item) => {
+      if (!item || typeof item !== 'object') return item
+      const comment = item as Comment
+      return comment.id === commentId ? toggleCommentLikeState(comment) : comment
+    })
+  }
+
+  return next as T
+}
+
 export function removeCommentInPostDetail<T>(data: T, commentId: string): T {
   if (!data || typeof data !== 'object') return data
 

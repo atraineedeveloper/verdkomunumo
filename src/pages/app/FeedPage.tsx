@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import { queryKeys } from '@/lib/query/keys'
 import { formatDate, getAvatarUrl } from '@/lib/utils'
+import { addPostLike } from '@/lib/likes'
 import { CATEGORY_COLORS } from '@/lib/icons'
 import { fetchFeedPostsWithFallback, normalizeQuotedPost } from '@/lib/postFeatures'
 import PostComposer from '@/components/PostComposer'
@@ -16,7 +17,7 @@ import { PostEditCard } from '@/components/PostEditCard'
 import PostMedia from '@/components/PostMedia'
 import { QuotedPostCard } from '@/components/QuotedPostCard'
 import { LinkPreviewCard } from '@/components/LinkPreviewCard'
-import { RichText } from '@/components/RichText'
+import { PostExcerpt } from '@/components/PostExcerpt'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import type { Post, Category } from '@/lib/types'
@@ -88,7 +89,7 @@ export default function FeedPage() {
         await supabase.from('likes').delete()
           .eq('post_id', post.id).eq('user_id', profile.id)
       } else {
-        await supabase.from('likes').insert({ post_id: post.id, user_id: profile.id })
+        await addPostLike(post.id, profile.id)
       }
     },
     onMutate: async (post) => {
@@ -308,7 +309,14 @@ export default function FeedPage() {
                   />
                 ) : (
                   <div className="body">
-                    <p className="content"><RichText content={post.content} /></p>
+                    <PostExcerpt
+                      content={post.content}
+                      to={routes.post(post.id)}
+                      contentClassName="content"
+                      linkClassName="read-more"
+                      maxLines={6}
+                      maxChars={420}
+                    />
                   </div>
                 )}
                 {post.quoted_post && (
@@ -418,6 +426,8 @@ export default function FeedPage() {
         .cat-tag { margin-left: auto; font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 99px; font-weight: 500; text-decoration: none; flex-shrink: 0; white-space: nowrap; }
         .body { text-decoration: none; display: block; }
         .content { font-size: 0.9375rem; line-height: 1.6; color: var(--color-text); margin: 0 0 0.65rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; -webkit-box-orient: vertical; }
+        .read-more { display: inline-flex; align-items: center; margin: -0.15rem 0 0.65rem; font-size: 0.8rem; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+        .read-more:hover { text-decoration: underline; }
         .actions { display: flex; gap: 0.15rem; align-items: center; }
         .act { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; background: transparent; border: none; font-size: 0.8rem; color: var(--color-text-muted); border-radius: 5px; cursor: pointer; transition: color 0.12s, background 0.12s; text-decoration: none; font-family: inherit; }
         .act:hover { color: var(--color-primary); background: var(--color-primary-dim); }

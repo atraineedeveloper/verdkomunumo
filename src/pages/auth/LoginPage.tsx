@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase/client'
 import { resolveLoginEmail } from '@/lib/auth'
 import { loginSchema } from '@/lib/validators'
@@ -27,6 +28,7 @@ const GoogleIcon = () => (
 )
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const next = searchParams.get('next') ?? routes.feed
@@ -120,6 +122,12 @@ export function LoginPage() {
             className="px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-bg)] text-[var(--color-text)] text-[0.9rem] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
           />
           {errors.password && <span className="text-[0.8rem] text-[var(--color-danger)]">{errors.password.message}</span>}
+        </div>
+
+        <div className="flex justify-end mb-4">
+          <Link to={routes.forgotPassword} className="text-[0.82rem] text-[var(--color-primary)] font-medium no-underline hover:underline">
+            {t('auth_forgot_password', { defaultValue: 'Ĉu vi forgesis la pasvorton?' })}
+          </Link>
         </div>
 
         <button

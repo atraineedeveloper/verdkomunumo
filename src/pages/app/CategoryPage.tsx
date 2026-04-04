@@ -7,11 +7,13 @@ import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase/client'
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/lib/icons'
 import { formatDate, getAvatarUrl } from '@/lib/utils'
+import { addPostLike } from '@/lib/likes'
 import { queryKeys } from '@/lib/query/keys'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import PostComposer from '@/components/PostComposer'
 import { PostEditCard } from '@/components/PostEditCard'
+import { PostExcerpt } from '@/components/PostExcerpt'
 import PostMedia from '@/components/PostMedia'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
@@ -78,8 +80,7 @@ export default function CategoryPage() {
         const { error } = await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', user.id)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('likes').insert({ post_id: post.id, user_id: user.id })
-        if (error) throw error
+        await addPostLike(post.id, user.id)
       }
     },
     onMutate: async (post) => {
@@ -254,9 +255,16 @@ export default function CategoryPage() {
                       onSubmit={() => editPostMutation.mutate({ postId: post.id })}
                     />
                   ) : (
-                    <Link to={routes.post(post.id)} className="body">
-                      <p className="content">{post.content}</p>
-                    </Link>
+                    <div className="body">
+                      <PostExcerpt
+                        content={post.content}
+                        to={routes.post(post.id)}
+                        contentClassName="content"
+                        linkClassName="read-more"
+                        maxLines={6}
+                        maxChars={420}
+                      />
+                    </div>
                   )}
                   {!!post.image_urls?.length && <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />}
                   <div className="actions">
@@ -321,6 +329,8 @@ export default function CategoryPage() {
         .small { font-size: 0.8rem; }
         .body { text-decoration: none; display: block; }
         .content { font-size: 0.9375rem; line-height: 1.6; color: var(--color-text); margin: 0 0 0.65rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; -webkit-box-orient: vertical; }
+        .read-more { display: inline-flex; align-items: center; margin: -0.15rem 0 0.65rem; font-size: 0.8rem; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+        .read-more:hover { text-decoration: underline; }
         .actions { display: flex; gap: 0.15rem; }
         .act { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; background: transparent; border: none; font-size: 0.8rem; color: var(--color-text-muted); border-radius: 5px; cursor: pointer; transition: color 0.12s, background 0.12s; text-decoration: none; font-family: inherit; }
         .act:hover { color: var(--color-primary); background: var(--color-primary-dim); }

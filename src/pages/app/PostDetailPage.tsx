@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase/client'
 import { CATEGORY_COLORS } from '@/lib/icons'
 import { fetchPostDetailWithFallback, normalizeQuotedPost } from '@/lib/postFeatures'
 import { formatDate, getAvatarUrl } from '@/lib/utils'
+import { addCommentLike, addPostLike } from '@/lib/likes'
 import { queryKeys } from '@/lib/query/keys'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
@@ -26,6 +27,7 @@ import {
   removeCommentInPostDetail,
   removePostInData,
   updateCommentInPostDetail,
+  updateCommentLikeInPostDetail,
   updatePostInData,
   updatePostLikeInData,
 } from '@/lib/query/optimisticPosts'
@@ -60,19 +62,27 @@ async function fetchPostDetail(postId: string, userId?: string | null) {
   if (commentsError) throw commentsError
 
   let userLiked = false
+  let likedCommentIds = new Set<string>()
   if (userId) {
-    const { data: like } = await supabase
-      .from('likes')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('post_id', postId)
-      .maybeSingle()
+    const commentIds = (comments ?? []).map((comment) => comment.id)
+    const [{ data: like }, commentLikesRes] = await Promise.all([
+      supabase.from('likes').select('id').eq('user_id', userId).eq('post_id', postId).maybeSingle(),
+      commentIds.length
+        ? supabase.from('likes').select('comment_id').eq('user_id', userId).in('comment_id', commentIds)
+        : Promise.resolve({ data: [], error: null }),
+    ])
+
     userLiked = Boolean(like)
+    if (commentLikesRes.error) throw commentLikesRes.error
+    likedCommentIds = new Set((commentLikesRes.data ?? []).map((entry) => entry.comment_id).filter(Boolean))
   }
 
   return {
     post: { ...normalizeQuotedPost(post as Post), user_liked: userLiked } as Post,
-    comments: (comments ?? []) as Comment[],
+    comments: (comments ?? []).map((comment) => ({
+      ...(comment as Comment),
+      user_liked: likedCommentIds.has(comment.id),
+    })) as Comment[],
     categories: categoriesRes.data ?? [],
   }
 }
@@ -140,8 +150,7 @@ export default function PostDetailPage() {
         const { error } = await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', user.id)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('likes').insert({ post_id: post.id, user_id: user.id })
-        if (error) throw error
+        await addPostLike(post.id, user.id)
       }
     },
     onMutate: async () => {
@@ -354,6 +363,34 @@ export default function PostDetailPage() {
     },
   })
 
+  const commentLikeMutation = useMutation({
+    mutationFn: async ({ comment }: { comment: Comment }) => {
+      if (!user) throw new Error('Ne ensalutinta')
+      if (comment.user_liked) {
+        const { error } = await supabase.from('likes').delete().eq('comment_id', comment.id).eq('user_id', user.id)
+        if (error) throw error
+      } else {
+        await addCommentLike(comment.id, user.id)
+      }
+    },
+    onMutate: async ({ comment }) => {
+      const postKey = queryKeys.post(id)
+      await queryClient.cancelQueries({ queryKey: postKey })
+      const previousPost = queryClient.getQueryData(postKey)
+      queryClient.setQueryData(postKey, (current: unknown) => updateCommentLikeInPostDetail(current, comment.id))
+      return { previousPost, postKey }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousPost) {
+        queryClient.setQueryData(context.postKey, context.previousPost)
+      }
+      toast.error(t('toast_action_failed'))
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.post(id) })
+    },
+  })
+
   if (isLoading) return <TimelineSkeleton items={2} />
   if (!post) return null
 
@@ -531,6 +568,9 @@ export default function PostDetailPage() {
                   deleteCommentMutation.mutate({ commentId: comment.id })
                 }
               }}
+              canLike={Boolean(user)}
+              isLiking={commentLikeMutation.isPending && commentLikeMutation.variables?.comment.id === comment.id}
+              onToggleLike={() => commentLikeMutation.mutate({ comment })}
             />
           ))
         )}
@@ -594,11 +634,14 @@ function CommentRow({
   editingValue,
   isSaving,
   isDeleting,
+  canLike,
+  isLiking,
   onStartEdit,
   onCancelEdit,
   onChangeEditingValue,
   onSaveEdit,
   onDelete,
+  onToggleLike,
 }: {
   comment: Comment
   onReport: (reason: ContentReportReason, details: string) => void
@@ -607,11 +650,14 @@ function CommentRow({
   editingValue: string
   isSaving: boolean
   isDeleting: boolean
+  canLike: boolean
+  isLiking: boolean
   onStartEdit: () => void
   onCancelEdit: () => void
   onChangeEditingValue: (value: string) => void
   onSaveEdit: () => void
   onDelete: () => void
+  onToggleLike: () => void
 }) {
   const { t } = useTranslation()
   const [reason, setReason] = useState<ContentReportReason>('spam')
@@ -676,7 +722,13 @@ function CommentRow({
           <p className="ccontent">{comment.content}</p>
         )}
         <div className="comment-footer">
-          <span className="act static"><Heart size={13} strokeWidth={1.75} /> {comment.likes_count}</span>
+          {canLike ? (
+            <button type="button" className={`act${comment.user_liked ? ' liked' : ''}`} onClick={onToggleLike} disabled={isLiking}>
+              {isLiking ? <InlineSpinner size={13} /> : <Heart size={13} strokeWidth={1.75} />} {comment.likes_count}
+            </button>
+          ) : (
+            <span className="act static"><Heart size={13} strokeWidth={1.75} /> {comment.likes_count}</span>
+          )}
           {canManage && !isEditing && (
             <>
               <button type="button" className="act" onClick={onStartEdit}>

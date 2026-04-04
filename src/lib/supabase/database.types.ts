@@ -468,10 +468,68 @@ export type Database = {
           },
         ]
       }
+      notification_email_deliveries: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          notification_id: string
+          provider_message_id: string | null
+          recipient_email: string | null
+          sent_at: string | null
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          notification_id: string
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          sent_at?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          notification_id?: string
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          sent_at?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_email_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_email_deliveries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string
           comment_id: string | null
+          conversation_id: string | null
           created_at: string | null
           id: string
           is_read: boolean | null
@@ -483,6 +541,7 @@ export type Database = {
         Insert: {
           actor_id: string
           comment_id?: string | null
+          conversation_id?: string | null
           created_at?: string | null
           id?: string
           is_read?: boolean | null
@@ -494,6 +553,7 @@ export type Database = {
         Update: {
           actor_id?: string
           comment_id?: string | null
+          conversation_id?: string | null
           created_at?: string | null
           id?: string
           is_read?: boolean | null
@@ -515,6 +575,13 @@ export type Database = {
             columns: ["comment_id"]
             isOneToOne: false
             referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
           {
@@ -612,6 +679,8 @@ export type Database = {
           bio: string | null
           created_at: string | null
           display_name: string
+          email_notify_comment: boolean
+          email_notify_message: boolean
           esperanto_level: string | null
           followers_count: number | null
           following_count: number | null
@@ -629,6 +698,8 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name: string
+          email_notify_comment?: boolean
+          email_notify_message?: boolean
           esperanto_level?: string | null
           followers_count?: number | null
           following_count?: number | null
@@ -646,6 +717,8 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name?: string
+          email_notify_comment?: boolean
+          email_notify_message?: boolean
           esperanto_level?: string | null
           followers_count?: number | null
           following_count?: number | null

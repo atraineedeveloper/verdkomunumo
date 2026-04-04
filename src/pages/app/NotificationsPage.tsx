@@ -25,6 +25,7 @@ const notifKeyMap: Record<NotificationType, string> = {
 function notifLink(notif: Notification): string {
   if (notif.type === 'follow' && notif.actor?.username) return routes.profile(notif.actor.username)
   if (notif.post_id) return routes.post(notif.post_id)
+  if (notif.type === 'message' && notif.conversation_id) return routes.conversation(notif.conversation_id)
   if (notif.type === 'message') return routes.messages
   return '#'
 }

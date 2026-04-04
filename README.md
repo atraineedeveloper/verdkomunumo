@@ -19,6 +19,7 @@ The app currently includes:
 
 - public landing page
 - email and Google authentication
+- password recovery flow
 - feed, profiles, categories, search, post detail
 - messages and notifications
 - settings
@@ -44,6 +45,8 @@ bun run build
 bun run db:push
 bun run db:types
 bun run db:sync
+bun run email:serve
+bun run email:deploy
 ```
 
 The Vite dev server runs on:
@@ -64,6 +67,9 @@ VITE_APP_NAME=Verdkomunumo
 VITE_DEMO_MODE=false
 VITE_GOOGLE_AUTH_ENABLED=true
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+RESEND_API_KEY=re_xxxxx
+EMAIL_FROM=Verdkomunumo <noreply@example.com>
+EMAIL_WEBHOOK_SECRET=choose-a-long-random-secret
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` is only needed for the local MCP admin tooling.
@@ -80,6 +86,64 @@ Production variables should be:
 - `VITE_APP_NAME`
 - `VITE_DEMO_MODE`
 - `VITE_GOOGLE_AUTH_ENABLED`
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- `EMAIL_WEBHOOK_SECRET`
+
+## Email Setup
+
+Verdkomunumo now supports:
+
+- Supabase Auth emails for signup confirmation and password reset
+- product emails for new comments and new messages via a Supabase Edge Function
+
+### 1. Auth email
+
+Supabase Auth is configured in [`supabase/config.toml`](/home/otilio/projects/verdkomunumo/supabase/config.toml) with confirmations enabled and reset redirect URLs for the React app.
+
+For production you still need to configure SMTP in the Supabase dashboard using Resend:
+
+- SMTP host: `smtp.resend.com`
+- SMTP port: `465` or `587`
+- SMTP username: `resend`
+- SMTP password: your Resend API key
+
+The HTML templates to paste into Supabase Auth are included at:
+
+- [`auth-confirm-signup.html`](/home/otilio/projects/verdkomunumo/supabase/templates/auth-confirm-signup.html)
+- [`auth-reset-password.html`](/home/otilio/projects/verdkomunumo/supabase/templates/auth-reset-password.html)
+
+### 2. Product emails
+
+The Edge Function lives at:
+
+- [`send-notification-email/index.ts`](/home/otilio/projects/verdkomunumo/supabase/functions/send-notification-email/index.ts)
+
+Serve locally:
+
+```bash
+bun run email:serve
+```
+
+Deploy:
+
+```bash
+bun run email:deploy
+```
+
+The database now queues email deliveries in `notification_email_deliveries`. To make delivery automatic in production, create a database webhook in Supabase for `INSERT` on `public.notification_email_deliveries` and point it to:
+
+```text
+https://<project-ref>.supabase.co/functions/v1/send-notification-email
+```
+
+Add the header:
+
+```text
+x-email-webhook-secret: <EMAIL_WEBHOOK_SECRET>
+```
+
+The function accepts either a direct payload like `{"delivery_id":"..."}` or the normal database webhook payload.
 
 ## MCP Admin Server
 

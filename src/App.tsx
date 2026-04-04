@@ -10,6 +10,8 @@ const AdminLayout = lazy(() => import('@/layouts/AdminLayout').then((module) => 
 
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })))
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then((module) => ({ default: module.RegisterPage })))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })))
 const AuthCallback = lazy(() => import('@/pages/auth/AuthCallback').then((module) => ({ default: module.AuthCallback })))
 
 const LandingPage = lazy(() => import('@/pages/public/LandingPage'))
@@ -39,6 +41,8 @@ export default function App() {
         <Route element={<AuthLayout />}>
           <Route path={routes.login} element={<LoginPage />} />
           <Route path={routes.register} element={<RegisterPage />} />
+          <Route path={routes.forgotPassword} element={<ForgotPasswordPage />} />
+          <Route path={routes.resetPassword} element={<ResetPasswordPage />} />
         </Route>
 
         {/* Public routes — readable without login */}

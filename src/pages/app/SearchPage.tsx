@@ -9,8 +9,10 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import { CATEGORY_COLORS } from '@/lib/icons'
 import { formatDate, getAvatarUrl } from '@/lib/utils'
+import { addPostLike } from '@/lib/likes'
 import { queryKeys } from '@/lib/query/keys'
 import { PostEditCard } from '@/components/PostEditCard'
+import { PostExcerpt } from '@/components/PostExcerpt'
 import PostMedia from '@/components/PostMedia'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
@@ -77,8 +79,7 @@ export default function SearchPage() {
         const { error } = await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', user.id)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('likes').insert({ post_id: post.id, user_id: user.id })
-        if (error) throw error
+        await addPostLike(post.id, user.id)
       }
     },
     onMutate: async (post) => {
@@ -286,7 +287,16 @@ export default function SearchPage() {
                       onSubmit={() => editPostMutation.mutate({ postId: post.id })}
                     />
                   ) : (
-                    <Link to={routes.post(post.id)} className="body"><p className="content">{post.content}</p></Link>
+                    <div className="body">
+                      <PostExcerpt
+                        content={post.content}
+                        to={routes.post(post.id)}
+                        contentClassName="content"
+                        linkClassName="read-more"
+                        maxLines={4}
+                        maxChars={280}
+                      />
+                    </div>
                   )}
                   {!!post.image_urls?.length && <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />}
                   <div className="acts">
@@ -371,6 +381,8 @@ export default function SearchPage() {
         .cat { margin-left: auto; font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 99px; font-weight: 500; text-decoration: none; flex-shrink: 0; white-space: nowrap; }
         .body { text-decoration: none; display: block; }
         .content { font-size: 0.9rem; line-height: 1.6; color: var(--color-text); margin: 0 0 0.55rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; }
+        .read-more { display: inline-flex; align-items: center; margin: -0.15rem 0 0.55rem; font-size: 0.78rem; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+        .read-more:hover { text-decoration: underline; }
         .acts { display: flex; gap: 0.75rem; }
         .act { font-size: 0.8rem; color: var(--color-text-muted); display: inline-flex; align-items: center; gap: 0.3rem; }
         .act-btn { background: transparent; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer; }

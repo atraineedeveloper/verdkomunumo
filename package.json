@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "mcp:admin": "bun run mcp/admin-server.ts",
+    "email:serve": "supabase functions serve send-notification-email --no-verify-jwt",
+    "email:deploy": "supabase functions deploy send-notification-email --no-verify-jwt",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
     "db:sync": "supabase db push && supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts"

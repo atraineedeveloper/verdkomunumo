@@ -14,6 +14,8 @@ export const routes = {
   settings: '/agordoj',
   login: '/ensaluti',
   register: '/registrigxi',
+  forgotPassword: '/forgesis-pasvorton',
+  resetPassword: '/restarigi-pasvorton',
   authCallback: '/auxtentigo/revoko',
   conversation: (conversationId: string) => `/mesagxoj/${conversationId}`,
   conversationPattern: '/mesagxoj/:conversationId',

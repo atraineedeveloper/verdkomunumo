@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   removeCommentInPostDetail,
   removePostInData,
+  toggleCommentLikeState,
   togglePostLikeState,
   updateCommentInPostDetail,
+  updateCommentLikeInPostDetail,
   updatePostInData,
   updatePostLikeInData,
 } from './optimisticPosts'
@@ -100,6 +102,29 @@ describe('optimisticPosts', () => {
 
     expect(result.comments[0]).toMatchObject({ id: 'a', content: 'Bela afiŝo' })
     expect(result.comments[1]).toMatchObject({ id: 'b', content: 'Redaktita komento', is_edited: true, updated_at: nextUpdatedAt })
+  })
+
+  it('toggles likes optimistically on a single comment', () => {
+    const liked = toggleCommentLikeState(makeComment())
+    expect(liked.user_liked).toBe(true)
+    expect(liked.likes_count).toBe(1)
+
+    const unliked = toggleCommentLikeState(makeComment({ user_liked: true, likes_count: 1 }))
+    expect(unliked.user_liked).toBe(false)
+    expect(unliked.likes_count).toBe(0)
+  })
+
+  it('updates matching comments likes in post detail payloads', () => {
+    const result = updateCommentLikeInPostDetail(
+      {
+        post: makePost(),
+        comments: [makeComment({ id: 'a', likes_count: 2 }), makeComment({ id: 'b', user_liked: true, likes_count: 5 })],
+      },
+      'a'
+    )
+
+    expect(result.comments[0]).toMatchObject({ id: 'a', user_liked: true, likes_count: 3 })
+    expect(result.comments[1]).toMatchObject({ id: 'b', user_liked: true, likes_count: 5 })
   })
 
   it('removes matching comments in post detail payloads', () => {

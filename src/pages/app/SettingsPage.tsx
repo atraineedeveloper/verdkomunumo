@@ -33,6 +33,8 @@ export default function SettingsPage() {
     esperanto_level: EsperantoLevel
     location: string
     website: string
+    email_notify_comment: boolean
+    email_notify_message: boolean
   }>({
     username: profile?.username ?? '',
     display_name: profile?.display_name ?? '',
@@ -40,6 +42,8 @@ export default function SettingsPage() {
     esperanto_level: profile?.esperanto_level ?? 'komencanto',
     location: profile?.location ?? '',
     website: profile?.website ?? '',
+    email_notify_comment: profile?.email_notify_comment ?? true,
+    email_notify_message: profile?.email_notify_message ?? true,
   })
 
   const updateProfileMutation = useMutation({
@@ -66,6 +70,8 @@ export default function SettingsPage() {
         website: String(formData.get('website') ?? ''),
         location: String(formData.get('location') ?? ''),
         esperanto_level: String(formData.get('esperanto_level') ?? '') as EsperantoLevel,
+        email_notify_comment: formData.get('email_notify_comment') === 'on',
+        email_notify_message: formData.get('email_notify_message') === 'on',
         ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
         updated_at: new Date().toISOString(),
       }
@@ -185,6 +191,56 @@ export default function SettingsPage() {
       </section>
 
       <section className="section">
+        <h2 className="section-title">{t('settings_email', { defaultValue: 'Retpoŝtaj sciigoj' })}</h2>
+        <p className="section-copy">{t('settings_email_help', { defaultValue: 'Administru kiajn retmesaĝojn Verdkomunumo sendu al vi.' })}</p>
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          const nextFormData = new FormData()
+          nextFormData.set('username', form.username)
+          nextFormData.set('display_name', form.display_name)
+          nextFormData.set('bio', form.bio)
+          nextFormData.set('website', form.website)
+          nextFormData.set('location', form.location)
+          nextFormData.set('esperanto_level', form.esperanto_level)
+          if (form.email_notify_comment) nextFormData.set('email_notify_comment', 'on')
+          if (form.email_notify_message) nextFormData.set('email_notify_message', 'on')
+          updateProfileMutation.mutate(nextFormData)
+        }}>
+          <div className="toggle-list">
+            <label className="toggle-row">
+              <div>
+                <span className="toggle-title">{t('settings_email_comment', { defaultValue: 'Novaj komentoj' })}</span>
+                <span className="toggle-sub">{t('settings_email_comment_hint', { defaultValue: 'Sendi retmesaĝon kiam iu komentis vian afiŝon.' })}</span>
+              </div>
+              <input
+                name="email_notify_comment"
+                type="checkbox"
+                checked={form.email_notify_comment}
+                onChange={(e) => setForm((prev) => ({ ...prev, email_notify_comment: e.target.checked }))}
+              />
+            </label>
+
+            <label className="toggle-row">
+              <div>
+                <span className="toggle-title">{t('settings_email_message', { defaultValue: 'Novaj mesaĝoj' })}</span>
+                <span className="toggle-sub">{t('settings_email_message_hint', { defaultValue: 'Sendi retmesaĝon kiam iu sendis al vi novan mesaĝon.' })}</span>
+              </div>
+              <input
+                name="email_notify_message"
+                type="checkbox"
+                checked={form.email_notify_message}
+                onChange={(e) => setForm((prev) => ({ ...prev, email_notify_message: e.target.checked }))}
+              />
+            </label>
+          </div>
+
+          <button className="btn-primary" type="submit" disabled={updateProfileMutation.isPending}>
+            {updateProfileMutation.isPending ? t('settings_saving') : t('settings_save')}
+          </button>
+        </form>
+      </section>
+
+      <section className="section">
         <h2 className="section-title">{t('settings_language')}</h2>
         <div className="theme-grid">
           {locales.map((l) => (
@@ -204,6 +260,7 @@ export default function SettingsPage() {
         .page-title { font-size: 1.25rem; font-weight: 700; color: var(--color-text); margin: 0 0 1.5rem; }
         .section { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; }
         .section-title { font-size: 1rem; font-weight: 600; color: var(--color-text); margin: 0 0 1.25rem; }
+        .section-copy { margin: -0.5rem 0 1rem; color: var(--color-text-muted); font-size: 0.88rem; line-height: 1.55; }
         .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; flex: 1; }
         .avatar-field { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
         .avatar-wrap { position: relative; width: 80px; height: 80px; border-radius: 9999px; cursor: pointer; flex-shrink: 0; display: block; }
@@ -225,6 +282,11 @@ export default function SettingsPage() {
         .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; }
         .theme-btn { padding: 0.75rem 1rem; border: 2px solid var(--color-border); border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: border-color 0.15s, transform 0.1s; width: 100%; text-align: left; }
         .theme-btn:hover,.lang-btn-big:hover { transform: translateY(-1px); }
+        .toggle-list { display: grid; gap: 0.9rem; margin-bottom: 1rem; }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.95rem 1rem; border: 1px solid var(--color-border); border-radius: 0.85rem; background: var(--color-bg); }
+        .toggle-title { display: block; font-size: 0.92rem; font-weight: 600; color: var(--color-text); }
+        .toggle-sub { display: block; margin-top: 0.2rem; font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.45; }
+        .toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--color-primary); flex-shrink: 0; }
         .theme-green { background: #e8f5e9; color: #14532d; border-color: #1b7a4a; }
         .theme-dark { background: #1e293b; color: #4ade80; border-color: #22c55e; }
         .theme-vivid { background: #fdf4ff; color: #1e1b4b; border-color: #7c3aed; }

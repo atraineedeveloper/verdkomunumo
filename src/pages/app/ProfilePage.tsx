@@ -12,9 +12,11 @@ import { CATEGORY_COLORS, CATEGORY_ICONS, LEVEL_COLORS, LEVEL_ICONS } from '@/li
 import { ESPERANTO_LEVELS } from '@/lib/constants'
 import { queryKeys } from '@/lib/query/keys'
 import { getAvatarUrl } from '@/lib/utils'
+import { addPostLike } from '@/lib/likes'
 import type { EsperantoLevel, Post, Profile } from '@/lib/types'
 import { routes } from '@/lib/routes'
 import { PostEditCard } from '@/components/PostEditCard'
+import { PostExcerpt } from '@/components/PostExcerpt'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import { updatePostLikeInData } from '@/lib/query/optimisticPosts'
@@ -106,8 +108,7 @@ export default function ProfilePage() {
         const { error } = await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', user.id)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('likes').insert({ post_id: post.id, user_id: user.id })
-        if (error) throw error
+        await addPostLike(post.id, user.id)
       }
     },
     onMutate: async (post) => {
@@ -303,7 +304,14 @@ export default function ProfilePage() {
                     onSubmit={() => editPostMutation.mutate({ postId: post.id })}
                   />
                 ) : (
-                  <Link to={routes.post(post.id)} className="post-content">{post.content}</Link>
+                  <PostExcerpt
+                    content={post.content}
+                    to={routes.post(post.id)}
+                    contentClassName="post-content"
+                    linkClassName="post-read-more"
+                    maxLines={3}
+                    maxChars={210}
+                  />
                 )}
                 <div className="post-meta">
                   {post.category && (
@@ -374,6 +382,8 @@ export default function ProfilePage() {
         .posts-heading { font-size: 1rem; font-weight: 600; color: var(--color-text); margin: 0 0 1rem; }
         .post-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; }
         .post-content { display: block; color: var(--color-text); font-size: 0.9rem; text-decoration: none; margin-bottom: 0.5rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; }
+        .post-read-more { display: inline-flex; align-items: center; margin: -0.15rem 0 0.5rem; font-size: 0.78rem; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+        .post-read-more:hover { text-decoration: underline; }
         .post-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); align-items: center; }
         .post-category { display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 500; padding: 0.15rem 0.45rem; border-radius: 999px; }
         .stat { display: inline-flex; align-items: center; gap: 0.25rem; }

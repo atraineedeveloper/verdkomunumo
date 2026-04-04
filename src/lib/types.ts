@@ -40,6 +40,8 @@ export interface Profile {
   followers_count: number
   following_count: number
   posts_count: number
+  email_notify_comment: boolean
+  email_notify_message: boolean
   created_at: string
   updated_at: string
 }
@@ -134,6 +136,7 @@ export interface Notification {
   type: NotificationType
   post_id: string | null
   comment_id: string | null
+  conversation_id?: string | null
   message: string
   is_read: boolean
   created_at: string
