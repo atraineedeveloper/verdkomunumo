@@ -1,10 +1,19 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
 
+type NotificationType =
+  | 'like'
+  | 'comment'
+  | 'follow'
+  | 'message'
+  | 'mention'
+  | 'category_approved'
+  | 'category_rejected'
+
 type DeliveryRecord = {
   id: string
   notification_id: string
   user_id: string
-  type: 'comment' | 'message'
+  type: NotificationType
   status: 'queued' | 'sent' | 'skipped' | 'failed'
   recipient_email: string | null
 }
@@ -13,7 +22,7 @@ type NotificationRecord = {
   id: string
   user_id: string
   actor_id: string
-  type: 'comment' | 'message'
+  type: NotificationType
   post_id: string | null
   conversation_id: string | null
   message: string | null
@@ -23,10 +32,25 @@ type NotificationRecord = {
   } | null
   recipient?: {
     display_name: string
+    email_notifications_enabled: boolean
+    email_notify_like: boolean
     email_notify_comment: boolean
+    email_notify_follow: boolean
     email_notify_message: boolean
+    email_notify_mention: boolean
+    email_notify_category_approved: boolean
+    email_notify_category_rejected: boolean
   } | null
 }
+
+type EmailPreferenceField =
+  | 'email_notify_like'
+  | 'email_notify_comment'
+  | 'email_notify_follow'
+  | 'email_notify_message'
+  | 'email_notify_mention'
+  | 'email_notify_category_approved'
+  | 'email_notify_category_rejected'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -38,6 +62,16 @@ const webhookSecret = Deno.env.get('EMAIL_WEBHOOK_SECRET') ?? ''
 const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
+
+const preferenceFields: Record<NotificationType, EmailPreferenceField> = {
+  like: 'email_notify_like',
+  comment: 'email_notify_comment',
+  follow: 'email_notify_follow',
+  message: 'email_notify_message',
+  mention: 'email_notify_mention',
+  category_approved: 'email_notify_category_approved',
+  category_rejected: 'email_notify_category_rejected',
+}
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -73,42 +107,139 @@ function truncate(value: string, max = 180) {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value
 }
 
+function buildSettingsUrl(options?: { type?: NotificationType; unsubscribe?: boolean }) {
+  const url = new URL('/agordoj', `${appUrl}/`)
+  if (options?.type) {
+    url.searchParams.set('email', options.type)
+  }
+  if (options?.unsubscribe) {
+    url.searchParams.set('unsubscribe', '1')
+  }
+  url.hash = 'email-preferences'
+  return url.toString()
+}
+
+function notificationTargetUrl(notification: NotificationRecord) {
+  switch (notification.type) {
+    case 'comment':
+    case 'like':
+    case 'mention':
+      return notification.post_id ? `${appUrl}/afisxo/${notification.post_id}` : `${appUrl}/fonto`
+    case 'message':
+      return notification.conversation_id ? `${appUrl}/mesagxoj/${notification.conversation_id}` : `${appUrl}/mesagxoj`
+    case 'follow':
+      return notification.actor?.username ? `${appUrl}/profilo/${notification.actor.username}` : `${appUrl}/sciigoj`
+    case 'category_approved':
+    case 'category_rejected':
+      return `${appUrl}/sciigoj`
+  }
+}
+
+function notificationActionLabel(type: NotificationType) {
+  switch (type) {
+    case 'comment':
+      return 'Vidi la komenton'
+    case 'like':
+      return 'Vidi la afiŝon'
+    case 'follow':
+      return 'Vidi la profilon'
+    case 'message':
+      return 'Malfermi la konversacion'
+    case 'mention':
+      return 'Vidi la mencion'
+    case 'category_approved':
+      return 'Vidi la sciigon'
+    case 'category_rejected':
+      return 'Vidi la sciigon'
+  }
+}
+
+function notificationHeading(type: NotificationType) {
+  switch (type) {
+    case 'comment':
+      return 'Nova komento ĉe Verdkomunumo'
+    case 'like':
+      return 'Nova ŝato ĉe Verdkomunumo'
+    case 'follow':
+      return 'Nova sekvanto ĉe Verdkomunumo'
+    case 'message':
+      return 'Nova mesaĝo ĉe Verdkomunumo'
+    case 'mention':
+      return 'Nova mencio ĉe Verdkomunumo'
+    case 'category_approved':
+      return 'Via propono estis aprobita'
+    case 'category_rejected':
+      return 'Via propono estis malakceptita'
+  }
+}
+
+function notificationSummary(notification: NotificationRecord, actorName: string) {
+  switch (notification.type) {
+    case 'comment':
+      return `<strong>${escapeHtml(actorName)}</strong> komentis vian afiŝon.`
+    case 'like':
+      return `<strong>${escapeHtml(actorName)}</strong> ŝatis vian afiŝon.`
+    case 'follow':
+      return `<strong>${escapeHtml(actorName)}</strong> komencis sekvi vin.`
+    case 'message':
+      return `<strong>${escapeHtml(actorName)}</strong> sendis al vi novan mesaĝon.`
+    case 'mention':
+      return `<strong>${escapeHtml(actorName)}</strong> menciis vin en afiŝo.`
+    case 'category_approved':
+      return 'Via kategorio-propono estis aprobita.'
+    case 'category_rejected':
+      return 'Via kategorio-propono estis malakceptita.'
+  }
+}
+
+function notificationTextSummary(notification: NotificationRecord, actorName: string) {
+  switch (notification.type) {
+    case 'comment':
+      return `${actorName} komentis vian afiŝon.`
+    case 'like':
+      return `${actorName} ŝatis vian afiŝon.`
+    case 'follow':
+      return `${actorName} komencis sekvi vin.`
+    case 'message':
+      return `${actorName} sendis al vi novan mesaĝon.`
+    case 'mention':
+      return `${actorName} menciis vin en afiŝo.`
+    case 'category_approved':
+      return 'Via kategorio-propono estis aprobita.'
+    case 'category_rejected':
+      return 'Via kategorio-propono estis malakceptita.'
+  }
+}
+
 function buildEmail(notification: NotificationRecord) {
   const actorName = notification.actor?.display_name ?? 'Iu'
   const snippet = truncate(notification.message?.trim() || '')
+  const targetUrl = notificationTargetUrl(notification)
+  const settingsUrl = buildSettingsUrl()
+  const unsubscribeUrl = buildSettingsUrl({ type: notification.type, unsubscribe: true })
+  const heading = notificationHeading(notification.type)
+  const actionLabel = notificationActionLabel(notification.type)
+  const summaryHtml = notificationSummary(notification, actorName)
+  const summaryText = notificationTextSummary(notification, actorName)
 
-  if (notification.type === 'comment') {
-    const targetUrl = notification.post_id ? `${appUrl}/afisxo/${notification.post_id}` : `${appUrl}/fonto`
-    return {
-      subject: `${actorName} komentis vian afiŝon`,
-      html: `
-        <div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#111827;">
-          <h1 style="font-size:20px;margin:0 0 16px;">Nova komento ĉe Verdkomunumo</h1>
-          <p style="margin:0 0 12px;"><strong>${escapeHtml(actorName)}</strong> komentis vian afiŝon.</p>
-          ${snippet ? `<blockquote style="margin:16px 0;padding:12px 16px;border-left:4px solid #16a34a;background:#f0fdf4;color:#14532d;">${escapeHtml(snippet)}</blockquote>` : ''}
-          <p style="margin:20px 0 0;">
-            <a href="${targetUrl}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;">Vidi la komenton</a>
-          </p>
-        </div>
-      `.trim(),
-      text: `${actorName} komentis vian afiŝon.${snippet ? `\n\n"${snippet}"` : ''}\n\nVidu ĝin: ${targetUrl}`,
-    }
-  }
-
-  const targetUrl = notification.conversation_id ? `${appUrl}/mesagxoj/${notification.conversation_id}` : `${appUrl}/mesagxoj`
   return {
-    subject: `${actorName} sendis al vi mesaĝon`,
+    subject: heading,
     html: `
       <div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#111827;">
-        <h1 style="font-size:20px;margin:0 0 16px;">Nova mesaĝo ĉe Verdkomunumo</h1>
-        <p style="margin:0 0 12px;"><strong>${escapeHtml(actorName)}</strong> sendis al vi novan mesaĝon.</p>
-        ${snippet ? `<blockquote style="margin:16px 0;padding:12px 16px;border-left:4px solid #2563eb;background:#eff6ff;color:#1d4ed8;">${escapeHtml(snippet)}</blockquote>` : ''}
-        <p style="margin:20px 0 0;">
-          <a href="${targetUrl}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;">Malfermi la konversacion</a>
+        <h1 style="font-size:20px;margin:0 0 16px;">${escapeHtml(heading)}</h1>
+        <p style="margin:0 0 12px;">${summaryHtml}</p>
+        ${snippet ? `<blockquote style="margin:16px 0;padding:12px 16px;border-left:4px solid #16a34a;background:#f0fdf4;color:#14532d;">${escapeHtml(snippet)}</blockquote>` : ''}
+        <p style="margin:20px 0 10px;">
+          <a href="${targetUrl}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;">${escapeHtml(actionLabel)}</a>
+        </p>
+        <p style="margin:18px 0 0;font-size:13px;color:#4b5563;">
+          <a href="${settingsUrl}" style="color:#166534;">Administri retpoŝtajn sciigojn</a>
+          &nbsp;•&nbsp;
+          <a href="${unsubscribeUrl}" style="color:#166534;">Malaboni ĉi tiun specon</a>
         </p>
       </div>
     `.trim(),
-    text: `${actorName} sendis al vi novan mesaĝon.${snippet ? `\n\n"${snippet}"` : ''}\n\nMalfermu ĝin: ${targetUrl}`,
+    text: `${summaryText}${snippet ? `\n\n"${snippet}"` : ''}\n\n${actionLabel}: ${targetUrl}\nAdministri retpoŝtajn sciigojn: ${settingsUrl}\nMalaboni ĉi tiun specon: ${unsubscribeUrl}`,
   }
 }
 
@@ -168,7 +299,7 @@ Deno.serve(async (request) => {
 
   const { data: notification, error: notificationError } = await supabaseAdmin
     .from('notifications')
-    .select('id, user_id, actor_id, type, post_id, conversation_id, message, actor:profiles!actor_id(display_name, username), recipient:profiles!user_id(display_name, email_notify_comment, email_notify_message)')
+    .select('id, user_id, actor_id, type, post_id, conversation_id, message, actor:profiles!actor_id(display_name, username), recipient:profiles!user_id(display_name, email_notifications_enabled, email_notify_like, email_notify_comment, email_notify_follow, email_notify_message, email_notify_mention, email_notify_category_approved, email_notify_category_rejected)')
     .eq('id', currentDelivery.notification_id)
     .single()
 
@@ -178,11 +309,11 @@ Deno.serve(async (request) => {
   }
 
   const currentNotification = notification as unknown as NotificationRecord
-
+  const recipientPrefs = currentNotification.recipient
+  const preferenceField = preferenceFields[currentNotification.type]
   const preferenceEnabled =
-    currentNotification.type === 'comment'
-      ? currentNotification.recipient?.email_notify_comment !== false
-      : currentNotification.recipient?.email_notify_message !== false
+    recipientPrefs?.email_notifications_enabled !== false &&
+    recipientPrefs?.[preferenceField] !== false
 
   if (!preferenceEnabled) {
     await updateDelivery(currentDelivery.id, { status: 'skipped', error: 'preference_disabled' })

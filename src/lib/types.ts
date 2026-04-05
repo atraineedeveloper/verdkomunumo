@@ -40,8 +40,14 @@ export interface Profile {
   followers_count: number
   following_count: number
   posts_count: number
+  email_notifications_enabled: boolean
+  email_notify_like: boolean
   email_notify_comment: boolean
+  email_notify_follow: boolean
   email_notify_message: boolean
+  email_notify_mention: boolean
+  email_notify_category_approved: boolean
+  email_notify_category_rejected: boolean
   created_at: string
   updated_at: string
 }

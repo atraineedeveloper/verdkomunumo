@@ -478,7 +478,14 @@ export type Database = {
           recipient_email: string | null
           sent_at: string | null
           status: string
-          type: string
+          type:
+            | "like"
+            | "comment"
+            | "follow"
+            | "message"
+            | "mention"
+            | "category_approved"
+            | "category_rejected"
           updated_at: string
           user_id: string
         }
@@ -491,7 +498,14 @@ export type Database = {
           recipient_email?: string | null
           sent_at?: string | null
           status?: string
-          type: string
+          type:
+            | "like"
+            | "comment"
+            | "follow"
+            | "message"
+            | "mention"
+            | "category_approved"
+            | "category_rejected"
           updated_at?: string
           user_id: string
         }
@@ -504,7 +518,14 @@ export type Database = {
           recipient_email?: string | null
           sent_at?: string | null
           status?: string
-          type?: string
+          type?:
+            | "like"
+            | "comment"
+            | "follow"
+            | "message"
+            | "mention"
+            | "category_approved"
+            | "category_rejected"
           updated_at?: string
           user_id?: string
         }
@@ -679,7 +700,13 @@ export type Database = {
           bio: string | null
           created_at: string | null
           display_name: string
+          email_notifications_enabled: boolean
+          email_notify_category_approved: boolean
+          email_notify_category_rejected: boolean
           email_notify_comment: boolean
+          email_notify_follow: boolean
+          email_notify_like: boolean
+          email_notify_mention: boolean
           email_notify_message: boolean
           esperanto_level: string | null
           followers_count: number | null
@@ -698,7 +725,13 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name: string
+          email_notifications_enabled?: boolean
+          email_notify_category_approved?: boolean
+          email_notify_category_rejected?: boolean
           email_notify_comment?: boolean
+          email_notify_follow?: boolean
+          email_notify_like?: boolean
+          email_notify_mention?: boolean
           email_notify_message?: boolean
           esperanto_level?: string | null
           followers_count?: number | null
@@ -717,7 +750,13 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name?: string
+          email_notifications_enabled?: boolean
+          email_notify_category_approved?: boolean
+          email_notify_category_rejected?: boolean
           email_notify_comment?: boolean
+          email_notify_follow?: boolean
+          email_notify_like?: boolean
+          email_notify_mention?: boolean
           email_notify_message?: boolean
           esperanto_level?: string | null
           followers_count?: number | null
