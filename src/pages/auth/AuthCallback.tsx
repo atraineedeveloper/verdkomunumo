@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
+import { safeRedirect } from '@/lib/redirect'
 import { routes } from '@/lib/routes'
 
 export function AuthCallback() {
@@ -9,7 +10,7 @@ export function AuthCallback() {
 
   useEffect(() => {
     const code = searchParams.get('code')
-    const next = searchParams.get('next') ?? routes.feed
+    const next = safeRedirect(searchParams.get('next'))
 
     async function handleCallback() {
       if (code) {

@@ -532,7 +532,7 @@ export default function PostDetailPage() {
         </div>
       ) : (
         <div className="guest-comment-cta">
-          <Link to={`${routes.login}?next=${encodeURIComponent(window.location.pathname)}`} className="btn">{t('nav_login')}</Link>
+          <Link to={`${routes.login}?next=${encodeURIComponent(`${window.location.pathname}${window.location.search}${window.location.hash}`)}`} className="btn">{t('nav_login')}</Link>
           <span>{t('post_guest_comment_cta')}</span>
         </div>
       )}

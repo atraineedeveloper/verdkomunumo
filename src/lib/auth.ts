@@ -1,29 +1,52 @@
 import { supabase } from '@/lib/supabase/client'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const INVALID_CREDENTIALS_ERROR = 'Nevalidaj ensalutaj datumoj.'
 
 export function looksLikeEmail(value: string) {
   return EMAIL_PATTERN.test(value.trim())
 }
 
-export async function resolveLoginEmail(identifier: string) {
+type LoginWithIdentifierResponse = {
+  session?: {
+    access_token: string
+    refresh_token: string
+  }
+}
+
+export async function signInWithIdentifier(identifier: string, password: string) {
   const normalized = identifier.trim()
 
   if (looksLikeEmail(normalized)) {
-    return normalized.toLowerCase()
+    const { error } = await supabase.auth.signInWithPassword({
+      email: normalized.toLowerCase(),
+      password,
+    })
+
+    if (error) {
+      throw new Error(INVALID_CREDENTIALS_ERROR)
+    }
+
+    return
   }
 
-  const { data, error } = await supabase.rpc('resolve_login_email', {
-    login_identifier: normalized,
+  const { data, error } = await supabase.functions.invoke<LoginWithIdentifierResponse>('login-with-identifier', {
+    body: {
+      identifier: normalized,
+      password,
+    },
   })
 
-  if (error) {
-    throw new Error('Ne eblis kontroli la uzantnomon.')
+  if (error || !data?.session?.access_token || !data.session.refresh_token) {
+    throw new Error(INVALID_CREDENTIALS_ERROR)
   }
 
-  if (!data || typeof data !== 'string') {
-    throw new Error('Ne trovita konto por tiu retpoŝto aŭ uzantnomo.')
-  }
+  const { error: setSessionError } = await supabase.auth.setSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  })
 
-  return data
+  if (setSessionError) {
+    throw new Error(INVALID_CREDENTIALS_ERROR)
+  }
 }

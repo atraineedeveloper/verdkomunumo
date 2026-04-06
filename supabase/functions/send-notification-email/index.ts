@@ -263,11 +263,13 @@ Deno.serve(async (request) => {
     return json({ error: 'Missing required env vars' }, 500)
   }
 
-  if (webhookSecret) {
-    const received = request.headers.get('x-email-webhook-secret')
-    if (received !== webhookSecret) {
-      return json({ error: 'Unauthorized' }, 401)
-    }
+  if (!webhookSecret) {
+    return json({ error: 'Missing required env vars' }, 500)
+  }
+
+  const received = request.headers.get('x-email-webhook-secret')
+  if (received !== webhookSecret) {
+    return json({ error: 'Unauthorized' }, 401)
   }
 
   let payload: unknown

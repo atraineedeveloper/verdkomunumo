@@ -6,7 +6,8 @@ import { useMutation } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase/client'
-import { resolveLoginEmail } from '@/lib/auth'
+import { signInWithIdentifier } from '@/lib/auth'
+import { safeRedirect } from '@/lib/redirect'
 import { loginSchema } from '@/lib/validators'
 import { routes } from '@/lib/routes'
 import type { z } from 'zod'
@@ -31,7 +32,7 @@ export function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const next = searchParams.get('next') ?? routes.feed
+  const next = safeRedirect(searchParams.get('next'))
   const [serverError, setServerError] = useState<string | null>(null)
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
@@ -40,12 +41,7 @@ export function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginInput) => {
-      const email = await resolveLoginEmail(data.email)
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password: data.password,
-      })
-      if (error) throw new Error(error.message)
+      await signInWithIdentifier(data.email, data.password)
     },
     onSuccess: () => navigate(next),
     onError: (err: Error) => setServerError(err.message),
@@ -55,7 +51,7 @@ export function LoginPage() {
     mutationFn: async () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${APP_URL}${routes.authCallback}` },
+        options: { redirectTo: `${APP_URL}${routes.authCallback}?next=${encodeURIComponent(next)}` },
       })
       if (error) throw new Error(error.message)
       if (data.url) window.location.href = data.url

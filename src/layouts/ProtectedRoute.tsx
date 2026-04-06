@@ -12,8 +12,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, minRole = 'user' }: ProtectedRouteProps) {
-  const { user, profile, initialized } = useAuthStore()
-  const { pathname } = useLocation()
+  const { user, profile, initialized, profileLoaded } = useAuthStore()
+  const { pathname, search, hash } = useLocation()
 
   // Wait for auth to initialize before deciding
   if (!initialized) {
@@ -21,10 +21,14 @@ export function ProtectedRoute({ children, minRole = 'user' }: ProtectedRoutePro
   }
 
   if (!user) {
-    return <Navigate to={`${routes.login}?next=${encodeURIComponent(pathname)}`} replace />
+    return <Navigate to={`${routes.login}?next=${encodeURIComponent(`${pathname}${search}${hash}`)}`} replace />
   }
 
-  if (profile && minRole !== 'user' && !hasRequiredRole(profile.role, minRole)) {
+  if (minRole !== 'user' && !profileLoaded) {
+    return <FullScreenSpinner label="Loading permissions" />
+  }
+
+  if (minRole !== 'user' && (!profile || !hasRequiredRole(profile.role, minRole))) {
     return <Navigate to={routes.feed} replace />
   }
 

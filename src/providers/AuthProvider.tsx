@@ -8,7 +8,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { setUser, setProfile, setInitialized, clear } = useAuthStore()
+  const { setUser, setProfile, setInitialized, setProfileLoaded, clear } = useAuthStore()
   const { init: initTheme } = useThemeStore()
 
   useEffect(() => {
@@ -16,6 +16,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initTheme()
 
     async function syncProfile(userId: string, options?: { preserveProfile?: boolean }) {
+      setInitialized(false)
+      setProfileLoaded(false)
+
       try {
         if (!options?.preserveProfile) {
           setProfile(null)
@@ -32,12 +35,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       } catch (error) {
         console.error('Profile sync failed', error)
+      } finally {
+        setProfileLoaded(true)
+        setInitialized(true)
       }
-    }
-
-    function bootstrapSession(userId: string, options?: { preserveProfile?: boolean }) {
-      setInitialized(true)
-      void syncProfile(userId, options)
     }
 
     async function initAuth() {
@@ -47,13 +48,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (user) {
           setUser(user)
-          bootstrapSession(user.id)
+          await syncProfile(user.id)
           return
         }
       } catch (error) {
         console.error('Auth initialization failed', error)
       } finally {
-        setInitialized(true)
+        if (!useAuthStore.getState().user) {
+          setProfile(null)
+          setProfileLoaded(true)
+          setInitialized(true)
+        }
       }
     }
 
@@ -66,19 +71,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
 
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         setUser(session.user)
-        bootstrapSession(session.user.id)
+        await syncProfile(session.user.id)
       }
 
       if (event === 'TOKEN_REFRESHED') {
         setUser(session.user)
-        bootstrapSession(session.user.id, { preserveProfile: true })
+        await syncProfile(session.user.id, { preserveProfile: true })
       }
     })
 
     return () => subscription.unsubscribe()
-  }, [initTheme, setProfile, setUser, setInitialized, clear])
+  }, [initTheme, setProfile, setUser, setInitialized, setProfileLoaded, clear])
 
   return <>{children}</>
 }

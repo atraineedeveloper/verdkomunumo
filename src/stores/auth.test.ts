@@ -7,6 +7,7 @@ describe('useAuthStore', () => {
       user: null,
       profile: null,
       initialized: false,
+      profileLoaded: false,
     })
   })
 
@@ -23,6 +24,7 @@ describe('useAuthStore', () => {
       user: null,
       profile: null,
       initialized: true,
+      profileLoaded: true,
     })
   })
 })

@@ -1,0 +1,53 @@
+INFORME DE AUDITORÍA DE CÓDIGO - PROYECTO VERDKOMUNUMO
+===================================================
+Fecha: 6 de Abril, 2026
+Auditor: Gemini CLI (Auditor Experto)
+Estado: Crítico / Acción Requerida
+
+RESUMEN DE HALLAZGOS
+--------------------
+Se han detectado vulnerabilidades de seguridad de nivel ALTO y CRÍTICO, así como problemas de arquitectura que pueden causar errores de consistencia en la interfaz de usuario.
+
+1. SEGURIDAD (Vulnerabilidades Críticas)
+----------------------------------------
+
+[CRÍTICO] Salto de verificación de Roles en ProtectedRoute.tsx:
+- El componente ProtectedRoute renderiza los hijos antes de que el perfil del usuario (y su rol) se haya cargado completamente si 'initialized' es true pero 'profile' sigue siendo null.
+- Riesgo: Un usuario estándar podría acceder a paneles de administración por unos segundos o hasta que el estado se actualice, exponiendo UI sensible.
+
+[ALTO] Redirección Abierta (Open Redirect) en Login y AuthCallback:
+- El parámetro 'next' en la URL no se valida. 
+- Riesgo: Un atacante puede enviar un link de login legítimo que, tras el inicio de sesión, redirija al usuario a un sitio malicioso (phishing) fuera de la aplicación.
+
+[ALTO] Exposición de Emails en RPC resolve_login_email:
+- La función de base de datos devuelve el email completo de cualquier usuario basándose solo en su username.
+- Riesgo: Fuga de privacidad que permite recolectar emails de usuarios de forma masiva para spam o ataques dirigidos.
+
+[MEDIO] Riesgo en Edge Functions (--no-verify-jwt):
+- La función 'send-notification-email' se despliega sin verificación de JWT. Aunque usa un 'webhookSecret', si este no se configura correctamente en producción, la función queda abierta al público.
+
+2. ARQUITECTURA Y ESTABILIDAD
+-----------------------------
+
+[MEDIO] Condición de carrera en AuthProvider.tsx:
+- 'setInitialized(true)' se llama antes de que 'syncProfile' termine. Esto causa que la aplicación crea que está lista antes de tener los datos del usuario, provocando parpadeos de UI o errores en componentes que dependen del perfil.
+
+[BAJO] Notificaciones de Menciones en el Cliente:
+- Las notificaciones de menciones se crean en el componente 'PostComposer' después de insertar el post.
+- Riesgo: Si el usuario cierra la pestaña justo después de publicar, las notificaciones nunca se enviarán. Esto debería ser un Trigger de base de datos.
+
+[BAJO] Falta de Paginación:
+- El feed y los reportes de administración tienen límites fijos (50 y 30 posts). A medida que crezca la comunidad, el rendimiento se degradará.
+
+3. RECOMENDACIONES TÉCNICAS
+---------------------------
+
+1. Corregir ProtectedRoute.tsx: No renderizar 'children' si hay un 'minRole' requerido y el 'profile' aún es null.
+2. Validar Redirecciones: Crear una función 'safeRedirect' que solo permita rutas que empiecen por "/" y no por "http".
+3. Ofuscar Emails: Modificar 'resolve_login_email' para que sea utilizado internamente por Supabase Auth o que devuelva una versión enmascarada del email si es para fines informativos.
+4. Mover Lógica a la DB: Implementar un Trigger en PostgreSQL para que, al insertar un post, se detecten las menciones y se creen las notificaciones automáticamente.
+5. Cabeceras de Seguridad: Configurar 'vercel.json' para incluir Content Security Policy (CSP), X-Content-Type-Options y HSTS.
+
+CONCLUSIÓN
+----------
+El proyecto tiene una base sólida en TypeScript y RLS (Row Level Security), lo cual es excelente. Sin embargo, los fallos en la lógica de navegación y la gestión de estados de carga representan un riesgo real para la seguridad y la experiencia del usuario. Se recomienda priorizar la corrección de 'ProtectedRoute' y la validación de redirecciones de inmediato.
