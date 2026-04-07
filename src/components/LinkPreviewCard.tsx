@@ -1,21 +1,25 @@
 import type { LinkPreview } from '@/lib/types'
+import { sanitizeLinkPreview } from '@/lib/linkPreview'
 
 export function LinkPreviewCard({ preview }: { preview: LinkPreview }) {
+  const safePreview = sanitizeLinkPreview(preview)
+  if (!safePreview) return null
+
   return (
     <a
-      href={preview.url}
+      href={safePreview.url}
       target="_blank"
       rel="noopener noreferrer"
       className="link-preview"
       onClick={e => e.stopPropagation()}
     >
-      {preview.image && (
-        <img src={preview.image} alt={preview.title ?? ''} className="lp-img" />
+      {safePreview.image && (
+        <img src={safePreview.image} alt={safePreview.title ?? ''} className="lp-img" />
       )}
       <div className="lp-text">
-        {preview.title && <p className="lp-title">{preview.title}</p>}
-        {preview.description && <p className="lp-desc">{preview.description}</p>}
-        <p className="lp-url">{preview.url}</p>
+        {safePreview.title && <p className="lp-title">{safePreview.title}</p>}
+        {safePreview.description && <p className="lp-desc">{safePreview.description}</p>}
+        <p className="lp-url">{safePreview.url}</p>
       </div>
       <style>{`
         .link-preview { display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; margin: 0.45rem 0 0.65rem; text-decoration: none; background: var(--color-surface-alt); transition: border-color 0.12s; }

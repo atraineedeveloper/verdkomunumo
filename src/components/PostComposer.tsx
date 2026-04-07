@@ -14,7 +14,7 @@ import { mergeUniqueFiles } from '@/lib/editor'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { QuotedPostCard } from '@/components/QuotedPostCard'
 import { LinkPreviewCard } from '@/components/LinkPreviewCard'
-import { extractFirstUrl, fetchLinkPreview } from '@/lib/linkPreview'
+import { extractFirstUrl, fetchLinkPreview, sanitizeLinkPreview } from '@/lib/linkPreview'
 import { getAvatarUrl } from '@/lib/utils'
 
 interface Props {
@@ -155,7 +155,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
       lastFetchedUrl.current = url
       setFetchingPreview(true)
       const preview = await fetchLinkPreview(url)
-      setLinkPreview(preview)
+      setLinkPreview(sanitizeLinkPreview(preview))
       setFetchingPreview(false)
     }, 800)
 
@@ -338,7 +338,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
         content: content.trim(),
         image_urls: imageUrls,
         quoted_post_id: quotedPost?.id ?? null,
-        link_preview: linkPreview ?? null,
+        link_preview: sanitizeLinkPreview(linkPreview) ?? null,
       }
 
       let { error } = await supabase.from('posts').insert(payload as never)
