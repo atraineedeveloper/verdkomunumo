@@ -57,7 +57,7 @@ http://localhost:5174
 
 ## Environment Variables
 
-Use Vite-prefixed variables in [`.env.local.example`](/home/otilio/projects/verdkomunumo/.env.local.example):
+Use Vite-prefixed variables in [`.env.example`](./.env.example):
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
@@ -76,7 +76,7 @@ EMAIL_WEBHOOK_SECRET=choose-a-long-random-secret
 
 ## Deployment
 
-[`vercel.json`](/home/otilio/projects/verdkomunumo/vercel.json) is configured so Vercel builds the React app directly from the repository root.
+[`vercel.json`](./vercel.json) is configured so Vercel builds the React app directly from the repository root.
 
 Production variables should be:
 
@@ -99,7 +99,7 @@ Verdkomunumo now supports:
 
 ### 1. Auth email
 
-Supabase Auth is configured in [`supabase/config.toml`](/home/otilio/projects/verdkomunumo/supabase/config.toml) with confirmations enabled and reset redirect URLs for the React app.
+Supabase Auth is configured in [`supabase/config.toml`](./supabase/config.toml) with confirmations enabled and reset redirect URLs for the React app.
 
 For production you still need to configure SMTP in the Supabase dashboard using Resend:
 
@@ -110,14 +110,14 @@ For production you still need to configure SMTP in the Supabase dashboard using 
 
 The HTML templates to paste into Supabase Auth are included at:
 
-- [`auth-confirm-signup.html`](/home/otilio/projects/verdkomunumo/supabase/templates/auth-confirm-signup.html)
-- [`auth-reset-password.html`](/home/otilio/projects/verdkomunumo/supabase/templates/auth-reset-password.html)
+- `supabase/templates/auth-confirm-signup.html`
+- `supabase/templates/auth-reset-password.html`
 
 ### 2. Product emails
 
 The Edge Function lives at:
 
-- [`send-notification-email/index.ts`](/home/otilio/projects/verdkomunumo/supabase/functions/send-notification-email/index.ts)
+- `supabase/functions/send-notification-email/index.ts`
 
 Serve locally:
 
@@ -147,7 +147,7 @@ The function accepts either a direct payload like `{"delivery_id":"..."}` or the
 
 ## MCP Admin Server
 
-The local MCP admin server now lives at [`mcp/admin-server.ts`](/home/otilio/projects/verdkomunumo/mcp/admin-server.ts) and can be started with:
+The local MCP admin server now lives at [`mcp/admin-server.ts`](./mcp/admin-server.ts) and can be started with:
 
 ```bash
 bun run mcp:admin
@@ -157,7 +157,7 @@ It supports the same moderation and product suggestion workflows as before while
 
 ## Supabase
 
-Database migrations remain under [`supabase/migrations`](/home/otilio/projects/verdkomunumo/supabase/migrations). The backend is unchanged; the frontend stack is now fully React.
+Database migrations remain under `supabase/migrations`. The backend is unchanged; the frontend stack is now fully React.
 
 Useful Supabase workflows:
 
@@ -171,10 +171,23 @@ Pushes pending local migrations to the linked Supabase project.
 bun run db:types
 ```
 
-Regenerates [`database.types.ts`](/home/otilio/projects/verdkomunumo/src/lib/supabase/database.types.ts) from the linked Supabase schema.
+Regenerates `src/lib/supabase/database.types.ts` from the linked Supabase schema.
 
 ```bash
 bun run db:sync
 ```
 
 Pushes migrations first and then refreshes the local TypeScript schema snapshot.
+
+## Open Source
+
+This project is open source under the MIT License.
+
+- License text: [`LICENSE`](./LICENSE)
+- Contribution guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+- Community standards: [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
+- Vulnerability disclosure: [`SECURITY.md`](./SECURITY.md)
+
+### Dependency license compatibility
+
+When adding or updating dependencies, contributors should verify license compatibility with MIT and document any non-standard licensing in pull requests.
