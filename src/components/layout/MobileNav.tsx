@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Home, Search, Bell, MessageCircle, User, LogIn } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
@@ -13,8 +14,24 @@ export function MobileNav({ unreadNotificationsCount = 0, unreadMessagesCount = 
   const user = useAuthStore((s) => s.user)
   const profile = useAuthStore((s) => s.profile)
   const initialized = useAuthStore((s) => s.initialized)
-  const profileLoaded = useAuthStore((s) => s.profileLoaded)
-  const authResolved = initialized && (!user || profileLoaded)
+  const [cachedProfile, setCachedProfile] = useState(profile)
+  const displayProfile = profile ?? (user ? cachedProfile : null)
+
+  useEffect(() => {
+    if (!user) {
+      setCachedProfile(null)
+      return
+    }
+
+    if (profile?.id === user.id) {
+      setCachedProfile(profile)
+      return
+    }
+
+    if (cachedProfile && cachedProfile.id !== user.id) {
+      setCachedProfile(null)
+    }
+  }, [user, profile, cachedProfile])
 
   return (
     <nav className="flex md:hidden fixed bottom-0 left-0 right-0 z-[90] bg-[var(--color-bg)] border-t border-[var(--color-border)] px-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)]">
@@ -26,7 +43,7 @@ export function MobileNav({ unreadNotificationsCount = 0, unreadMessagesCount = 
         <Search size={21} strokeWidth={pathname === routes.search ? 2.5 : 1.75} />
       </Link>
 
-      {authResolved && user ? (
+      {user ? (
         <>
           <Link to={routes.notifications} className={`relative flex-1 flex items-center justify-center py-2.5 no-underline transition-colors ${pathname === routes.notifications ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}>
             <Bell size={21} strokeWidth={pathname === routes.notifications ? 2.5 : 1.75} />
@@ -46,16 +63,16 @@ export function MobileNav({ unreadNotificationsCount = 0, unreadMessagesCount = 
             )}
           </Link>
 
-          {profile ? (
+          {displayProfile ? (
             <Link
-              to={routes.profile(profile.username)}
+              to={routes.profile(displayProfile.username)}
               className={`flex-1 flex items-center justify-center py-2.5 no-underline transition-colors ${pathname.startsWith('/profilo') ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}
             >
               <User size={21} strokeWidth={pathname.startsWith('/profilo') ? 2.5 : 1.75} />
             </Link>
           ) : null}
         </>
-      ) : authResolved ? (
+      ) : initialized ? (
         <Link to={routes.login} className="flex-1 flex items-center justify-center py-2.5 no-underline text-[var(--color-primary)] gap-1.5">
           <LogIn size={21} strokeWidth={1.75} />
         </Link>

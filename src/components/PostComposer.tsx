@@ -27,7 +27,10 @@ interface Props {
 export default function PostComposer({ categories, defaultCategoryId = '', quotedPost, onQuoteClear }: Props) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const user = useAuthStore(s => s.user)
   const profile = useAuthStore(s => s.profile)
+  const initialized = useAuthStore(s => s.initialized)
+  const profileLoaded = useAuthStore(s => s.profileLoaded)
   const toast = useToastStore()
 
   const [content, setContent] = useState('')
@@ -51,6 +54,27 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
   const [hashtagResults, setHashtagResults] = useState<string[]>([])
   const [suggestionIndex, setSuggestionIndex] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const suppressFocusUntilRef = useRef(0)
+  const cachedProfileRef = useRef(profile)
+
+  const displayProfile = profile ?? (user ? cachedProfileRef.current : null)
+  const authResolved = initialized && (!user || profileLoaded)
+
+  useEffect(() => {
+    if (!user) {
+      cachedProfileRef.current = null
+      return
+    }
+
+    if (profile?.id === user.id) {
+      cachedProfileRef.current = profile
+      return
+    }
+
+    if (cachedProfileRef.current && cachedProfileRef.current.id !== user.id) {
+      cachedProfileRef.current = null
+    }
+  }, [user, profile])
 
   useEffect(() => {
     const next = defaultCategoryId || (categories[0]?.id ?? '')
@@ -78,6 +102,22 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [content, imagePreviews.length, quotedPost, filePickerOpen])
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        suppressFocusUntilRef.current = Date.now() + 400
+      }
+    }
+
+    window.addEventListener('focus', handleVisibilityChange)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', handleVisibilityChange)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
 
   useEffect(() => {
     if (!filePickerOpen) return
@@ -278,13 +318,13 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!profile) throw new Error('Not authenticated')
+      if (!displayProfile) throw new Error('Not authenticated')
 
       let imageUrls: string[] = []
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
           const ext = file.name.split('.').pop() ?? 'jpg'
-          const path = `${profile.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+          const path = `${displayProfile.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
           const { error } = await supabase.storage.from('post-images').upload(path, file)
           if (error) throw error
           const { data: { publicUrl } } = supabase.storage.from('post-images').getPublicUrl(path)
@@ -293,7 +333,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
       }
 
       const payload = {
-        user_id: profile.id,
+        user_id: displayProfile.id,
         category_id: categoryId,
         content: content.trim(),
         image_urls: imageUrls,
@@ -305,7 +345,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
 
       if (error && isOptionalPostFeaturesError(error)) {
         const fallbackPayload = {
-          user_id: profile.id,
+          user_id: displayProfile.id,
           category_id: categoryId,
           content: content.trim(),
           image_urls: imageUrls,
@@ -334,7 +374,14 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
     <div
       ref={composerRef}
       className={`composer${isDraggingFiles ? ' drag-active' : ''}`}
-      onFocus={() => setFocused(true)}
+      onFocus={(event) => {
+        if (Date.now() < suppressFocusUntilRef.current && !content.trim() && imagePreviews.length === 0 && !quotedPost) {
+          const target = event.target as HTMLElement | null
+          target?.blur?.()
+          return
+        }
+        setFocused(true)
+      }}
       onDragEnter={(event) => {
         if (!extractImageFiles(Array.from(event.dataTransfer.items).map((item) => item.getAsFile()).filter(Boolean) as File[]).length) return
         event.preventDefault()
@@ -504,6 +551,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
                   value={categoryId}
                   onChange={e => setCategoryId(e.target.value)}
                   className="cat-select"
+                  disabled={!authResolved || !displayProfile}
                 >
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>{t(`cat_name_${cat.slug}` as any)}</option>
@@ -519,8 +567,10 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
               type="button"
               className="bar-chip file-btn"
               title={t('post_compose_images')}
+              disabled={!authResolved || !displayProfile}
               onMouseDown={e => e.preventDefault()}
               onClick={() => {
+                if (!authResolved || !displayProfile) return
                 setFocused(true)
                 setFilePickerOpen(true)
                 if (fileInputRef.current) fileInputRef.current.value = ''
@@ -542,7 +592,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
           <button
             type="button"
             className="post-btn"
-            disabled={!canPost || mutation.isPending || preparingImages}
+            disabled={!authResolved || !displayProfile || !canPost || mutation.isPending || preparingImages}
             onClick={() => mutation.mutate()}
             aria-busy={mutation.isPending || preparingImages}
           >
