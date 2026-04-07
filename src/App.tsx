@@ -21,6 +21,7 @@ const SearchPage = lazy(() => import('@/pages/app/SearchPage'))
 const NotificationsPage = lazy(() => import('@/pages/app/NotificationsPage'))
 const MessagesPage = lazy(() => import('@/pages/app/MessagesPage'))
 const ConversationPage = lazy(() => import('@/pages/app/ConversationPage'))
+const CommunityChatPage = lazy(() => import('@/pages/app/CommunityChatPage'))
 const ProfilePage = lazy(() => import('@/pages/app/ProfilePage'))
 const CategoryPage = lazy(() => import('@/pages/app/CategoryPage'))
 const PostDetailPage = lazy(() => import('@/pages/app/PostDetailPage'))
@@ -59,6 +60,7 @@ export default function App() {
           <Route path={routes.notifications} element={<NotificationsPage />} />
           <Route path={routes.messages} element={<MessagesPage />} />
           <Route path={routes.conversationPattern} element={<ConversationPage />} />
+          <Route path={routes.communityChat} element={<CommunityChatPage />} />
           <Route path={routes.settings} element={<SettingsPage />} />
         </Route>
 

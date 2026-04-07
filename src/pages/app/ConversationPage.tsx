@@ -12,6 +12,7 @@ import type { Conversation, Message, Profile } from '@/lib/types'
 import { routes } from '@/lib/routes'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { ListSkeleton } from '@/components/ui/ListSkeleton'
+import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 
 async function fetchConversationPage(conversationId: string, userId: string) {
   await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('type', 'message').eq('is_read', false)
@@ -133,7 +134,14 @@ export default function ConversationPage() {
         <Link to={routes.messages} className="back">←</Link>
         {other && (
           <>
-            <img src={getAvatarUrl(other.avatar_url, other.display_name)} alt={other.display_name} className="ava" />
+            <PresenceAvatar
+              userId={other.id}
+              avatarUrl={other.avatar_url}
+              displayName={other.display_name}
+              wrapperClassName="ava-wrap"
+              imageClassName="ava"
+              dotClassName="ava-dot"
+            />
             <div className="chat-info">
               <Link to={routes.profile(other.username)} className="chat-name">{other.display_name}</Link>
               <span className="chat-user">@{other.username}</span>
@@ -154,7 +162,16 @@ export default function ConversationPage() {
             const isMe = msg.sender_id === user?.id
             return (
               <div key={msg.id} className={`row${isMe ? ' me' : ''}`}>
-                {!isMe && msg.sender && <img src={getAvatarUrl(msg.sender.avatar_url, msg.sender.display_name)} alt={msg.sender.display_name} className="msg-ava" />}
+                {!isMe && msg.sender && (
+                  <PresenceAvatar
+                    userId={msg.sender.id}
+                    avatarUrl={msg.sender.avatar_url}
+                    displayName={msg.sender.display_name}
+                    wrapperClassName="msg-ava-wrap"
+                    imageClassName="msg-ava"
+                    dotClassName="msg-dot"
+                  />
+                )}
                 <div className={`bubble ${isMe ? 'bubble-me' : 'bubble-them'}`}>
                   <p>{msg.content}</p>
                   <span className="ts">{formatDate(msg.created_at)}</span>
@@ -192,7 +209,9 @@ export default function ConversationPage() {
         .chat-header { display: flex; align-items: center; gap: 0.65rem; padding-bottom: 0.875rem; border-bottom: 1px solid var(--color-border); margin-bottom: 1rem; }
         .back { font-size: 1.1rem; color: var(--color-text-muted); text-decoration: none; flex-shrink: 0; padding: 0.2rem; transition: color 0.12s; }
         .back:hover { color: var(--color-text); }
-        .ava { width: 36px; height: 36px; border-radius: 99px; object-fit: cover; flex-shrink: 0; }
+        .ava-wrap { width: 36px; height: 36px; }
+        .ava { width: 36px; height: 36px; }
+        .ava-dot { width: 10px; height: 10px; right: -1px; bottom: -1px; }
         .chat-info { min-width: 0; }
         .chat-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .chat-name:hover { text-decoration: underline; }
@@ -203,7 +222,9 @@ export default function ConversationPage() {
         .empty-copy { margin: 0; color: var(--color-text-muted); font-size: 0.88rem; }
         .row { display: flex; align-items: flex-end; gap: 0.45rem; }
         .row.me { flex-direction: row-reverse; }
-        .msg-ava { width: 28px; height: 28px; border-radius: 99px; object-fit: cover; flex-shrink: 0; }
+        .msg-ava-wrap { width: 28px; height: 28px; }
+        .msg-ava { width: 28px; height: 28px; }
+        .msg-dot { width: 9px; height: 9px; right: -1px; bottom: -1px; }
         .bubble { max-width: 68%; padding: 0.55rem 0.85rem; border-radius: 14px; }
         .bubble p { margin: 0 0 0.18rem; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
         .ts { font-size: 0.68rem; display: block; text-align: right; }

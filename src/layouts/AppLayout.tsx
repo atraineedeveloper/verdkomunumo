@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth'
 import { queryKeys } from '@/lib/query/keys'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useGlobalPresence } from '@/hooks/useGlobalPresence'
 import type { Category } from '@/lib/types'
 
 async function fetchAppLayoutData(userId: string | undefined) {
@@ -65,6 +66,7 @@ export function AppLayout() {
   const user = useAuthStore((s) => s.user)
 
   usePushNotifications(user?.id)
+  useGlobalPresence()
 
   const { data } = useQuery({
     queryKey: [...queryKeys.appLayout(), user?.id ?? 'guest'],

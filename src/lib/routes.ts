@@ -5,6 +5,7 @@ export const routes = {
   search: '/sercxi',
   notifications: '/sciigoj',
   messages: '/mesagxoj',
+  communityChat: '/komunuma-babilejo',
   profile: (username: string) => `/profilo/${username}`,
   profilePattern: '/profilo/:username',
   category: (slug: string) => `/kategorio/${slug}`,

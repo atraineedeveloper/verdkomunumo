@@ -135,6 +135,16 @@ export interface Message {
   sender?: Profile
 }
 
+export interface CommunityMessage {
+  id: string
+  user_id: string
+  content: string
+  client_nonce?: string | null
+  is_deleted?: boolean
+  created_at: string
+  author?: Profile
+}
+
 export interface Notification {
   id: string
   user_id: string

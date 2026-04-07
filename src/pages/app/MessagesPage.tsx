@@ -12,6 +12,7 @@ import type { Conversation, Profile } from '@/lib/types'
 import { routes } from '@/lib/routes'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { ListSkeleton } from '@/components/ui/ListSkeleton'
+import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 
 async function fetchConversations(userId: string) {
   await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('type', 'message').eq('is_read', false)
@@ -147,6 +148,9 @@ export default function MessagesPage() {
         <h1>{t('nav_messages')}</h1>
         <div className="header-actions">
           {isFetching && !isLoading && <InlineSpinner size={13} className="text-[var(--color-primary)]" />}
+          <Link className="btn-chat" to={routes.communityChat}>
+            {t('nav_chat', { defaultValue: 'Babilejo' })}
+          </Link>
           <button className="btn-new" type="button" onClick={() => { setShowNew(true); setSearch(''); setResults([]) }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           {t('messages_new')}
@@ -169,7 +173,16 @@ export default function MessagesPage() {
             const other = getOther(conv)
             return (
               <Link key={conv.id} to={routes.conversation(conv.id)} className={`row${(conv.unread_count ?? 0) > 0 ? ' unread' : ''}`}>
-                {other && <img src={getAvatarUrl(other.avatar_url, other.display_name)} alt={other.display_name} className="ava" />}
+                {other && (
+                  <PresenceAvatar
+                    userId={other.id}
+                    avatarUrl={other.avatar_url}
+                    displayName={other.display_name}
+                    wrapperClassName="ava-wrap"
+                    imageClassName="ava"
+                    dotClassName="ava-dot"
+                  />
+                )}
                 <div className="body">
                   <div className="top">
                     <span className="name">{other?.display_name ?? '?'}</span>
@@ -219,7 +232,14 @@ export default function MessagesPage() {
                       startMutation.mutate(profile.id, { onSettled: () => setStartingConversation(null) })
                     }}
                   >
-                    <img src={getAvatarUrl(profile.avatar_url, profile.display_name)} alt={profile.display_name} className="result-ava" />
+                    <PresenceAvatar
+                      userId={profile.id}
+                      avatarUrl={profile.avatar_url}
+                      displayName={profile.display_name}
+                      wrapperClassName="result-ava-wrap"
+                      imageClassName="result-ava"
+                      dotClassName="result-dot"
+                    />
                     <div>
                       <span className="result-name">{profile.display_name}</span>
                       <span className="result-user">@{profile.username}</span>
@@ -239,7 +259,9 @@ export default function MessagesPage() {
         .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); margin-bottom: 0.25rem; }
         .header-actions { display: flex; align-items: center; gap: 0.6rem; }
         h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; color: var(--color-text); margin: 0; }
-        .btn-new { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--color-primary); color: #fff; border: none; border-radius: 6px; padding: 0.38rem 0.75rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.12s; }
+        .btn-new, .btn-chat { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 6px; padding: 0.38rem 0.75rem; font-size: 0.8rem; font-weight: 600; transition: opacity 0.12s; }
+        .btn-new { background: var(--color-primary); color: #fff; border: none; cursor: pointer; font-family: inherit; }
+        .btn-chat { background: transparent; color: var(--color-text); border: 1px solid var(--color-border); text-decoration: none; }
         .btn-new:hover,.btn-new-lg:hover { opacity: 0.85; }
         .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 3rem 0; }
         .empty { font-size: 0.875rem; color: var(--color-text-muted); margin: 0; }
@@ -249,7 +271,9 @@ export default function MessagesPage() {
         .row:hover { background: var(--color-surface-alt); padding-left: 0.5rem; padding-right: 0.5rem; margin: 0 -0.5rem; }
         .row.unread .name { font-weight: 700; }
         .row.unread .preview { color: var(--color-text); }
-        .ava { width: 44px; height: 44px; border-radius: 99px; object-fit: cover; flex-shrink: 0; }
+        .ava-wrap { width: 44px; height: 44px; }
+        .ava { width: 44px; height: 44px; }
+        .ava-dot { width: 11px; height: 11px; right: 1px; bottom: 1px; }
         .body { flex: 1; min-width: 0; }
         .top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; }
         .name { font-size: 0.875rem; color: var(--color-text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -268,7 +292,9 @@ export default function MessagesPage() {
         .result-row { width: 100%; display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem; border: 0; border-radius: 10px; background: transparent; text-align: left; cursor: pointer; color: inherit; }
         .result-row:hover { background: var(--color-surface-alt); }
         .result-row:disabled { opacity: 0.7; cursor: wait; }
-        .result-ava { width: 40px; height: 40px; border-radius: 999px; object-fit: cover; flex-shrink: 0; }
+        .result-ava-wrap { width: 40px; height: 40px; }
+        .result-ava { width: 40px; height: 40px; }
+        .result-dot { width: 10px; height: 10px; right: -1px; bottom: -1px; }
         .result-name,.result-user { display: block; }
         .result-name { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
         .result-user { font-size: 0.78rem; color: var(--color-text-muted); }

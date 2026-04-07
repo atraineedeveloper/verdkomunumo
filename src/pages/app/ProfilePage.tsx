@@ -19,6 +19,7 @@ import { PostEditCard } from '@/components/PostEditCard'
 import { PostExcerpt } from '@/components/PostExcerpt'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
+import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 import { updatePostLikeInData } from '@/lib/query/optimisticPosts'
 import { removePostInData, updatePostInData } from '@/lib/query/optimisticPosts'
 import { postSchema } from '@/lib/validators'
@@ -225,7 +226,14 @@ export default function ProfilePage() {
       </Helmet>
 
       <div className="profile-header">
-        <img className="profile-avatar" src={getAvatarUrl(profile.avatar_url, profile.display_name)} alt={profile.display_name} />
+        <PresenceAvatar
+          userId={profile.id}
+          avatarUrl={profile.avatar_url}
+          displayName={profile.display_name}
+          wrapperClassName="profile-avatar-wrap"
+          imageClassName="profile-avatar"
+          dotClassName="profile-avatar-dot"
+        />
         <div className="profile-info">
           <div className="profile-title-row">
             <div>
@@ -357,8 +365,13 @@ export default function ProfilePage() {
 
       <style>{`
         .profile-header { display: flex; gap: 1.5rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; align-items: flex-start; flex-wrap: wrap; }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 9999px; object-fit: cover; border: 3px solid var(--color-primary); flex-shrink: 0; }
-        @media (min-width: 480px) { .profile-avatar { width: 96px; height: 96px; } }
+        .profile-avatar-wrap { width: 80px; height: 80px; flex-shrink: 0; }
+        .profile-avatar { width: 80px; height: 80px; border: 3px solid var(--color-primary); }
+        .profile-avatar-dot { width: 16px; height: 16px; right: 3px; bottom: 3px; border-width: 3px; }
+        @media (min-width: 480px) {
+          .profile-avatar-wrap, .profile-avatar { width: 96px; height: 96px; }
+          .profile-avatar-dot { width: 18px; height: 18px; right: 4px; bottom: 4px; }
+        }
         .profile-info { flex: 1; min-width: 0; }
         .profile-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
         .profile-name { font-size: 1.25rem; font-weight: 700; color: var(--color-text); margin: 0; }

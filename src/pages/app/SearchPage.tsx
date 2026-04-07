@@ -16,6 +16,7 @@ import { PostExcerpt } from '@/components/PostExcerpt'
 import PostMedia from '@/components/PostMedia'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
+import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 import type { Post, Profile } from '@/lib/types'
 import { routes } from '@/lib/routes'
 import { removePostInData, updatePostInData, updatePostLikeInData } from '@/lib/query/optimisticPosts'
@@ -340,7 +341,14 @@ export default function SearchPage() {
         <div className="user-list">
           {users.map((foundUser) => (
             <Link key={foundUser.id} to={routes.profile(foundUser.username)} className="user-row">
-              <img src={getAvatarUrl(foundUser.avatar_url, foundUser.display_name)} alt={foundUser.display_name} className="user-ava" />
+              <PresenceAvatar
+                userId={foundUser.id}
+                avatarUrl={foundUser.avatar_url}
+                displayName={foundUser.display_name}
+                wrapperClassName="user-ava-wrap"
+                imageClassName="user-ava"
+                dotClassName="user-dot"
+              />
               <div className="user-info">
                 <span className="user-name">{foundUser.display_name}</span>
                 <span className="muted">@{foundUser.username}</span>
@@ -392,7 +400,9 @@ export default function SearchPage() {
         .user-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 0; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: background 0.12s; border-radius: 6px; }
         .user-row:first-child { border-top: 1px solid var(--color-border); }
         .user-row:hover { background: var(--color-surface-alt); padding-left: 0.5rem; padding-right: 0.5rem; margin: 0 -0.5rem; }
-        .user-ava { width: 42px; height: 42px; border-radius: 99px; object-fit: cover; flex-shrink: 0; }
+        .user-ava-wrap { width: 42px; height: 42px; }
+        .user-ava { width: 42px; height: 42px; }
+        .user-dot { width: 10px; height: 10px; right: -1px; bottom: -1px; }
         .user-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
         .user-name { font-size: 0.875rem; font-weight: 600; color: var(--color-text); }
         .user-bio { font-size: 0.8rem; color: var(--color-text-muted); margin: 0.1rem 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

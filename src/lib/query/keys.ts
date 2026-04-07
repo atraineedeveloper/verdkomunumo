@@ -6,6 +6,7 @@ export const queryKeys = {
   notifications: () => ['notifications'] as const,
   conversations: () => ['conversations'] as const,
   messages: (conversationId: string) => ['messages', conversationId] as const,
+  communityMessages: () => ['community-messages'] as const,
   search: (q: string, tab: string) => ['search', q, tab] as const,
   appLayout: () => ['app-layout'] as const,
   adminDashboard: (params?: object) => ['admin-dashboard', params] as const,

@@ -8,6 +8,7 @@ describe('routes', () => {
     expect(routes.search).toBe('/sercxi')
     expect(routes.notifications).toBe('/sciigoj')
     expect(routes.messages).toBe('/mesagxoj')
+    expect(routes.communityChat).toBe('/komunuma-babilejo')
     expect(routes.settings).toBe('/agordoj')
     expect(routes.login).toBe('/ensaluti')
     expect(routes.register).toBe('/registrigxi')
