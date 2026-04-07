@@ -37,7 +37,7 @@ individual is representing the project.
 
 To report unacceptable behavior, contact the maintainers by opening a private
 security report (see `SECURITY.md`) or by emailing
-`maintainers@verdkomunumo.example`.
+`otilio.latam@gmail.com`.
 
 ## Enforcement
 
