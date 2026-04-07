@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bell, MessageCircle, Palette, Settings, LogOut, Search, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase/client'
-import { LOCALE_LABELS, LOCALE_COUNTRY, type Locale } from '@/lib/i18n'
+import { LOCALE_LABELS, type Locale } from '@/lib/i18n'
 import { APP_NAME } from '@/lib/constants'
 import type { Theme } from '@/lib/types'
 import i18n from '@/lib/i18n'
 import { routes } from '@/lib/routes'
 import { getAvatarUrl, hasRequiredRole } from '@/lib/utils'
+import { LocaleFlag } from '@/components/ui/LocaleFlag'
 
 const THEMES: Theme[] = ['green', 'dark', 'vivid', 'minimal']
 const LOCALES = Object.keys(LOCALE_LABELS) as Locale[]
@@ -23,21 +24,17 @@ interface NavbarProps {
 export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }: NavbarProps) {
   const { t } = useTranslation()
   const { theme, setTheme } = useThemeStore()
+  const user = useAuthStore((s) => s.user)
   const profile = useAuthStore((s) => s.profile)
-  const [stableProfile, setStableProfile] = useState(profile)
+  const initialized = useAuthStore((s) => s.initialized)
+  const profileLoaded = useAuthStore((s) => s.profileLoaded)
   const clearAuth = useAuthStore((s) => s.clear)
   const navigate = useNavigate()
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const locale = i18n.language as Locale
-  const activeProfile = profile ?? stableProfile
-  const canAccessAdmin = activeProfile ? hasRequiredRole(activeProfile.role, 'moderator') : false
-
-  useEffect(() => {
-    if (profile) {
-      setStableProfile(profile)
-    }
-  }, [profile])
+  const authResolved = initialized && (!user || profileLoaded)
+  const canAccessAdmin = authResolved && profile ? hasRequiredRole(profile.role, 'moderator') : false
 
   function cycleTheme() {
     const idx = THEMES.indexOf(theme)
@@ -89,10 +86,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
               title={t('nav_change_lang')}
               onClick={() => { setShowLangMenu(!showLangMenu); setShowUserMenu(false) }}
             >
-              {LOCALE_COUNTRY[locale]
-                ? <span className={`fi fi-${LOCALE_COUNTRY[locale]} block w-5 h-[15px] rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.1)]`} />
-                : <span className="inline-flex items-center justify-center w-5 h-[15px] rounded-[2px] bg-[#16a34a] text-white text-[0.58rem] font-bold">EO</span>
-              }
+              <LocaleFlag locale={locale} className="block w-5 h-[15px] rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.1)]" />
             </button>
             {showLangMenu && (
               <>
@@ -104,10 +98,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
                       onClick={() => selectLocale(l)}
                       className={`flex items-center gap-2 w-full px-2.5 py-[0.42rem] border-0 text-left text-[0.825rem] font-[inherit] cursor-pointer rounded-[6px] transition-all no-underline ${locale === l ? 'text-[var(--color-primary)] font-semibold' : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)]'}`}
                     >
-                      {LOCALE_COUNTRY[l]
-                        ? <span className={`fi fi-${LOCALE_COUNTRY[l]} block w-5 h-[15px] rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.1)] flex-shrink-0`} />
-                        : <span className="inline-flex items-center justify-center w-5 h-[15px] rounded-[2px] bg-[#16a34a] text-white text-[0.58rem] font-bold flex-shrink-0">EO</span>
-                      }
+                      <LocaleFlag locale={l} className="block w-5 h-[15px] rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.1)] flex-shrink-0" />
                       <span>{LOCALE_LABELS[l]}</span>
                       {locale === l && <span className="ml-auto text-[0.75rem]">✓</span>}
                     </button>
@@ -127,7 +118,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           </button>
 
           {/* Notifications — logged-in only */}
-          {activeProfile && (
+          {authResolved && user && (
             <Link
               to={routes.notifications}
               title={t('nav_notifications')}
@@ -143,7 +134,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           )}
 
           {/* Messages — logged-in only */}
-          {activeProfile && (
+          {authResolved && user && (
             <Link
               to={routes.messages}
               title={t('nav_messages')}
@@ -159,7 +150,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           )}
 
           {/* Guest CTA */}
-          {!activeProfile && (
+          {authResolved && !user && (
             <Link
               to={routes.login}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-primary)] text-white text-[0.8rem] font-semibold rounded-[6px] no-underline hover:opacity-85 transition-opacity"
@@ -169,15 +160,15 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           )}
 
           {/* Avatar / user menu */}
-          {activeProfile && (
+          {authResolved && profile && (
             <div className="relative">
               <button
                 className="p-0 border-0 bg-transparent cursor-pointer rounded-full flex"
                 onClick={() => { setShowUserMenu(!showUserMenu); setShowLangMenu(false) }}
               >
                 <img
-                  src={getAvatarUrl(activeProfile.avatar_url, activeProfile.display_name)}
-                  alt={activeProfile.display_name}
+                  src={getAvatarUrl(profile.avatar_url, profile.display_name)}
+                  alt={profile.display_name}
                   className="w-[30px] h-[30px] rounded-full object-cover border-[1.5px] border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
                 />
               </button>
@@ -186,11 +177,11 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
                   <button className="fixed inset-0 z-[90] bg-transparent border-0 cursor-default p-0" onClick={() => setShowUserMenu(false)} tabIndex={-1} aria-hidden />
                   <div className="absolute top-[calc(100%+8px)] right-0 z-[100] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[10px] min-w-[168px] p-1.5 shadow-lg animate-[pop_0.12s_ease]">
                     <div className="px-2.5 py-2 pb-1.5 flex flex-col gap-px">
-                      <span className="text-[0.825rem] font-semibold text-[var(--color-text)]">{activeProfile.display_name}</span>
-                      <span className="text-[0.75rem] text-[var(--color-text-muted)]">@{activeProfile.username}</span>
+                      <span className="text-[0.825rem] font-semibold text-[var(--color-text)]">{profile.display_name}</span>
+                      <span className="text-[0.75rem] text-[var(--color-text-muted)]">@{profile.username}</span>
                     </div>
                     <div className="h-px bg-[var(--color-border)] my-1.5" />
-                    <Link to={routes.profile(activeProfile.username)} onClick={() => setShowUserMenu(false)}
+                    <Link to={routes.profile(profile.username)} onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2 w-full px-2.5 py-[0.42rem] text-[var(--color-text-muted)] text-[0.825rem] no-underline rounded-[6px] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all">
                       <User size={13} strokeWidth={1.75} /> {t('nav_profile')}
                     </Link>

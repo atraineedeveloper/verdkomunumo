@@ -10,7 +10,11 @@ interface MobileNavProps {
 
 export function MobileNav({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }: MobileNavProps) {
   const { pathname } = useLocation()
+  const user = useAuthStore((s) => s.user)
   const profile = useAuthStore((s) => s.profile)
+  const initialized = useAuthStore((s) => s.initialized)
+  const profileLoaded = useAuthStore((s) => s.profileLoaded)
+  const authResolved = initialized && (!user || profileLoaded)
 
   return (
     <nav className="flex md:hidden fixed bottom-0 left-0 right-0 z-[90] bg-[var(--color-bg)] border-t border-[var(--color-border)] px-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)]">
@@ -22,7 +26,7 @@ export function MobileNav({ unreadNotificationsCount = 0, unreadMessagesCount = 
         <Search size={21} strokeWidth={pathname === routes.search ? 2.5 : 1.75} />
       </Link>
 
-      {profile ? (
+      {authResolved && user ? (
         <>
           <Link to={routes.notifications} className={`relative flex-1 flex items-center justify-center py-2.5 no-underline transition-colors ${pathname === routes.notifications ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}>
             <Bell size={21} strokeWidth={pathname === routes.notifications ? 2.5 : 1.75} />
@@ -42,18 +46,20 @@ export function MobileNav({ unreadNotificationsCount = 0, unreadMessagesCount = 
             )}
           </Link>
 
-          <Link
-            to={routes.profile(profile.username)}
-            className={`flex-1 flex items-center justify-center py-2.5 no-underline transition-colors ${pathname.startsWith('/profilo') ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}
-          >
-            <User size={21} strokeWidth={pathname.startsWith('/profilo') ? 2.5 : 1.75} />
-          </Link>
+          {profile ? (
+            <Link
+              to={routes.profile(profile.username)}
+              className={`flex-1 flex items-center justify-center py-2.5 no-underline transition-colors ${pathname.startsWith('/profilo') ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}
+            >
+              <User size={21} strokeWidth={pathname.startsWith('/profilo') ? 2.5 : 1.75} />
+            </Link>
+          ) : null}
         </>
-      ) : (
+      ) : authResolved ? (
         <Link to={routes.login} className="flex-1 flex items-center justify-center py-2.5 no-underline text-[var(--color-primary)] gap-1.5">
           <LogIn size={21} strokeWidth={1.75} />
         </Link>
-      )}
+      ) : null}
     </nav>
   )
 }

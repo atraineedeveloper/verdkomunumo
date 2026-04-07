@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import 'flag-icons/css/flag-icons.min.css';
 
 *, *::before, *::after {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;

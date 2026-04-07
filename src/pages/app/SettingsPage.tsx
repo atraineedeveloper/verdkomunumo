@@ -7,13 +7,14 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useToastStore } from '@/stores/toasts'
-import { LOCALE_COUNTRY, LOCALE_LABELS, type Locale } from '@/lib/i18n'
+import { LOCALE_LABELS, type Locale } from '@/lib/i18n'
 import i18n from '@/lib/i18n'
 import { optimizeImageFiles, replaceInputFiles } from '@/lib/browser/images'
 import { ESPERANTO_LEVELS } from '@/lib/constants'
 import { EMAIL_NOTIFICATION_OPTIONS, isKnownNotificationType } from '@/lib/emailPreferences'
 import { getAvatarUrl } from '@/lib/utils'
 import type { EsperantoLevel, Profile, Theme } from '@/lib/types'
+import { LocaleFlag } from '@/components/ui/LocaleFlag'
 
 const themeValues: Theme[] = ['green', 'dark', 'vivid', 'minimal']
 const themeKeys = ['theme_green', 'theme_dark', 'theme_vivid', 'theme_minimal'] as const
@@ -343,11 +344,7 @@ export default function SettingsPage() {
         <div className="theme-grid">
           {locales.map((l) => (
             <button key={l} className={`lang-btn-big ${locale === l ? 'active' : ''}`} type="button" onClick={() => i18n.changeLanguage(l)}>
-              {LOCALE_COUNTRY[l] ? (
-                <span className={`fi fi-${LOCALE_COUNTRY[l]} lang-flag`} />
-              ) : (
-                <span className="lang-flag eo-badge">EO</span>
-              )}
+              <LocaleFlag locale={l} className="lang-flag" />
               <span>{LOCALE_LABELS[l]}</span>
             </button>
           ))}
@@ -398,7 +395,6 @@ export default function SettingsPage() {
         .lang-btn-big { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border: 2px solid var(--color-border); border-radius: 0.75rem; background: var(--color-bg); color: var(--color-text); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: border-color 0.15s, transform 0.1s; width: 100%; text-align: left; }
         .lang-btn-big.active { border-color: var(--color-primary); background: var(--color-primary); color: white; }
         .lang-flag { width: 28px; height: 21px; border-radius: 3px; display: block; box-shadow: 0 0 0 1px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .eo-badge { display: inline-flex; align-items: center; justify-content: center; background: #16a34a; color: #fff; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.03em; }
       `}</style>
     </>
   )

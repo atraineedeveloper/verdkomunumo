@@ -11,6 +11,8 @@ import { InlineSpinner } from '@/components/ui/InlineSpinner'
 export function FloatingSuggestionButton() {
   const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
+  const initialized = useAuthStore((s) => s.initialized)
+  const profileLoaded = useAuthStore((s) => s.profileLoaded)
   const toast = useToastStore()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
@@ -64,7 +66,9 @@ export function FloatingSuggestionButton() {
     },
   })
 
-  if (!user) return null
+  const authResolved = initialized && (!user || profileLoaded)
+
+  if (!authResolved || !user) return null
 
   return (
     <>
