@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -13,38 +14,66 @@ import { Link } from 'react-router-dom'
 import { ListSkeleton } from '@/components/ui/ListSkeleton'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 
-async function fetchAdminReports() {
-  const [reportsRes, hiddenPostsRes, hiddenCommentsRes, suggestionsRes] = await Promise.all([
+const REPORTS_PAGE_SIZE = 15
+const HIDDEN_PAGE_SIZE = 10
+const SUGGESTIONS_PAGE_SIZE = 15
+
+async function fetchAdminReports(params: {
+  reportsPage: number
+  suggestionsPage: number
+  hiddenPostsPage: number
+  hiddenCommentsPage: number
+}) {
+  const [reportsRes, reportsCountRes, hiddenPostsRes, hiddenPostsCountRes, hiddenCommentsRes, hiddenCommentsCountRes, suggestionsRes, suggestionsCountRes] = await Promise.all([
     supabase
       .from('content_reports')
       .select('*, author:profiles!user_id(*), post:posts!post_id(*, author:profiles!user_id(*), category:categories!category_id(*)), comment:comments!comment_id(*, author:profiles!user_id(*), post:posts!post_id(id, content))')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
-      .limit(30),
+      .range(params.reportsPage * REPORTS_PAGE_SIZE, ((params.reportsPage + 1) * REPORTS_PAGE_SIZE) - 1),
+    supabase
+      .from('content_reports')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending'),
     supabase
       .from('posts')
       .select('*, author:profiles!user_id(*), category:categories!category_id(*)')
       .eq('is_deleted', true)
       .order('created_at', { ascending: false })
-      .limit(12),
+      .range(params.hiddenPostsPage * HIDDEN_PAGE_SIZE, ((params.hiddenPostsPage + 1) * HIDDEN_PAGE_SIZE) - 1),
+    supabase
+      .from('posts')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_deleted', true),
     supabase
       .from('comments')
       .select('*, author:profiles!user_id(*), post:posts!post_id(id, content)')
       .eq('is_deleted', true)
       .order('created_at', { ascending: false })
-      .limit(12),
+      .range(params.hiddenCommentsPage * HIDDEN_PAGE_SIZE, ((params.hiddenCommentsPage + 1) * HIDDEN_PAGE_SIZE) - 1),
+    supabase
+      .from('comments')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_deleted', true),
     supabase
       .from('app_suggestions')
       .select('*, author:profiles!user_id(*)')
       .order('created_at', { ascending: false })
-      .limit(30),
+      .range(params.suggestionsPage * SUGGESTIONS_PAGE_SIZE, ((params.suggestionsPage + 1) * SUGGESTIONS_PAGE_SIZE) - 1),
+    supabase
+      .from('app_suggestions')
+      .select('id', { count: 'exact', head: true }),
   ])
 
   return {
     contentReports: (reportsRes.data ?? []) as ContentReport[],
+    contentReportsCount: reportsCountRes.count ?? 0,
     hiddenPosts: (hiddenPostsRes.data ?? []) as Post[],
+    hiddenPostsCount: hiddenPostsCountRes.count ?? 0,
     hiddenComments: (hiddenCommentsRes.data ?? []) as Comment[],
+    hiddenCommentsCount: hiddenCommentsCountRes.count ?? 0,
     appSuggestions: (suggestionsRes.data ?? []) as AppSuggestion[],
+    appSuggestionsCount: suggestionsCountRes.count ?? 0,
   }
 }
 
@@ -53,10 +82,14 @@ export default function AdminReportsPage() {
   const user = useAuthStore((s) => s.user)
   const toast = useToastStore()
   const queryClient = useQueryClient()
+  const [reportsPage, setReportsPage] = useState(0)
+  const [suggestionsPage, setSuggestionsPage] = useState(0)
+  const [hiddenPostsPage, setHiddenPostsPage] = useState(0)
+  const [hiddenCommentsPage, setHiddenCommentsPage] = useState(0)
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: queryKeys.adminReports(),
-    queryFn: fetchAdminReports,
+    queryKey: queryKeys.adminReports({ reportsPage, suggestionsPage, hiddenPostsPage, hiddenCommentsPage }),
+    queryFn: () => fetchAdminReports({ reportsPage, suggestionsPage, hiddenPostsPage, hiddenCommentsPage }),
   })
 
   const actionMutation = useMutation({
@@ -130,9 +163,13 @@ export default function AdminReportsPage() {
   })
 
   const reports = data?.contentReports ?? []
+  const reportsCount = data?.contentReportsCount ?? 0
   const hiddenPosts = data?.hiddenPosts ?? []
+  const hiddenPostsCount = data?.hiddenPostsCount ?? 0
   const hiddenComments = data?.hiddenComments ?? []
+  const hiddenCommentsCount = data?.hiddenCommentsCount ?? 0
   const suggestions = data?.appSuggestions ?? []
+  const suggestionsCount = data?.appSuggestionsCount ?? 0
 
   return (
     <>
@@ -151,7 +188,15 @@ export default function AdminReportsPage() {
         <ListSkeleton items={6} avatarSize={12} />
       ) : (
         <div className="grid gap-8">
-          <AdminSection title="Open reports" empty="No pending reports right now.">
+          <AdminSection
+            title="Open reports"
+            empty="No pending reports right now."
+            page={reportsPage}
+            pageSize={REPORTS_PAGE_SIZE}
+            totalCount={reportsCount}
+            onPrevious={() => setReportsPage((current) => Math.max(0, current - 1))}
+            onNext={() => setReportsPage((current) => current + 1)}
+          >
             {reports.map((report) => (
               <article key={report.id} className="flex flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0 flex-1">
@@ -200,7 +245,15 @@ export default function AdminReportsPage() {
             ))}
           </AdminSection>
 
-          <AdminSection title="Product suggestions" empty="There are no product suggestions yet.">
+          <AdminSection
+            title="Product suggestions"
+            empty="There are no product suggestions yet."
+            page={suggestionsPage}
+            pageSize={SUGGESTIONS_PAGE_SIZE}
+            totalCount={suggestionsCount}
+            onPrevious={() => setSuggestionsPage((current) => Math.max(0, current - 1))}
+            onNext={() => setSuggestionsPage((current) => current + 1)}
+          >
             {suggestions.map((suggestion) => (
               <article key={suggestion.id} className="flex flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0 flex-1">
@@ -225,7 +278,15 @@ export default function AdminReportsPage() {
             ))}
           </AdminSection>
 
-          <AdminSection title="Hidden posts" empty="No hidden posts.">
+          <AdminSection
+            title="Hidden posts"
+            empty="No hidden posts."
+            page={hiddenPostsPage}
+            pageSize={HIDDEN_PAGE_SIZE}
+            totalCount={hiddenPostsCount}
+            onPrevious={() => setHiddenPostsPage((current) => Math.max(0, current - 1))}
+            onNext={() => setHiddenPostsPage((current) => current + 1)}
+          >
             {hiddenPosts.map((post) => (
               <article key={post.id} className="flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -241,7 +302,15 @@ export default function AdminReportsPage() {
             ))}
           </AdminSection>
 
-          <AdminSection title="Hidden comments" empty="No hidden comments.">
+          <AdminSection
+            title="Hidden comments"
+            empty="No hidden comments."
+            page={hiddenCommentsPage}
+            pageSize={HIDDEN_PAGE_SIZE}
+            totalCount={hiddenCommentsCount}
+            onPrevious={() => setHiddenCommentsPage((current) => Math.max(0, current - 1))}
+            onNext={() => setHiddenCommentsPage((current) => current + 1)}
+          >
             {hiddenComments.map((comment) => (
               <article key={comment.id} className="flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -264,17 +333,44 @@ function AdminSection({
   title,
   empty,
   children,
+  page,
+  pageSize,
+  totalCount,
+  onPrevious,
+  onNext,
 }: {
   title: string
   empty: string
   children: ReactNode
+  page: number
+  pageSize: number
+  totalCount: number
+  onPrevious: () => void
+  onNext: () => void
 }) {
   const items = Array.isArray(children) ? children : [children]
   const hasContent = items.some(Boolean)
+  const start = totalCount === 0 ? 0 : (page * pageSize) + 1
+  const end = Math.min((page + 1) * pageSize, totalCount)
+  const hasPrevious = page > 0
+  const hasNext = end < totalCount
 
   return (
     <section>
-      <h2 className="mb-3 text-base font-semibold text-[var(--color-text)]">{title}</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-[var(--color-text)]">{title}</h2>
+        {totalCount > 0 && (
+          <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+            <span>{start}-{end} / {totalCount}</span>
+            <button type="button" className="rounded-lg border border-[var(--color-border)] px-2 py-1 disabled:opacity-50" disabled={!hasPrevious} onClick={onPrevious}>
+              Prev
+            </button>
+            <button type="button" className="rounded-lg border border-[var(--color-border)] px-2 py-1 disabled:opacity-50" disabled={!hasNext} onClick={onNext}>
+              Next
+            </button>
+          </div>
+        )}
+      </div>
       {hasContent ? <div className="grid gap-3">{children}</div> : <p className="text-sm text-[var(--color-text-muted)]">{empty}</p>}
     </section>
   )

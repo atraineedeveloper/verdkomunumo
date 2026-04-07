@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import { Heart, MessageSquare, Pencil, Quote, Trash2, TriangleAlert, X } from 'lucide-react'
@@ -27,6 +27,7 @@ import { postSchema } from '@/lib/validators'
 
 const BETA_KEY = 'verdkomunumo-beta-notice-dismissed'
 const APP_NAME = import.meta.env.VITE_APP_NAME ?? 'Verdkomunumo'
+const FEED_PAGE_SIZE = 20
 
 export default function FeedPage() {
   const { t } = useTranslation()
@@ -40,6 +41,7 @@ export default function FeedPage() {
   const [editedCategoryId, setEditedCategoryId] = useState('')
   const [quotingPost, setQuotingPost] = useState<Post | null>(null)
   const composerRef = useRef<HTMLDivElement>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
   const filter = searchParams.get('filter') === 'following' ? 'following' : 'all'
 
   useEffect(() => {
@@ -51,26 +53,53 @@ export default function FeedPage() {
     localStorage.setItem(BETA_KEY, 'true')
   }
 
-  const { data: feedData, isLoading, isFetching, error } = useQuery({
-    queryKey: queryKeys.feed({ filter }),
+  const { data: categories = [] } = useQuery({
+    queryKey: queryKeys.categories(),
     queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order')
+
+      if (error) throw error
+      return data ?? []
+    },
+  })
+
+  const {
+    data: feedData,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+  } = useInfiniteQuery({
+    queryKey: queryKeys.feed({ filter, profileId: profile?.id ?? null }),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
       let followedIds: string[] | undefined
       if (filter === 'following' && profile) {
-        const { data: follows } = await supabase
+        const { data: follows, error: followsError } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', profile.id)
+
+        if (followsError) throw followsError
         followedIds = (follows ?? []).map((f: any) => f.following_id)
-        if (followedIds.length === 0) return { posts: [], categories: [] }
+        if (followedIds.length === 0) {
+          return { posts: [], page: pageParam }
+        }
       }
 
-      const [postsRes, catsRes] = await Promise.all([
-        fetchFeedPostsWithFallback(followedIds),
-        supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
-      ])
+      const postsRes = await fetchFeedPostsWithFallback({
+        filterUserIds: followedIds,
+        page: pageParam,
+        pageSize: FEED_PAGE_SIZE,
+      })
 
       if (postsRes.error) throw postsRes.error
-      if (catsRes.error) throw catsRes.error
 
       const posts = (postsRes.data ?? []).map((p: any) => ({
         ...normalizeQuotedPost(p),
@@ -78,9 +107,28 @@ export default function FeedPage() {
         likes_count: p.likes?.length ?? 0,
       }))
 
-      return { posts, categories: catsRes.data ?? [] }
+      return { posts, page: pageParam }
     },
+    getNextPageParam: (lastPage) => (
+      lastPage.posts.length === FEED_PAGE_SIZE ? lastPage.page + 1 : undefined
+    ),
   })
+
+  useEffect(() => {
+    const node = loadMoreRef.current
+    if (!node || !hasNextPage || isFetchingNextPage) return
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        void fetchNextPage()
+      }
+    }, {
+      rootMargin: '200px 0px',
+    })
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
   const likeMutation = useMutation({
     mutationFn: async (post: Post) => {
@@ -189,8 +237,7 @@ export default function FeedPage() {
     },
   })
 
-  const posts: Post[] = (feedData as any)?.posts ?? []
-  const categories: Category[] = (feedData as any)?.categories ?? []
+  const posts: Post[] = feedData?.pages.flatMap((page) => page.posts) ?? []
 
   return (
     <>
@@ -391,6 +438,18 @@ export default function FeedPage() {
             </article>
             )
           })}
+        </div>
+      )}
+
+      {!isLoading && posts.length > 0 && (
+        <div ref={loadMoreRef} className="py-4 flex justify-center">
+          {isFetchingNextPage ? (
+            <InlineSpinner size={16} className="text-[var(--color-primary)]" />
+          ) : hasNextPage ? (
+            <span className="text-sm text-[var(--color-text-muted)]">{t('messages_loading')}</span>
+          ) : (
+            <span className="text-sm text-[var(--color-text-muted)]">{t('notif_empty', { defaultValue: 'No more posts.' })}</span>
+          )}
         </div>
       )}
 

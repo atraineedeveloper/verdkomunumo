@@ -301,7 +301,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
         link_preview: linkPreview ?? null,
       }
 
-      let { data: insertedPost, error } = await supabase.from('posts').insert(payload as never).select('id').single()
+      let { error } = await supabase.from('posts').insert(payload as never)
 
       if (error && isOptionalPostFeaturesError(error)) {
         const fallbackPayload = {
@@ -317,28 +317,6 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
 
       if (error) throw error
 
-      // Create mention notifications
-      const mentionRegex = /@([\w]+)/g
-      const mentionedUsernames = [...content.matchAll(mentionRegex)].map(m => m[1])
-      if (mentionedUsernames.length > 0 && insertedPost?.id) {
-        const { data: mentionedUsers } = await supabase
-          .from('profiles')
-          .select('id')
-          .in('username', mentionedUsernames)
-          .neq('id', profile.id)
-
-        if (mentionedUsers?.length) {
-          await supabase.from('notifications').insert(
-            mentionedUsers.map(u => ({
-              user_id: u.id,
-              actor_id: profile.id,
-              type: 'mention',
-              post_id: insertedPost.id,
-              message: `${profile.display_name} menciis vin`,
-            }))
-          )
-        }
-      }
     },
     onSuccess: () => {
       toast.success(t('toast_post_created'))

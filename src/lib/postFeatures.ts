@@ -102,16 +102,23 @@ export function normalizeQuotedPost<T extends { quoted_post?: Post | null }>(pos
   return post
 }
 
-export async function fetchFeedPostsWithFallback(filterUserIds?: string[]) {
+export async function fetchFeedPostsWithFallback(options?: {
+  filterUserIds?: string[]
+  page?: number
+  pageSize?: number
+}) {
+  const page = options?.page ?? 0
+  const pageSize = options?.pageSize ?? 20
+
   const loadPosts = async (selectClause: string) => {
     let query = supabase
       .from('posts')
       .select(selectClause)
       .order('created_at', { ascending: false })
-      .limit(50)
+      .range(page * pageSize, ((page + 1) * pageSize) - 1)
 
-    if (filterUserIds) {
-      query = query.in('user_id', filterUserIds)
+    if (options?.filterUserIds) {
+      query = query.in('user_id', options.filterUserIds)
     }
 
     return query

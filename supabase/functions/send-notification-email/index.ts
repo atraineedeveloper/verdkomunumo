@@ -14,7 +14,7 @@ type DeliveryRecord = {
   notification_id: string
   user_id: string
   type: NotificationType
-  status: 'queued' | 'sent' | 'skipped' | 'failed'
+  status: 'queued' | 'processing' | 'sent' | 'skipped' | 'failed'
   recipient_email: string | null
 }
 
@@ -254,6 +254,22 @@ async function updateDelivery(deliveryId: string, patch: Record<string, unknown>
   }
 }
 
+async function claimQueuedDelivery(deliveryId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('notification_email_deliveries')
+    .update({
+      status: 'processing',
+      error: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', deliveryId)
+    .eq('status', 'queued')
+    .select('id, notification_id, user_id, type, status, recipient_email')
+    .maybeSingle()
+
+  return { data: data as DeliveryRecord | null, error }
+}
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405)
@@ -284,20 +300,31 @@ Deno.serve(async (request) => {
     return json({ error: 'Missing delivery_id' }, 400)
   }
 
-  const { data: delivery, error: deliveryError } = await supabaseAdmin
-    .from('notification_email_deliveries')
-    .select('id, notification_id, user_id, type, status, recipient_email')
-    .eq('id', deliveryId)
-    .single()
-
-  if (deliveryError || !delivery) {
-    return json({ error: 'Delivery not found' }, 404)
+  const { data: claimedDelivery, error: claimError } = await claimQueuedDelivery(deliveryId)
+  if (claimError) {
+    console.error('Failed to claim delivery', deliveryId, claimError)
+    return json({ error: 'Failed to claim delivery' }, 500)
   }
 
-  const currentDelivery = delivery as DeliveryRecord
-  if (currentDelivery.status !== 'queued') {
-    return json({ ok: true, skipped: 'already-processed' })
+  if (!claimedDelivery) {
+    const { data: existingDelivery, error: existingDeliveryError } = await supabaseAdmin
+      .from('notification_email_deliveries')
+      .select('id, status')
+      .eq('id', deliveryId)
+      .maybeSingle()
+
+    if (existingDeliveryError || !existingDelivery) {
+      return json({ error: 'Delivery not found' }, 404)
+    }
+
+    return json({
+      ok: true,
+      skipped: 'already-processed',
+      status: existingDelivery.status,
+    })
   }
+
+  const currentDelivery = claimedDelivery
 
   const { data: notification, error: notificationError } = await supabaseAdmin
     .from('notifications')

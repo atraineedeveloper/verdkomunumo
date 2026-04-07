@@ -41,6 +41,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
+    function queueProfileSync(userId: string, options?: { preserveProfile?: boolean }) {
+      window.setTimeout(() => {
+        void syncProfile(userId, options)
+      }, 0)
+    }
+
     async function initAuth() {
       try {
         const { data: { session } } = await supabase.auth.getSession()
@@ -65,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initAuth()
 
     // Listen for auth changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || !session?.user) {
         clear()
         return
@@ -73,12 +79,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         setUser(session.user)
-        await syncProfile(session.user.id)
+        queueProfileSync(session.user.id)
       }
 
       if (event === 'TOKEN_REFRESHED') {
         setUser(session.user)
-        await syncProfile(session.user.id, { preserveProfile: true })
+        queueProfileSync(session.user.id, { preserveProfile: true })
       }
     })
 

@@ -10,5 +10,5 @@ export const queryKeys = {
   appLayout: () => ['app-layout'] as const,
   adminDashboard: (params?: object) => ['admin-dashboard', params] as const,
   adminCategories: () => ['admin-categories'] as const,
-  adminReports: () => ['admin-reports'] as const,
+  adminReports: (params?: object) => ['admin-reports', params] as const,
 } 

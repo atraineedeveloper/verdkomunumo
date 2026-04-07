@@ -25,6 +25,10 @@ export function updatePostLikeInData<T>(data: T, postId: string): T {
     })
   }
 
+  if (Array.isArray(record.pages)) {
+    next.pages = record.pages.map((page) => updatePostLikeInData(page, postId))
+  }
+
   if (record.post && typeof record.post === 'object') {
     const post = record.post as Post
     next.post = post.id === postId ? togglePostLikeState(post) : post
@@ -47,6 +51,10 @@ export function updatePostInData<T>(data: T, postId: string, patch: Partial<Post
     })
   }
 
+  if (Array.isArray(record.pages)) {
+    next.pages = record.pages.map((page) => updatePostInData(page, postId, patch))
+  }
+
   if (record.post && typeof record.post === 'object') {
     const post = record.post as Post
     next.post = post.id === postId ? { ...post, ...patch } : post
@@ -66,6 +74,10 @@ export function removePostInData<T>(data: T, postId: string): T {
       if (!item || typeof item !== 'object') return true
       return (item as Post).id !== postId
     })
+  }
+
+  if (Array.isArray(record.pages)) {
+    next.pages = record.pages.map((page) => removePostInData(page, postId))
   }
 
   if (record.post && typeof record.post === 'object' && (record.post as Post).id === postId) {
