@@ -11,7 +11,7 @@ vulnerabilities.
 
 Instead, report privately to:
 
-- `maintainers@verdkomunumo.example`
+- `otilio.latam@gmail.com`
 
 Please include:
 
