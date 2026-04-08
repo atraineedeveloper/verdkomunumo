@@ -29,7 +29,7 @@ export function LocaleFlag({ locale, className = '' }: LocaleFlagProps) {
 
   if (!flagSrc) {
     return (
-      <span className={`inline-flex items-center justify-center bg-[#16a34a] text-white text-[0.58rem] font-bold ${className}`.trim()}>
+      <span className={`inline-flex items-center justify-center bg-[#14532d] text-white text-[0.68rem] font-bold tracking-wide ${className}`.trim()}>
         EO
       </span>
     )

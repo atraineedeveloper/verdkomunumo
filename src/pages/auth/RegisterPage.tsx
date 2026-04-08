@@ -172,7 +172,7 @@ export function RegisterPage() {
         <button
           type="submit"
           disabled={registerMutation.isPending}
-          className="w-full py-2.5 mt-1 bg-[var(--color-primary)] text-white border-0 rounded-lg text-[0.9rem] font-semibold cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
+          className="w-full py-2.5 mt-1 bg-[var(--color-primary)] text-white border-0 rounded-lg text-[0.9rem] font-semibold cursor-pointer hover:brightness-[1.05] disabled:opacity-60 disabled:cursor-not-allowed transition-[filter,opacity]"
         >
           {registerMutation.isPending ? 'Atendu…' : 'Krei konton'}
         </button>

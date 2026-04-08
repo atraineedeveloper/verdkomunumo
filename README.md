@@ -40,6 +40,11 @@ Useful commands:
 ```bash
 bun run dev
 bun run test
+bun run test:smoke
+bun run test:visual
+bun run test:visual:update
+bun run test:a11y
+bun run test:e2e:install
 bun run typecheck
 bun run build
 bun run db:push
@@ -66,13 +71,42 @@ VITE_APP_URL=http://localhost:5174
 VITE_APP_NAME=Verdkomunumo
 VITE_DEMO_MODE=false
 VITE_GOOGLE_AUTH_ENABLED=true
+VITE_SENTRY_DSN=
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
+VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE=0
+VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE=1
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 RESEND_API_KEY=re_xxxxx
 EMAIL_FROM=Verdkomunumo <noreply@example.com>
 EMAIL_WEBHOOK_SECRET=choose-a-long-random-secret
+SENTRY_AUTH_TOKEN=
+SENTRY_ORG=
+SENTRY_PROJECT=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` is only needed for the local MCP admin tooling.
+
+## QA And Monitoring
+
+The repository now supports four complementary quality layers:
+
+- `bun run test` for unit and integration coverage with Vitest
+- `bun run test:smoke` for public-route smoke tests with Playwright
+- `bun run test:visual` for visual regression checks
+- `bun run test:a11y` for accessibility checks with `axe`
+- optional Sentry runtime monitoring through `VITE_SENTRY_DSN`
+
+Before running browser tests locally, install the Playwright browser once:
+
+```bash
+bun run test:e2e:install
+```
+
+Visual snapshots are stored in the repo. When an intentional UI change happens, refresh them with:
+
+```bash
+bun run test:visual:update
+```
 
 ## Deployment
 

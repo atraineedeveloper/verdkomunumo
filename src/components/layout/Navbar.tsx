@@ -79,7 +79,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           <span className="hidden sm:block text-[0.95rem] font-bold tracking-tight text-[var(--color-text)]">
             {APP_NAME}
           </span>
-          <span className="text-[0.6rem] font-bold tracking-wider uppercase text-[var(--color-primary)] bg-[var(--color-primary-dim)] border border-[color-mix(in_srgb,var(--color-primary)_25%,transparent)] px-1.5 py-0.5 rounded-full self-start mt-0.5">
+          <span className="text-[0.68rem] font-bold tracking-wider uppercase text-[#14532d] bg-[#dcfce7] border border-[#86efac] px-1.5 py-0.5 rounded-full self-start mt-0.5">
             beta
           </span>
         </Link>
@@ -101,6 +101,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
             <button
               className="flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent border-0 text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
               title={t('nav_change_lang')}
+              aria-label={t('nav_change_lang')}
               onClick={() => { setShowLangMenu(!showLangMenu); setShowUserMenu(false) }}
             >
               <LocaleFlag locale={locale} className="block w-5 h-[15px] rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.1)]" />
@@ -129,6 +130,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           <button
             className="flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent border-0 text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
             title={t('nav_change_theme')}
+            aria-label={t('nav_change_theme')}
             onClick={cycleTheme}
           >
             <Palette size={16} strokeWidth={1.75} />
@@ -139,11 +141,12 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
             <Link
               to={routes.notifications}
               title={t('nav_notifications')}
+              aria-label={t('nav_notifications')}
               className="relative flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
             >
               <Bell size={16} strokeWidth={1.75} />
               {unreadNotificationsCount > 0 && (
-                <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.58rem] font-bold min-w-[14px] h-[14px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
+                <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.65rem] font-bold min-w-[16px] h-[16px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
                   {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
                 </span>
               )}
@@ -155,11 +158,12 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
             <Link
               to={routes.messages}
               title={t('nav_messages')}
+              aria-label={t('nav_messages')}
               className="relative flex items-center justify-center w-[34px] h-[34px] rounded-[6px] bg-transparent text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)] transition-all"
             >
               <MessageCircle size={16} strokeWidth={1.75} />
               {unreadMessagesCount > 0 && (
-                <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.58rem] font-bold min-w-[14px] h-[14px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
+                <span className="absolute top-1 right-1 bg-[var(--color-danger)] text-white text-[0.65rem] font-bold min-w-[16px] h-[16px] px-[3px] rounded-full flex items-center justify-center border-[1.5px] border-[var(--color-bg)]">
                   {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
                 </span>
               )}
@@ -170,7 +174,7 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
           {initialized && !user && (
             <Link
               to={routes.login}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-primary)] text-white text-[0.8rem] font-semibold rounded-[6px] no-underline hover:opacity-85 transition-opacity"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-primary)] text-white text-[0.8rem] font-semibold rounded-[6px] no-underline hover:opacity-90 transition-opacity"
             >
               {t('nav_login')}
             </Link>
@@ -181,6 +185,8 @@ export function Navbar({ unreadNotificationsCount = 0, unreadMessagesCount = 0 }
             <div className="relative">
               <button
                 className="p-0 border-0 bg-transparent cursor-pointer rounded-full flex"
+                aria-label={t('nav_profile')}
+                title={t('nav_profile')}
                 onClick={() => { setShowUserMenu(!showUserMenu); setShowLangMenu(false) }}
               >
                 <img

@@ -94,11 +94,9 @@ export function updateCommentInPostDetail<T>(data: T, commentId: string, patch: 
   const next = { ...record }
 
   if (Array.isArray(record.comments)) {
-    next.comments = record.comments.map((item) => {
-      if (!item || typeof item !== 'object') return item
-      const comment = item as Comment
-      return comment.id === commentId ? { ...comment, ...patch } : comment
-    })
+    next.comments = updateCommentTree(record.comments as Comment[], (comment) =>
+      comment.id === commentId ? { ...comment, ...patch } : comment
+    )
   }
 
   return next as T
@@ -122,11 +120,9 @@ export function updateCommentLikeInPostDetail<T>(data: T, commentId: string): T 
   const next = { ...record }
 
   if (Array.isArray(record.comments)) {
-    next.comments = record.comments.map((item) => {
-      if (!item || typeof item !== 'object') return item
-      const comment = item as Comment
-      return comment.id === commentId ? toggleCommentLikeState(comment) : comment
-    })
+    next.comments = updateCommentTree(record.comments as Comment[], (comment) =>
+      comment.id === commentId ? toggleCommentLikeState(comment) : comment
+    )
   }
 
   return next as T
@@ -137,24 +133,97 @@ export function removeCommentInPostDetail<T>(data: T, commentId: string): T {
 
   const record = data as Record<string, unknown>
   const next = { ...record }
-  let removed = false
+  let removedCount = 0
 
   if (Array.isArray(record.comments)) {
-    next.comments = record.comments.filter((item) => {
-      if (!item || typeof item !== 'object') return true
-      const shouldKeep = (item as Comment).id !== commentId
-      if (!shouldKeep) removed = true
-      return shouldKeep
-    })
+    const result = removeCommentTree(record.comments as Comment[], commentId)
+    next.comments = result.comments
+    removedCount = result.removedCount
   }
 
-  if (removed && record.post && typeof record.post === 'object') {
+  if (removedCount > 0 && record.post && typeof record.post === 'object') {
     const post = record.post as Post
     next.post = {
       ...post,
-      comments_count: Math.max(0, Number(post.comments_count ?? 0) - 1),
+      comments_count: Math.max(0, Number(post.comments_count ?? 0) - removedCount),
     }
   }
 
   return next as T
+}
+
+export function insertCommentInPostDetail<T>(data: T, comment: Comment): T {
+  if (!data || typeof data !== 'object') return data
+
+  const record = data as Record<string, unknown>
+  const next = { ...record }
+
+  if (Array.isArray(record.comments)) {
+    const comments = record.comments as Comment[]
+    next.comments = comment.parent_id
+      ? insertReplyInTree(comments, comment.parent_id, comment)
+      : [...comments, { ...comment, replies: comment.replies ?? [] }]
+  }
+
+  if (record.post && typeof record.post === 'object') {
+    const post = record.post as Post
+    next.post = {
+      ...post,
+      comments_count: Math.max(0, Number(post.comments_count ?? 0) + 1),
+    }
+  }
+
+  return next as T
+}
+
+function updateCommentTree(comments: Comment[], updater: (comment: Comment) => Comment): Comment[] {
+  return comments.map((comment) => {
+    const nextReplies = Array.isArray(comment.replies) ? updateCommentTree(comment.replies, updater) : comment.replies
+    return updater({ ...comment, replies: nextReplies })
+  })
+}
+
+function removeCommentTree(comments: Comment[], commentId: string): { comments: Comment[]; removedCount: number } {
+  let removedCount = 0
+
+  const nextComments = comments.flatMap((comment) => {
+    if (comment.id === commentId) {
+      removedCount += 1 + countReplies(comment.replies ?? [])
+      return []
+    }
+
+    if (!Array.isArray(comment.replies) || comment.replies.length === 0) {
+      return [comment]
+    }
+
+    const childResult = removeCommentTree(comment.replies, commentId)
+    removedCount += childResult.removedCount
+    return [{ ...comment, replies: childResult.comments }]
+  })
+
+  return { comments: nextComments, removedCount }
+}
+
+function insertReplyInTree(comments: Comment[], parentId: string, reply: Comment): Comment[] {
+  return comments.map((comment) => {
+    if (comment.id === parentId) {
+      return {
+        ...comment,
+        replies: [...(comment.replies ?? []), { ...reply, replies: reply.replies ?? [] }],
+      }
+    }
+
+    if (!Array.isArray(comment.replies) || comment.replies.length === 0) {
+      return comment
+    }
+
+    return {
+      ...comment,
+      replies: insertReplyInTree(comment.replies, parentId, reply),
+    }
+  })
+}
+
+function countReplies(comments: Comment[]): number {
+  return comments.reduce((total, comment) => total + 1 + countReplies(comment.replies ?? []), 0)
 }

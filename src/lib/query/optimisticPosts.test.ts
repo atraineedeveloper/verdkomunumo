@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  insertCommentInPostDetail,
   removeCommentInPostDetail,
   removePostInData,
   toggleCommentLikeState,
@@ -104,6 +105,30 @@ describe('optimisticPosts', () => {
     expect(result.comments[1]).toMatchObject({ id: 'b', content: 'Redaktita komento', is_edited: true, updated_at: nextUpdatedAt })
   })
 
+  it('updates matching nested comments in post detail payloads', () => {
+    const nextUpdatedAt = '2026-01-02T00:00:00.000Z'
+    const result = updateCommentInPostDetail(
+      {
+        post: makePost(),
+        comments: [
+          makeComment({
+            id: 'a',
+            replies: [makeComment({ id: 'reply-a', parent_id: 'a' })],
+          }),
+        ],
+      },
+      'reply-a',
+      { content: 'Respondo redaktita', is_edited: true, updated_at: nextUpdatedAt }
+    )
+
+    expect(result.comments[0].replies?.[0]).toMatchObject({
+      id: 'reply-a',
+      content: 'Respondo redaktita',
+      is_edited: true,
+      updated_at: nextUpdatedAt,
+    })
+  })
+
   it('toggles likes optimistically on a single comment', () => {
     const liked = toggleCommentLikeState(makeComment())
     expect(liked.user_liked).toBe(true)
@@ -127,6 +152,23 @@ describe('optimisticPosts', () => {
     expect(result.comments[1]).toMatchObject({ id: 'b', user_liked: true, likes_count: 5 })
   })
 
+  it('updates matching nested comments likes in post detail payloads', () => {
+    const result = updateCommentLikeInPostDetail(
+      {
+        post: makePost(),
+        comments: [
+          makeComment({
+            id: 'a',
+            replies: [makeComment({ id: 'reply-a', parent_id: 'a', likes_count: 2 })],
+          }),
+        ],
+      },
+      'reply-a'
+    )
+
+    expect(result.comments[0].replies?.[0]).toMatchObject({ id: 'reply-a', user_liked: true, likes_count: 3 })
+  })
+
   it('removes matching comments in post detail payloads', () => {
     const result = removeCommentInPostDetail(
       { post: makePost({ comments_count: 2 }), comments: [makeComment({ id: 'a' }), makeComment({ id: 'b' })] },
@@ -136,5 +178,65 @@ describe('optimisticPosts', () => {
     expect(result.comments).toHaveLength(1)
     expect(result.comments[0]).toMatchObject({ id: 'b' })
     expect(result.post).toMatchObject({ comments_count: 1 })
+  })
+
+  it('removes nested replies and decrements comment count', () => {
+    const result = removeCommentInPostDetail(
+      {
+        post: makePost({ comments_count: 2 }),
+        comments: [
+          makeComment({
+            id: 'a',
+            replies: [makeComment({ id: 'reply-a', parent_id: 'a' })],
+          }),
+        ],
+      },
+      'reply-a'
+    )
+
+    expect(result.comments[0].replies).toEqual([])
+    expect(result.post).toMatchObject({ comments_count: 1 })
+  })
+
+  it('removes comment subtrees and decrements comment count by subtree size', () => {
+    const result = removeCommentInPostDetail(
+      {
+        post: makePost({ comments_count: 3 }),
+        comments: [
+          makeComment({
+            id: 'a',
+            replies: [makeComment({ id: 'reply-a', parent_id: 'a' })],
+          }),
+          makeComment({ id: 'b' }),
+        ],
+      },
+      'a'
+    )
+
+    expect(result.comments).toHaveLength(1)
+    expect(result.comments[0]).toMatchObject({ id: 'b' })
+    expect(result.post).toMatchObject({ comments_count: 1 })
+  })
+
+  it('inserts root comments and replies in post detail payloads', () => {
+    const rootResult = insertCommentInPostDetail(
+      { post: makePost({ comments_count: 0 }), comments: [] },
+      makeComment({ id: 'root-new' })
+    )
+
+    expect(rootResult.comments).toHaveLength(1)
+    expect(rootResult.comments[0]).toMatchObject({ id: 'root-new' })
+    expect(rootResult.post).toMatchObject({ comments_count: 1 })
+
+    const replyResult = insertCommentInPostDetail(
+      {
+        post: makePost({ comments_count: 1 }),
+        comments: [makeComment({ id: 'root-1' })],
+      },
+      makeComment({ id: 'reply-new', parent_id: 'root-1' })
+    )
+
+    expect(replyResult.comments[0].replies?.[0]).toMatchObject({ id: 'reply-new', parent_id: 'root-1' })
+    expect(replyResult.post).toMatchObject({ comments_count: 2 })
   })
 })

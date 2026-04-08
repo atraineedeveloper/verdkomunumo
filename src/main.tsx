@@ -6,11 +6,14 @@ import { HelmetProvider } from 'react-helmet-async'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import { queryClient } from '@/lib/query/client'
+import { initMonitoring } from '@/lib/monitoring'
 import { AuthProvider } from '@/providers/AuthProvider'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import App from './App'
 import './lib/i18n'
 import './app.css'
+
+initMonitoring()
 
 const ReactQueryDevtools = import.meta.env.DEV
   ? lazy(() =>

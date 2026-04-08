@@ -85,7 +85,7 @@ export function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={requestResetMutation.isPending}
-          className="w-full py-2.5 mt-1 bg-[var(--color-primary)] text-white border-0 rounded-lg text-[0.9rem] font-semibold cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
+          className="w-full py-2.5 mt-1 bg-[var(--color-primary)] text-white border-0 rounded-lg text-[0.9rem] font-semibold cursor-pointer hover:brightness-[1.05] disabled:opacity-60 disabled:cursor-not-allowed transition-[filter,opacity]"
         >
           {requestResetMutation.isPending ? t('auth_loading') : t('auth_send_reset_link', { defaultValue: 'Sendi ligilon por restarigo' })}
         </button>

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { captureAppException } from '@/lib/monitoring'
 
 interface Props {
   children: ReactNode
@@ -19,6 +20,7 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('App render failed', error, errorInfo)
+    captureAppException(error, { componentStack: errorInfo.componentStack })
   }
 
   render() {

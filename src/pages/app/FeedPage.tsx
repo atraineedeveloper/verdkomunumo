@@ -460,12 +460,12 @@ export default function FeedPage() {
         .refreshing { display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem; padding: 0.32rem 0.55rem; border-radius: 999px; font-size: 0.72rem; color: var(--color-primary); background: var(--color-primary-dim); white-space: nowrap; }
         .tab { background: none; border: none; padding: 0.4rem 0.75rem; font-size: 0.84rem; font-weight: 500; color: var(--color-text-muted); cursor: pointer; border-radius: 6px; font-family: inherit; transition: color 0.12s, background 0.12s; text-decoration: none; }
         .tab:hover { color: var(--color-text); }
-        .tab.active { color: var(--color-primary); background: var(--color-primary-dim); }
+        .tab.active { color: var(--color-text); background: var(--color-surface-alt); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 26%, var(--color-border)); font-weight: 600; }
         .beta-banner { display: flex; align-items: flex-start; gap: 0.75rem; background: #fefce8; border: 1px solid #fde047; border-radius: 10px; padding: 0.85rem 1rem; margin: 0.75rem 0; }
         .beta-icon { color: #ca8a04; flex-shrink: 0; margin-top: 1px; }
         .beta-copy { flex: 1; font-size: 0.84rem; line-height: 1.5; color: #78350f; display: flex; flex-direction: column; gap: 0.2rem; }
         .beta-copy strong { font-weight: 700; }
-        .beta-close { background: none; border: none; color: #ca8a04; cursor: pointer; padding: 0.1rem; border-radius: 4px; flex-shrink: 0; display: flex; }
+        .beta-close { background: none; border: none; color: #a16207; cursor: pointer; padding: 0.1rem; border-radius: 4px; flex-shrink: 0; display: flex; }
         .beta-close:hover { color: #92400e; }
         .empty { text-align: center; padding: 3rem 0; color: var(--color-text-muted); font-size: 0.875rem; }
         .timeline { display: flex; flex-direction: column; }
@@ -497,8 +497,8 @@ export default function FeedPage() {
         .post-link { color: var(--color-primary); text-decoration: none; }
         .post-link:hover { text-decoration: underline; }
         .guest-cta { display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border); margin-bottom: 0.25rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--color-text-muted); }
-        .guest-cta-btn { padding: 0.35rem 0.9rem; border-radius: 6px; font-size: 0.825rem; font-weight: 600; text-decoration: none; background: var(--color-primary); color: #fff; transition: opacity 0.12s; }
-        .guest-cta-btn:hover { opacity: 0.85; }
+        .guest-cta-btn { padding: 0.35rem 0.9rem; border-radius: 6px; font-size: 0.825rem; font-weight: 600; text-decoration: none; background: var(--color-primary); color: #fff; transition: filter 0.12s; }
+        .guest-cta-btn:hover { filter: brightness(1.05); }
         .guest-cta-btn.secondary { background: var(--color-surface-alt); color: var(--color-text); border: 1px solid var(--color-border); }
         .act-count { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; font-size: 0.8rem; color: var(--color-text-muted); }
         .act-count svg { opacity: 0.6; }
