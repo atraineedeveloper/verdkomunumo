@@ -12,6 +12,7 @@ import { formatDate, getAvatarUrl } from '@/lib/utils'
 import { addPostLike } from '@/lib/likes'
 import { CATEGORY_COLORS } from '@/lib/icons'
 import { fetchFeedPostsWithFallback, normalizeQuotedPost } from '@/lib/postFeatures'
+import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 import PostComposer from '@/components/PostComposer'
 import { PostEditCard } from '@/components/PostEditCard'
 import PostMedia from '@/components/PostMedia'
@@ -307,10 +308,11 @@ export default function FeedPage() {
               <div className="left">
                 {post.author && (
                   <Link to={routes.profile(post.author.username)} className="ava-wrap">
-                    <img
-                      src={getAvatarUrl(post.author.avatar_url, post.author.display_name)}
-                      alt={post.author.display_name}
-                      className="ava"
+                    <PresenceAvatar
+                      userId={post.author.id}
+                      avatarUrl={post.author.avatar_url}
+                      displayName={post.author.display_name}
+                      imageClassName="ava"
                     />
                   </Link>
                 )}

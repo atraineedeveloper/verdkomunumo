@@ -1,5 +1,5 @@
 export const queryKeys = {
-  feed: (params?: object) => ['feed', params] as const,
+  feed: (params?: object) => params ? ['feed', params] as const : ['feed'] as const,
   post: (id: string) => ['post', id] as const,
   profile: (username: string) => ['profile', username] as const,
   categories: () => ['categories'] as const,
@@ -9,7 +9,7 @@ export const queryKeys = {
   communityMessages: () => ['community-messages'] as const,
   search: (q: string, tab: string) => ['search', q, tab] as const,
   appLayout: () => ['app-layout'] as const,
-  adminDashboard: (params?: object) => ['admin-dashboard', params] as const,
+  adminDashboard: (params?: object) => params ? ['admin-dashboard', params] as const : ['admin-dashboard'] as const,
   adminCategories: () => ['admin-categories'] as const,
-  adminReports: (params?: object) => ['admin-reports', params] as const,
-} 
+  adminReports: (params?: object) => params ? ['admin-reports', params] as const : ['admin-reports'] as const,
+}

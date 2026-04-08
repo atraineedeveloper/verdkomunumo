@@ -70,13 +70,14 @@ export function FloatingSuggestionButton() {
     <>
       <button
         type="button"
-        className="fixed bottom-[5.3rem] right-4 z-[950] inline-flex items-center gap-2 rounded-full border-0 bg-[linear-gradient(135deg,#138548_0%,#0f6a3c_100%)] px-4 py-3 text-[0.92rem] font-bold tracking-[-0.01em] text-white shadow-[0_20px_35px_rgba(11,88,52,0.26)] transition-transform hover:-translate-y-px md:bottom-4"
+        className="fixed bottom-[5.3rem] right-4 z-[950] flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-transform hover:-translate-y-px hover:text-[var(--color-text)] md:bottom-4"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
+        aria-label={t('suggestion_fab')}
+        title={t('suggestion_fab')}
       >
-        <Lightbulb size={18} strokeWidth={1.9} />
-        <span>{t('suggestion_fab')}</span>
+        <Lightbulb size={20} strokeWidth={1.8} />
       </button>
 
       {open && (

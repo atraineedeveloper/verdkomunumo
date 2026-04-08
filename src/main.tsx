@@ -53,7 +53,7 @@ createRoot(document.getElementById('root')!).render(
         </AppErrorBoundary>
         <Analytics />
         <SpeedInsights />
-        <QueryDevtools />
+
       </QueryClientProvider>
     </HelmetProvider>
   </StrictMode>,

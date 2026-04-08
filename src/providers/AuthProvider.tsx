@@ -78,11 +78,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        const currentUser = useAuthStore.getState().user
+        const isSameUser = !!currentUser && currentUser.id === session.user.id
         setUser(session.user)
-        queueProfileSync(session.user.id)
+        queueProfileSync(session.user.id, { preserveProfile: isSameUser })
       }
 
-      if (event === 'TOKEN_REFRESHED') {
+      if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         setUser(session.user)
         queueProfileSync(session.user.id, { preserveProfile: true })
       }

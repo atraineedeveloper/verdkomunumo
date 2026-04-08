@@ -21,6 +21,7 @@ import { LinkPreviewCard } from '@/components/LinkPreviewCard'
 import { RichText } from '@/components/RichText'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
+import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 import { hasCommentEditChanges } from '@/lib/editor'
 import type { Comment, ContentReportReason, Post } from '@/lib/types'
 import { routes } from '@/lib/routes'
@@ -408,7 +409,12 @@ export default function PostDetailPage() {
           {post.author && (
             <>
               <Link to={routes.profile(post.author.username)} className="ava-link">
-                <img src={getAvatarUrl(post.author.avatar_url, post.author.display_name)} alt={post.author.display_name} className="ava" />
+                <PresenceAvatar
+                  userId={post.author.id}
+                  avatarUrl={post.author.avatar_url}
+                  displayName={post.author.display_name}
+                  imageClassName="ava"
+                />
               </Link>
               <div className="author-info">
                 <Link to={routes.profile(post.author.username)} className="dname">{post.author.display_name}</Link>
@@ -488,14 +494,8 @@ export default function PostDetailPage() {
         </details>
       </article>
       {user ? (
-        <div className="compose">
+        <div className={`compose ${replyTarget ? 'opacity-50 pointer-events-none' : ''}`}>
           <form onSubmit={(e) => { e.preventDefault(); commentMutation.mutate() }}>
-            {replyTarget && (
-              <div className="reply-banner">
-                <span>{t('comment_replying_to', { username: replyTarget.username })}</span>
-                <button type="button" className="act" onClick={() => setReplyTarget(null)}>{t('suggestion_cancel')}</button>
-              </div>
-            )}
             <textarea name="content" value={commentContent} onChange={(e) => setCommentContent(e.target.value)} placeholder={t('post_comment_placeholder')} rows={2} />
             <div className="compose-footer">
               <button type="submit" className="btn" disabled={commentMutation.isPending}>{commentMutation.isPending ? t('messages_sending') : t('post_comment_btn')}</button>
@@ -534,11 +534,27 @@ export default function PostDetailPage() {
             onDelete={(commentId) => { if (window.confirm(`${t('admin_delete')}?`)) deleteCommentMutation.mutate({ commentId }) }}
             onToggleLike={(nextComment) => commentLikeMutation.mutate({ comment: nextComment })}
             onReport={(commentId, reason, details) => reportCommentMutation.mutate({ commentId, reason, details })}
+            renderReplyComposer={(commentId) => (
+              replyTarget?.id === commentId ? (
+                <div className="compose nested-compose" style={{ paddingLeft: '2.5rem', borderBottom: 'none', borderTop: '1px solid var(--color-border)', marginTop: '0.5rem', paddingTop: '0.85rem' }}>
+                  <form onSubmit={(e) => { e.preventDefault(); commentMutation.mutate() }}>
+                    <div className="reply-banner" style={{ border: 'none', padding: '0', marginBottom: '0.5rem', background: 'transparent' }}>
+                      <span style={{ fontWeight: 600 }}>{t('comment_replying_to', { username: replyTarget.username })}</span>
+                    </div>
+                    <textarea name="content" value={commentContent} onChange={(e) => setCommentContent(e.target.value)} placeholder={t('post_comment_placeholder')} rows={2} autoFocus />
+                    <div className="compose-footer" style={{ gap: '0.5rem' }}>
+                      <button type="button" className="act" onClick={() => { setReplyTarget(null); setCommentContent(''); }}>{t('suggestion_cancel')}</button>
+                      <button type="submit" className="btn" disabled={commentMutation.isPending || !commentContent.trim()}>{commentMutation.isPending ? t('messages_sending') : t('post_comment_btn')}</button>
+                    </div>
+                  </form>
+                </div>
+              ) : null
+            )}
           />
         ))}
       </section>
       <style>{`
-        .back{display:inline-flex;align-items:center;gap:.3rem;font-size:.825rem;color:var(--color-text-muted);text-decoration:none;margin-bottom:1.25rem}.back:hover{color:var(--color-text)}.post{padding-bottom:1.25rem;border-bottom:1px solid var(--color-border)}.author-row{display:flex;align-items:center;gap:.65rem;margin-bottom:1rem;flex-wrap:wrap}.ava-link{display:block;text-decoration:none;flex-shrink:0}.ava{width:40px;height:40px;border-radius:99px;object-fit:cover}.author-info{flex:1;min-width:0;display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap}.dname{font-size:.9rem;font-weight:600;color:var(--color-text);text-decoration:none}.dname:hover{text-decoration:underline}.muted{font-size:.82rem;color:var(--color-text-muted)}.cat-tag{margin-left:auto;font-size:.7rem;padding:.1rem .45rem;border-radius:99px;font-weight:500;text-decoration:none;white-space:nowrap}.content{font-size:1rem;line-height:1.7;color:var(--color-text);white-space:pre-wrap;margin:0 0 1.25rem}.post-footer{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.8rem}.time,.edited{color:var(--color-text-muted)}.edited{font-style:italic}.owner-actions,.stats{display:inline-flex;align-items:center;gap:.4rem;flex-wrap:wrap}.stats{margin-left:auto}.stat-line{display:inline-flex;align-items:center;gap:.3rem}.report-box,.comment-report{margin-top:1rem}.report-box summary,.comment-report summary{display:inline-flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.8rem;color:var(--color-text-muted)}.report-form{margin-top:.75rem;display:grid;gap:.7rem;max-width:420px}.report-form.compact{max-width:360px}.report-form label{display:grid;gap:.3rem}.report-form span{font-size:.78rem;color:var(--color-text-muted)}.report-form select,.report-form textarea,.comment-edit-form textarea{width:100%;border-radius:.75rem;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);padding:.7rem .8rem;font:inherit}.report-submit{width:fit-content;border:1px solid #dc2626;background:transparent;color:#dc2626;border-radius:.7rem;padding:.55rem .85rem;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.compose{padding:.85rem 0;border-bottom:1px solid var(--color-border)}.reply-banner{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.65rem;padding:.6rem .75rem;border:1px solid var(--color-border);border-radius:.8rem;background:var(--color-surface);color:var(--color-text-muted);font-size:.8rem}.compose textarea{width:100%;background:transparent;border:none;outline:none;resize:none;font-size:.9rem;line-height:1.6;color:var(--color-text);font-family:inherit;display:block;margin-bottom:.6rem}.compose-footer{display:flex;justify-content:flex-end}.comments{margin-top:.25rem}.comments h2{font-size:.875rem;font-weight:600;color:var(--color-text);padding:.75rem 0;margin:0;border-bottom:1px solid var(--color-border)}.count{color:var(--color-text-muted);font-weight:400}.empty{text-align:center;padding:2.5rem 0;font-size:.875rem;color:var(--color-text-muted)}.act{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .5rem;background:transparent;border:none;font-size:.8rem;color:var(--color-text-muted);border-radius:5px;cursor:pointer;font-family:inherit}.act:hover{color:var(--color-primary);background:var(--color-primary-dim)}.act:disabled{opacity:.7;cursor:wait}.act.liked{color:#e11d48;background:#f43f5e18}.act.danger:hover{color:#dc2626;background:#dc262615}.btn{background:var(--color-primary);color:#fff;border:none;border-radius:5px;padding:.35rem .9rem;font-size:.825rem;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center}
+        .back{display:inline-flex;align-items:center;gap:.3rem;font-size:.825rem;color:var(--color-text-muted);text-decoration:none;margin-bottom:1.25rem}.back:hover{color:var(--color-text)}.post{padding-bottom:1.25rem;border-bottom:1px solid var(--color-border)}.author-row{display:flex;align-items:center;gap:.65rem;margin-bottom:1rem;flex-wrap:wrap}.ava-link{display:block;text-decoration:none;flex-shrink:0}.ava{width:40px;height:40px;border-radius:99px;object-fit:cover}.author-info{flex:1;min-width:0;display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap}.dname{font-size:.9rem;font-weight:600;color:var(--color-text);text-decoration:none}.dname:hover{text-decoration:underline}.muted{font-size:.82rem;color:var(--color-text-muted)}.cat-tag{margin-left:auto;font-size:.7rem;padding:.1rem .45rem;border-radius:99px;font-weight:500;text-decoration:none;white-space:nowrap}.content{font-size:1rem;line-height:1.7;color:var(--color-text);white-space:pre-wrap;margin:0 0 1.25rem}.post-footer{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.8rem}.time,.edited{color:var(--color-text-muted)}.edited{font-style:italic}.owner-actions,.stats{display:inline-flex;align-items:center;gap:.4rem;flex-wrap:wrap}.stats{margin-left:auto}.stat-line{display:inline-flex;align-items:center;gap:.3rem}.report-box{margin-top:1rem}.comment-report{margin-left:auto}.report-box summary,.comment-report summary{display:inline-flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.8rem;color:var(--color-text-muted)}.report-box summary:hover,.comment-report summary:hover{color:var(--color-danger)}.report-form{margin-top:.75rem;display:grid;gap:.7rem;max-width:420px}.report-form.compact{max-width:360px;margin-top:.5rem;position:absolute;z-index:10;background:var(--color-surface);border:1px solid var(--color-border);padding:1rem;border-radius:0.75rem;box-shadow:0 10px 25px rgba(0,0,0,0.1);right:0}.report-form label{display:grid;gap:.3rem}.report-form span{font-size:.78rem;color:var(--color-text-muted)}.report-form select,.report-form textarea,.comment-edit-form textarea{width:100%;border-radius:.75rem;border:1px solid var(--color-border);background:var(--color-surface-alt);color:var(--color-text);padding:.7rem .8rem;font:inherit}.report-submit{width:fit-content;border:1px solid #dc2626;background:transparent;color:#dc2626;border-radius:.7rem;padding:.55rem .85rem;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.compose{padding:.85rem 0;border-bottom:1px solid var(--color-border)}.reply-banner{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.65rem;padding:.6rem .75rem;border:1px solid var(--color-border);border-radius:.8rem;background:var(--color-surface);color:var(--color-text-muted);font-size:.8rem}.compose textarea{width:100%;background:transparent;border:none;outline:none;resize:none;font-size:.9rem;line-height:1.6;color:var(--color-text);font-family:inherit;display:block;margin-bottom:.6rem}.compose-footer{display:flex;justify-content:flex-end}.comments{margin-top:.25rem}.comments h2{font-size:.875rem;font-weight:600;color:var(--color-text);padding:.75rem 0;margin:0;border-bottom:1px solid var(--color-border)}.count{color:var(--color-text-muted);font-weight:400}.empty{text-align:center;padding:2.5rem 0;font-size:.875rem;color:var(--color-text-muted)}.act{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .5rem;background:transparent;border:none;font-size:.8rem;color:var(--color-text-muted);border-radius:5px;cursor:pointer;font-family:inherit}.act:hover{color:var(--color-primary);background:var(--color-primary-dim)}.act:disabled{opacity:.7;cursor:wait}.act.liked{color:#e11d48;background:#f43f5e18}.act.danger:hover{color:#dc2626;background:#dc262615}.btn{background:var(--color-primary);color:#fff;border:none;border-radius:5px;padding:.35rem .9rem;font-size:.825rem;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center}
       `}</style>
     </>
   )
@@ -566,6 +582,7 @@ interface CommentRowProps {
   onDelete: (commentId: string) => void
   onToggleLike: (comment: Comment) => void
   onReport: (commentId: string, reason: ContentReportReason, details: string) => void
+  renderReplyComposer?: (commentId: string) => React.ReactNode
 }
 
 function CommentRow(props: CommentRowProps) {
@@ -594,6 +611,7 @@ function CommentRow(props: CommentRowProps) {
     onDelete,
     onToggleLike,
     onReport,
+    renderReplyComposer,
   } = props
   const isEditing = editingCommentId === comment.id
   const editingValue = isEditing ? editingCommentContent : comment.content
@@ -607,7 +625,16 @@ function CommentRow(props: CommentRowProps) {
     <div className={`comment-thread depth-${depth}`}>
       <div className="comment">
         <div className="left">
-          {comment.author && <Link to={routes.profile(comment.author.username)} className="ava-link"><img src={getAvatarUrl(comment.author.avatar_url, comment.author.display_name)} alt={comment.author.display_name} className="ava-sm" /></Link>}
+          {comment.author && (
+            <Link to={routes.profile(comment.author.username)} className="ava-link">
+              <PresenceAvatar
+                userId={comment.author.id}
+                avatarUrl={comment.author.avatar_url}
+                displayName={comment.author.display_name}
+                imageClassName="ava-sm"
+              />
+            </Link>
+          )}
         </div>
         <div className="right">
           <div className="cmeta">
@@ -658,6 +685,7 @@ function CommentRow(props: CommentRowProps) {
           </div>
         </div>
       </div>
+      {renderReplyComposer?.(comment.id)}
       {!!comment.replies?.length && <div className="comment-replies">{comment.replies.map((reply) => <CommentRow key={reply.id} {...props} comment={reply} depth={depth + 1} />)}</div>}
       <style>{`
         .comment-thread.depth-1{margin-left:2.35rem}.comment{display:flex;gap:.75rem;padding:.9rem 0;border-bottom:1px solid var(--color-border)}.comment-replies{display:grid}.left{flex-shrink:0}.ava-sm{width:32px;height:32px;border-radius:99px;object-fit:cover;display:block}.right{flex:1;min-width:0}.cmeta{display:flex;align-items:baseline;flex-wrap:wrap;gap:.25rem;margin-bottom:.3rem;font-size:.82rem}.small{font-size:.78rem}.ccontent{font-size:.9rem;line-height:1.6;color:var(--color-text);white-space:pre-wrap;margin:0 0 .45rem}.comment-edit-form{display:grid;gap:.6rem;margin-bottom:.5rem}.comment-edit-actions{display:flex;align-items:center;gap:.5rem;justify-content:flex-end;flex-wrap:wrap}.comment-footer{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap}
