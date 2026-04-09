@@ -663,7 +663,7 @@ function CommentRow(props: CommentRowProps) {
             </form>
           ) : (
             <div className="ccontent">
-              {comment.parentComment && (
+              {comment.parentComment && comment.parentComment.parent_id !== null && (
                 <div className="mb-[0.65rem] border-l-[3px] border-[var(--color-primary)] bg-[color:color-mix(in_srgb,var(--color-primary)_10%,transparent)] py-1.5 pl-3 pr-3 rounded-r-lg text-[0.85rem] overflow-hidden">
                   <strong className="block text-[var(--color-primary)] mb-0.5 text-[0.78rem] tracking-wide uppercase">{comment.parentComment.author?.display_name || comment.parentComment.author?.username}</strong>
                   <div className="text-[var(--color-text-muted)] opacity-90 line-clamp-1 text-ellipsis overflow-hidden break-words leading-relaxed whitespace-pre-line">
@@ -680,7 +680,7 @@ function CommentRow(props: CommentRowProps) {
                 {isLiking ? <InlineSpinner size={13} /> : <Heart size={13} strokeWidth={1.75} />} {comment.likes_count}
               </button>
             ) : <span className="act static"><Heart size={13} strokeWidth={1.75} /> {comment.likes_count}</span>}
-            {canReply && depth === 0 && !isEditing && <button type="button" className="act" onClick={() => onReply(getReplyTarget(comment))}><MessageSquare size={13} strokeWidth={1.75} /> {t('comment_reply')}</button>}
+            {canReply && !isEditing && <button type="button" className="act" onClick={() => onReply(getReplyTarget(comment))}><MessageSquare size={13} strokeWidth={1.75} /> {t('comment_reply')}</button>}
             {canManage && !isEditing && (
               <>
                 <button type="button" className="act" onClick={() => onStartEdit(comment)}><Pencil size={13} strokeWidth={1.75} /> {t('comment_edit')}</button>
