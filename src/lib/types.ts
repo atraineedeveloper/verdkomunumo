@@ -106,6 +106,7 @@ export interface Comment {
   author?: Profile
   user_liked?: boolean
   replies?: Comment[]
+  parentComment?: Comment | null
   post?: Post
 }
 

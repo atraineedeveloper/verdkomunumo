@@ -70,14 +70,13 @@ export function FloatingSuggestionButton() {
     <>
       <button
         type="button"
-        className="fixed bottom-[5.3rem] right-4 z-[950] flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-transform hover:-translate-y-px hover:text-[var(--color-text)] md:bottom-4"
+        className="fixed bottom-[5.3rem] right-4 z-[950] flex h-11 cursor-pointer items-center justify-center gap-2.5 rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] px-4.5 font-medium text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-transform hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)] md:bottom-4"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        aria-label={t('suggestion_fab')}
-        title={t('suggestion_fab')}
       >
-        <Lightbulb size={20} strokeWidth={1.8} />
+        <Lightbulb size={18} strokeWidth={2.2} className="text-white fill-white/20" />
+        <span className="text-[0.875rem] font-semibold text-white">{t('suggestion_fab') || 'Sugerencias'}</span>
       </button>
 
       {open && (
@@ -92,7 +91,7 @@ export function FloatingSuggestionButton() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="suggestion-title"
-            className="w-full max-w-[34rem] rounded-[1.5rem] border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--color-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.96))] p-[1.15rem] shadow-[0_28px_60px_rgba(0,0,0,0.22)]"
+            className="w-full max-w-[34rem] rounded-[1.5rem] border border-[var(--color-primary)] bg-[var(--color-surface)] p-[1.5rem] shadow-[0_28px_60px_rgba(0,0,0,0.35)]"
           >
             <div className="mb-4 flex justify-between gap-4">
               <div>

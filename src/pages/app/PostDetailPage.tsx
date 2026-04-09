@@ -22,6 +22,7 @@ import { RichText } from '@/components/RichText'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
+import { MentionTextarea } from '@/components/MentionTextarea'
 import { hasCommentEditChanges } from '@/lib/editor'
 import type { Comment, ContentReportReason, Post } from '@/lib/types'
 import { routes } from '@/lib/routes'
@@ -496,7 +497,7 @@ export default function PostDetailPage() {
       {user ? (
         <div className={`compose ${replyTarget ? 'opacity-50 pointer-events-none' : ''}`}>
           <form onSubmit={(e) => { e.preventDefault(); commentMutation.mutate() }}>
-            <textarea name="content" value={commentContent} onChange={(e) => setCommentContent(e.target.value)} placeholder={t('post_comment_placeholder')} rows={2} />
+            <MentionTextarea name="content" value={commentContent} onValueChange={setCommentContent} placeholder={t('post_comment_placeholder')} rows={2} />
             <div className="compose-footer">
               <button type="submit" className="btn" disabled={commentMutation.isPending}>{commentMutation.isPending ? t('messages_sending') : t('post_comment_btn')}</button>
             </div>
@@ -541,7 +542,7 @@ export default function PostDetailPage() {
                     <div className="reply-banner" style={{ border: 'none', padding: '0', marginBottom: '0.5rem', background: 'transparent' }}>
                       <span style={{ fontWeight: 600 }}>{t('comment_replying_to', { username: replyTarget.username })}</span>
                     </div>
-                    <textarea name="content" value={commentContent} onChange={(e) => setCommentContent(e.target.value)} placeholder={t('post_comment_placeholder')} rows={2} autoFocus />
+                    <MentionTextarea name="content" value={commentContent} onValueChange={setCommentContent} placeholder={t('post_comment_placeholder')} rows={2} autoFocus />
                     <div className="compose-footer" style={{ gap: '0.5rem' }}>
                       <button type="button" className="act" onClick={() => { setReplyTarget(null); setCommentContent(''); }}>{t('suggestion_cancel')}</button>
                       <button type="submit" className="btn" disabled={commentMutation.isPending || !commentContent.trim()}>{commentMutation.isPending ? t('messages_sending') : t('post_comment_btn')}</button>
@@ -650,7 +651,7 @@ function CommentRow(props: CommentRowProps) {
           </div>
           {isEditing ? (
             <form className="comment-edit-form" onSubmit={(event) => { event.preventDefault(); onSaveEdit(comment.id) }}>
-              <textarea rows={3} maxLength={2000} autoFocus value={editingValue} onChange={(event) => onChangeEditingValue(event.target.value)} onKeyDown={(event) => {
+              <MentionTextarea rows={3} maxLength={2000} autoFocus value={editingValue} onValueChange={onChangeEditingValue} onKeyDown={(event) => {
                 if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canSaveEdit && !isSaving) { event.preventDefault(); onSaveEdit(comment.id) }
                 if (event.key === 'Escape') { event.preventDefault(); onCancelEdit() }
               }} />
@@ -660,7 +661,19 @@ function CommentRow(props: CommentRowProps) {
                 <button type="submit" className="btn" disabled={isSaving || !canSaveEdit}>{isSaving ? <InlineSpinner size={13} className="mr-1.5" /> : null}{t('settings_save')}</button>
               </div>
             </form>
-          ) : <p className="ccontent">{comment.content}</p>}
+          ) : (
+            <div className="ccontent">
+              {comment.parentComment && (
+                <div className="mb-[0.65rem] border-l-[3px] border-[var(--color-primary)] bg-[color:color-mix(in_srgb,var(--color-primary)_10%,transparent)] py-1.5 pl-3 pr-3 rounded-r-lg text-[0.85rem] overflow-hidden">
+                  <strong className="block text-[var(--color-primary)] mb-0.5 text-[0.78rem] tracking-wide uppercase">{comment.parentComment.author?.display_name || comment.parentComment.author?.username}</strong>
+                  <div className="text-[var(--color-text-muted)] opacity-90 line-clamp-1 text-ellipsis overflow-hidden break-words leading-relaxed whitespace-pre-line">
+                    {comment.parentComment.content}
+                  </div>
+                </div>
+              )}
+              <RichText content={comment.content} />
+            </div>
+          )}
           <div className="comment-footer">
             {canLike ? (
               <button type="button" className={`act${comment.user_liked ? ' liked' : ''}`} onClick={() => onToggleLike(comment)} disabled={isLiking}>

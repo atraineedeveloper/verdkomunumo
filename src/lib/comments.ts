@@ -30,7 +30,7 @@ export function buildCommentThread(comments: Comment[]): Comment[] {
       continue
     }
 
-    parent.replies = [...(parent.replies ?? []), comment]
+    parent.replies = [...(parent.replies ?? []), { ...comment, parentComment: parent }]
   }
 
   return roots
