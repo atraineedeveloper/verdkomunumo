@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 import { queryKeys } from '@/lib/query/keys'
+import { useToastStore } from '@/stores/toasts'
 import {
   isTabVisible,
   requestPermission,
@@ -27,6 +28,16 @@ const TYPE_TITLES: Record<NotificationType, string> = {
   category_rejected: 'Kategorio malakceptita',
 }
 
+const TYPE_ICONS: Record<NotificationType, string> = {
+  comment: 'message-square',
+  follow: 'user-plus',
+  mention: 'at-sign',
+  message: 'message-square',
+  like: 'heart',
+  category_approved: 'check-circle',
+  category_rejected: 'shield-alert',
+}
+
 export function usePushNotifications(userId: string | undefined) {
   const queryClient = useQueryClient()
 
@@ -49,8 +60,16 @@ export function usePushNotifications(userId: string | undefined) {
           // Always refresh the badge count
           queryClient.invalidateQueries({ queryKey: queryKeys.appLayout() })
 
-          // Skip browser notification if tab is visible or type is not worthy
-          if (isTabVisible()) return
+          // In-App Toast Notification mechanism
+          if (isTabVisible()) {
+            const title = TYPE_TITLES[notif.type] ?? 'Verdkomunumo'
+            const icon = TYPE_ICONS[notif.type] ?? 'info'
+            const body = notif.message || title
+            useToastStore.getState().interaction(`${title}: ${body}`, icon)
+            return
+          }
+
+          // Native OS/Browser Notification mechanism
           if (!shouldNotify(notif.type)) return
 
           const granted = await requestPermission()

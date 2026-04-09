@@ -26,11 +26,13 @@ export function buildCommentThread(comments: Comment[]): Comment[] {
 
     const parent = byId.get(comment.parent_id)
     if (!parent) {
-      roots.push({ ...comment, parent_id: null })
+      comment.parent_id = null
+      roots.push(comment)
       continue
     }
 
-    parent.replies = [...(parent.replies ?? []), { ...comment, parentComment: parent }]
+    comment.parentComment = parent
+    parent.replies!.push(comment)
   }
 
   return roots
