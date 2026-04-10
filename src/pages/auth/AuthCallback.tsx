@@ -4,6 +4,19 @@ import { supabase } from '@/lib/supabase/client'
 import { safeRedirect } from '@/lib/redirect'
 import { routes } from '@/lib/routes'
 
+export async function exchangeAuthCallbackCode(code: string | null) {
+  if (!code) {
+    return { ok: true as const }
+  }
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  if (error) {
+    return { ok: false as const }
+  }
+
+  return { ok: true as const }
+}
+
 export function AuthCallback() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -13,18 +26,17 @@ export function AuthCallback() {
     const next = safeRedirect(searchParams.get('next'))
 
     async function handleCallback() {
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          navigate(`${routes.login}?error=auth_callback_failed`, { replace: true })
-          return
-        }
+      const result = await exchangeAuthCallbackCode(code)
+      if (!result.ok) {
+        navigate(`${routes.login}?error=auth_callback_failed`, { replace: true })
+        return
       }
+
       navigate(next, { replace: true })
     }
 
-    handleCallback()
-  }, [])
+    void handleCallback()
+  }, [navigate, searchParams])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">

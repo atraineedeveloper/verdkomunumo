@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { readE2EAuthOverride } from '@/lib/testing/authOverride'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 
@@ -14,6 +15,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Init theme from localStorage first
     initTheme()
+
+    const authOverride = readE2EAuthOverride()
+    if (authOverride) {
+      setUser(authOverride.user as never)
+      setProfile(authOverride.profile)
+      setProfileLoaded(true)
+      setInitialized(true)
+      return
+    }
 
     async function syncProfile(userId: string, options?: { preserveProfile?: boolean }) {
       setInitialized(false)

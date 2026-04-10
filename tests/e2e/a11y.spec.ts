@@ -1,11 +1,14 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { gotoAndWait } from './helpers'
+import { expectPublicPageReady, gotoAndWait } from './helpers'
 
 test.describe('accessibility', () => {
-  for (const path of ['/fonto', '/ensaluti', '/registrigxi']) {
+  test.describe.configure({ mode: 'serial' })
+
+  for (const path of ['/fonto', '/ensaluti', '/registrigxi', '/forgesis-pasvorton', '/restarigi-pasvorton']) {
     test(`has no critical axe violations on ${path}`, async ({ page }, testInfo) => {
       await gotoAndWait(page, path)
+      await expectPublicPageReady(page, path)
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa'])
         .analyze()

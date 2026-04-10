@@ -15,6 +15,26 @@ const resetPasswordSchema = z.object({
 
 type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
 
+export async function resolveResetPasswordSession(code: string | null) {
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      return { ready: false as const, error: 'Ne eblis validigi la ligilon por restarigo.' }
+    }
+  }
+
+  const { data, error } = await supabase.auth.getSession()
+  if (error) {
+    return { ready: false as const, error: error.message }
+  }
+
+  if (!data.session) {
+    return { ready: false as const, error: 'La restariga ligilo ne plu validas aŭ jam estis uzita.' }
+  }
+
+  return { ready: true as const, error: null }
+}
+
 export function ResetPasswordPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -31,23 +51,22 @@ export function ResetPasswordPage() {
     let active = true
 
     async function bootstrapRecovery() {
-      const code = searchParams.get('code')
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          if (active) setServerError('Ne eblis validigi la ligilon por restarigo.')
-          return
-        }
+      const result = await resolveResetPasswordSession(searchParams.get('code'))
+      if (!active) return
+
+      if (result.ready) {
+        setIsReady(true)
+        setServerError(null)
+        return
       }
 
-      const { data } = await supabase.auth.getSession()
-      if (active && data.session) {
-        setIsReady(true)
-      }
+      setIsReady(false)
+      setServerError(result.error)
     }
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY' || session) {
+        setServerError(null)
         setIsReady(true)
       }
     })
@@ -100,7 +119,9 @@ export function ResetPasswordPage() {
 
       {!isReady ? (
         <div className="bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-3 py-3 text-[0.875rem] text-[var(--color-text-muted)]">
-          {t('auth_reset_password_waiting', { defaultValue: 'Kontrolante la restarigan ligilon…' })}
+          {serverError
+            ? t('auth_reset_password_invalid_link', { defaultValue: 'La restariga ligilo ne plu validas aŭ jam estis uzita.' })
+            : t('auth_reset_password_waiting', { defaultValue: 'Kontrolante la restarigan ligilon…' })}
         </div>
       ) : (
         <form onSubmit={handleSubmit((data) => resetMutation.mutate(data))}>

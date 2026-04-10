@@ -1,20 +1,56 @@
 import { expect, test } from '@playwright/test'
-import { gotoAndWait } from './helpers'
+import { expectPublicPageReady, gotoAndWait } from './helpers'
 
 test.describe('visual regression', () => {
+  test.describe.configure({ mode: 'serial' })
+
+  test('feed guest page matches baseline', async ({ page }) => {
+    await gotoAndWait(page, '/fonto')
+    await expectPublicPageReady(page, '/fonto')
+    await expect(page).toHaveScreenshot('feed-guest-page.png', {
+      fullPage: true,
+      animations: 'disabled',
+      timeout: 15_000,
+    })
+  })
+
   test('login page matches baseline', async ({ page }) => {
     await gotoAndWait(page, '/ensaluti')
+    await expectPublicPageReady(page, '/ensaluti')
     await expect(page).toHaveScreenshot('login-page.png', {
       fullPage: true,
       animations: 'disabled',
+      timeout: 15_000,
     })
   })
 
   test('register page matches baseline', async ({ page }) => {
     await gotoAndWait(page, '/registrigxi')
+    await expectPublicPageReady(page, '/registrigxi')
     await expect(page).toHaveScreenshot('register-page.png', {
       fullPage: true,
       animations: 'disabled',
+      timeout: 15_000,
+    })
+  })
+
+  test('forgot password page matches baseline', async ({ page }) => {
+    await gotoAndWait(page, '/forgesis-pasvorton')
+    await expectPublicPageReady(page, '/forgesis-pasvorton')
+    await expect(page).toHaveScreenshot('forgot-password-page.png', {
+      fullPage: true,
+      animations: 'disabled',
+      timeout: 15_000,
+    })
+  })
+
+  test('reset password page matches baseline', async ({ page }) => {
+    await gotoAndWait(page, '/restarigi-pasvorton')
+    await expectPublicPageReady(page, '/restarigi-pasvorton')
+    await expect(page).toHaveScreenshot('reset-password-page.png', {
+      fullPage: true,
+      animations: 'disabled',
+      timeout: 15_000,
     })
   })
 })

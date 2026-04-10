@@ -108,6 +108,15 @@ Visual snapshots are stored in the repo. When an intentional UI change happens, 
 bun run test:visual:update
 ```
 
+## Documentation
+
+Specification-driven work for medium and large changes now lives in [`docs/`](./docs/).
+
+- process guide: [`docs/spec-driven-development.md`](./docs/spec-driven-development.md)
+- reusable template: [`docs/templates/spec-template.md`](./docs/templates/spec-template.md)
+- stabilization program: [`docs/specs/project-stabilization-program.md`](./docs/specs/project-stabilization-program.md)
+- QA coverage matrix: [`docs/qa-coverage-matrix.md`](./docs/qa-coverage-matrix.md)
+
 ## Deployment
 
 [`vercel.json`](./vercel.json) is configured so Vercel builds the React app directly from the repository root.

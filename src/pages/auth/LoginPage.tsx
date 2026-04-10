@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,7 +33,10 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const next = safeRedirect(searchParams.get('next'))
-  const [serverError, setServerError] = useState<string | null>(null)
+  const callbackError = searchParams.get('error') === 'auth_callback_failed'
+    ? t('auth_callback_failed', { defaultValue: 'La aŭtentiga revoko malsukcesis. Bonvolu reprovi.' })
+    : null
+  const [serverError, setServerError] = useState<string | null>(callbackError)
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -58,6 +61,10 @@ export function LoginPage() {
     },
     onError: (err: Error) => setServerError(err.message),
   })
+
+  useEffect(() => {
+    setServerError(callbackError)
+  }, [callbackError])
 
   return (
     <>

@@ -74,6 +74,21 @@ describe('optimisticPosts', () => {
     expect(result.post).toMatchObject({ id: 'detail-1', user_liked: false, likes_count: 8 })
   })
 
+  it('updates matching posts inside paginated payloads', () => {
+    const result = updatePostLikeInData(
+      {
+        pages: [
+          { posts: [makePost({ id: 'a', likes_count: 2 })] },
+          { posts: [makePost({ id: 'b', likes_count: 5, user_liked: true })] },
+        ],
+      },
+      'b'
+    )
+
+    expect(result.pages[0].posts[0]).toMatchObject({ id: 'a', user_liked: false, likes_count: 2 })
+    expect(result.pages[1].posts[0]).toMatchObject({ id: 'b', user_liked: false, likes_count: 4 })
+  })
+
   it('updates post content in list-like and detail payloads', () => {
     const nextUpdatedAt = '2026-01-02T00:00:00.000Z'
     const result = updatePostInData(
@@ -91,6 +106,25 @@ describe('optimisticPosts', () => {
 
     expect(result.posts).toHaveLength(1)
     expect(result.posts[0]).toMatchObject({ id: 'b' })
+  })
+
+  it('updates and removes posts inside paginated payloads', () => {
+    const updated = updatePostInData(
+      {
+        pages: [
+          { posts: [makePost({ id: 'a' })] },
+          { posts: [makePost({ id: 'b' })] },
+        ],
+      },
+      'b',
+      { content: 'Paginated patch', is_edited: true }
+    )
+
+    expect(updated.pages[1].posts[0]).toMatchObject({ id: 'b', content: 'Paginated patch', is_edited: true })
+
+    const removed = removePostInData(updated, 'a')
+    expect(removed.pages[0].posts).toEqual([])
+    expect(removed.pages[1].posts[0]).toMatchObject({ id: 'b' })
   })
 
   it('updates matching comments in post detail payloads', () => {
