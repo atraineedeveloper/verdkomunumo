@@ -28,10 +28,3 @@ if (
 afterEach(() => {
   cleanup()
 })
-
-
-// Polyfill environment variables for tests
-if (typeof process !== 'undefined' && process.env) {
-  if (!process.env.VITE_SUPABASE_URL) process.env.VITE_SUPABASE_URL = 'http://localhost:54321';
-  if (!process.env.VITE_SUPABASE_ANON_KEY) process.env.VITE_SUPABASE_ANON_KEY = 'fake-anon-key';
-}
