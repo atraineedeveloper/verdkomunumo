@@ -39,6 +39,7 @@ Useful commands:
 
 ```bash
 bun run dev
+bun run guard:quality
 bun run test
 bun run test:smoke
 bun run test:visual
@@ -110,10 +111,21 @@ bun run test:visual:update
 
 ## Documentation
 
-Specification-driven work for medium and large changes now lives in [`docs/`](./docs/).
+The repository includes a full engineering handbook in [`docs/`](./docs/).
 
+- documentation index: [`docs/README.md`](./docs/README.md)
+- engineering principles: [`docs/engineering-principles.md`](./docs/engineering-principles.md)
+- architecture guide: [`docs/architecture.md`](./docs/architecture.md)
+- coding standards: [`docs/coding-standards.md`](./docs/coding-standards.md)
+- testing standards: [`docs/testing-standards.md`](./docs/testing-standards.md)
+- i18n standards: [`docs/i18n-standards.md`](./docs/i18n-standards.md)
+- performance and reliability guide: [`docs/performance-and-reliability.md`](./docs/performance-and-reliability.md)
+- security and privacy guide: [`docs/security-and-privacy.md`](./docs/security-and-privacy.md)
 - process guide: [`docs/spec-driven-development.md`](./docs/spec-driven-development.md)
 - reusable template: [`docs/templates/spec-template.md`](./docs/templates/spec-template.md)
+- vibe coding playbook: [`docs/vibe-coding-playbook.md`](./docs/vibe-coding-playbook.md)
+- documentation governance: [`docs/documentation-governance.md`](./docs/documentation-governance.md)
+- review and release checklist: [`docs/review-and-release-checklist.md`](./docs/review-and-release-checklist.md)
 - stabilization program: [`docs/specs/project-stabilization-program.md`](./docs/specs/project-stabilization-program.md)
 - QA coverage matrix: [`docs/qa-coverage-matrix.md`](./docs/qa-coverage-matrix.md)
 

@@ -1,64 +1,59 @@
-# Feature Spec Template
+# Spec Template
 
 ## Title
 
-Nombre corto de la feature.
+Short feature or change name.
 
 ## Summary
 
-Qué se quiere lograr y cuál es el problema.
+One or two paragraphs explaining what changes and why.
 
-## Scope
+## Goals
 
-### In
+- goal 1
+- goal 2
+- goal 3
 
-- Comportamientos incluidos en esta iteración.
+## Non-Goals
 
-### Out
+- non-goal 1
+- non-goal 2
 
-- Lo que explícitamente no se va a resolver todavía.
+## Users And Scenarios
 
-## User Experience
+- primary user
+- primary workflow
+- notable edge workflow
 
-- Qué acción toma el usuario.
-- Qué feedback recibe.
-- Qué estados visuales importan.
+## Functional Requirements
 
-## Business Rules
+- requirement 1
+- requirement 2
+- requirement 3
 
-- Regla 1.
-- Regla 2.
-- Regla 3.
+## UX Notes
 
-## Data And Contracts
+- loading states
+- empty states
+- error states
+- responsive considerations
+- accessibility considerations
 
-- Tablas afectadas.
-- Campos nuevos o modificados.
-- Validaciones.
-- Tipos o payloads relevantes.
+## Data And Technical Notes
 
-## Error Cases
+- tables, queries, or API dependencies
+- auth or permission assumptions
+- cache/query key expectations
+- validation and normalization expectations
 
-- Qué pasa si falla la operación.
-- Qué pasa si el usuario no tiene permiso.
-- Qué pasa si el dato relacionado no existe.
+## Risks And Edge Cases
 
-## Acceptance Criteria
+- risk 1
+- risk 2
+- risk 3
 
-- Dado X, cuando Y, entonces Z.
-- Dado X, cuando Y, entonces Z.
+## Testing And Verification
 
-## Verification
-
-- Unit:
-- Integration:
-- E2E:
-- A11y:
-- Visual:
-- DB / migration:
-
-## Notes
-
-- Riesgos.
-- Dependencias.
-- Decisiones abiertas.
+- unit/integration coverage
+- E2E expectations
+- manual verification notes

@@ -2,31 +2,9 @@
 
 ## Summary
 
-This flow covers moderator and admin access, dashboard entry, report handling, and category management permissions. The goal is to keep privileged tooling reliable while preventing unauthorized access.
+Admin and moderation tools are high-impact surfaces with elevated risk. They must be reliable, authorization-aware, and auditable enough for operational use.
 
-## Scope
+## Goals
 
-### In
-
-- protected admin routes
-- moderator dashboard and reports
-- admin-only category management
-- permission boundaries and redirects
-
-### Out
-
-- policy redesign
-- new moderation models
-
-## Business Rules
-
-- moderator and admin routes must enforce role minimums
-- category management remains admin-only
-- unauthorized users must be redirected safely and consistently
-
-## Verification
-
-- Unit: protected-route and role helpers
-- E2E: allowed and denied admin entry paths
-- A11y: dashboard and reports minimum
-- Visual: dashboard primary state
+- clear admin visibility into relevant content and users
+- safe moderation actions

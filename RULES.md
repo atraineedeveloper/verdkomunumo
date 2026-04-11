@@ -1,50 +1,84 @@
-# Verdkomunumo AI Engineering Guidelines
+# Verdkomunumo Rules
 
-This document contains explicit rules and architecture patterns for Verdkomunumo. All AI agents (Cursor, Copilot, Cline, Antigravity, Claude Code, etc.) MUST read and adhere to these guidelines BEFORE writing any code.
+This file is the short operational rulebook for contributors and AI agents.
 
-## 1. Tech Stack Overview
-- **Core:** React 18, TypeScript, Vite
-- **State Management:** Zustand (global state), TanStack React Query v5 (server state)
-- **Backend & Auth:** Supabase (PostgreSQL, Edge Functions, Storage, Auth)
-- **Routing:** React Router v6
-- **Styling:** Vanilla CSS (App-wide) / Tailwind (if specifically migrated)
+Read this before editing code. Use `docs/` for the longer explanation.
 
----
+## Required Reading Order
 
-## 2. TanStack React Query Standards
-React Query is the backbone of this application. Most critical bugs stem from cache mismatch.
-### A. Query Key Generation (Fuzzy Matching Safety)
-When creating query keys via factory functions (e.g., `src/lib/query/keys.ts`), **NEVER** include `undefined` as an array element for optional parameters. React Query v5 treats `undefined` as a strict match element, destroying fuzzy prefix matching for cache invalidation.
-**❌ INCORRECT:**
-```typescript
-feed: (params?: object) => ['feed', params] as const
-```
-**✅ CORRECT:**
-```typescript
-feed: (params?: object) => params ? ['feed', params] as const : ['feed'] as const
-```
+1. this file
+2. `docs/README.md`
+3. the relevant feature spec in `docs/specs/`
 
-### B. Optimistic UI Updates
-When implementing features like "Likes", "Follows", or "Edits", **ALWAYS** use Optimistic UI via `onMutate`. 
-- You MUST ensure the mutation's `setQueryData` target key perfectly reflects the EXACT parameters used by the `useQuery`/`useInfiniteQuery` hook.
-- e.g. If the Feed Hook uses `['feed', { filter, profileId }]`, the mutation's `onMutate` MUST use `['feed', { filter, profileId }]`.
+## Non-Negotiable Rules
 
----
+### 1. Keep User-Facing Text Clean
 
-## 3. Auth & Session Lifecycle (Supabase + Zustand)
-Supabase automatically triggers `onAuthStateChange` listeners upon tab focus, visibility change, and token refreshes.
-- DO NOT set global states to `null` on `SIGNED_IN` or `TOKEN_REFRESHED` events if the incoming session user ID perfectly matches the currently cached Zustand `user.id`.
-- Failing to use a `preserveProfile: true` flag during re-synchronization will cause the app layout to erroneously flash guest UI elements.
+- all product strings should go through i18n unless there is a deliberate exception
+- do not introduce mojibake or mixed encodings
+- if you see corrupted text, fix it at the source
 
----
+### 2. Do Not Grow Giant Feature Files Casually
 
-## 4. Vite & Build Bundling 
-- **DO NOT** configure custom `manualChunks` in `vite.config.ts` unless there is an explicitly confirmed dependency size threshold bypass. Over-aggressively splitting chunks creates fatal cyclic dependencies (especially with `zod` and forms validation) resulting in empty module exports on Vercel production.
-- Leave bundling algorithms to Vite's automatic Rolldown/Rollup capabilities.
+- if a page or component is already large, extract logic before adding major new behavior
+- move repeated async logic into hooks or helpers
+- do not let route files absorb all business logic
 
----
+### 3. Avoid Runtime `any`
 
-## 5. UI/UX Rules
-- **Disabled Interaction States**: Buttons handling asynchronous actions (e.g. Likes, Posts) should immediately render an `<InlineSpinner />` mask on `isPending`, but the underlying text/data should be driven by the instantaneous Optimistic Cache update.
-- Always include thorough error catching and render via `toast.error()`.
-- Do not add arbitrary CSS classes or inline styles unless completely necessary; adhere to standard BEM-like class layouts existing in the CSS architecture.
+- do not add new `any` in production paths by default
+- use concrete types near Supabase boundaries
+- tests can be more flexible, production code cannot
+
+### 4. Respect React Query Contracts
+
+- use `src/lib/query/keys.ts`
+- never include `undefined` as an array element in query keys
+- optimistic updates must target the exact cache shape used by the active query
+
+### 5. Preserve Auth Continuity
+
+- do not null out stable auth/profile state on refresh-like Supabase auth events when the user identity did not change
+- avoid guest/auth flicker during known authenticated transitions
+
+### 6. Keep Error Handling Explicit
+
+- user actions need loading and error states
+- failed async actions should surface through explicit UI feedback such as `toast.error()`
+- unexpected rendering failures should be capturable centrally
+
+### 7. Do Not Change Architecture Accidentally
+
+- do not introduce new frameworks or patterns casually
+- do not invent a second way to solve a problem that already has a project pattern
+- if architecture must change, update docs in the same task
+
+### 8. Treat PWA And Lazy Routes As Risky Areas
+
+- route-level lazy loading is allowed
+- deployment/caching interactions must be considered
+- do not modify chunking strategy casually
+
+## Documentation Rules
+
+- medium and large changes need a spec or a spec update in `docs/specs/`
+- update durable docs when behavior, architecture, or standards change
+- code is not done if the docs are now misleading
+
+## Validation Rules
+
+For meaningful changes, run the relevant subset of:
+
+- `bun run typecheck`
+- `bun run test`
+- `bun run build`
+- Playwright checks when the flow is user-critical or highly visual
+
+## Decision Default
+
+When in doubt, prefer the option that is:
+
+- easier to reason about
+- easier to test
+- more consistent with existing patterns
+- less likely to create hidden debt
