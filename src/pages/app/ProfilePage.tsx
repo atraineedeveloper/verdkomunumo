@@ -268,7 +268,7 @@ export default function ProfilePage() {
 
           <div className="profile-meta">
             {profile.location && <span><MapPin size={13} strokeWidth={1.75} /> {profile.location}</span>}
-            {profile.website && <a href={profile.website} target="_blank" rel="noopener"><ExternalLink size={13} strokeWidth={1.75} /> {profile.website}</a>}
+            {profile.website && <a href={profile.website} target="_blank" rel="noopener noreferrer"><ExternalLink size={13} strokeWidth={1.75} /> {profile.website}</a>}
           </div>
 
           <div className="profile-stats">
