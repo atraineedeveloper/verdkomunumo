@@ -316,6 +316,48 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
     }, 0)
   }
 
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (suggestion) {
+      const results = suggestion.type === '@' ? mentionResults : hashtagResults
+      const count = results.length
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault()
+          setSuggestionIndex(i => (i + 1) % Math.max(count, 1))
+          return
+        case 'ArrowUp':
+          event.preventDefault()
+          setSuggestionIndex(i => (i - 1 + Math.max(count, 1)) % Math.max(count, 1))
+          return
+        case 'Enter':
+        case 'Tab':
+          if (count > 0) {
+            event.preventDefault()
+            const selected = suggestion.type === '@' ? (mentionResults[suggestionIndex] as any).username : hashtagResults[suggestionIndex]
+            insertSuggestion(selected)
+            return
+          }
+          break
+        case 'Escape':
+          event.preventDefault()
+          setSuggestion(null)
+          return
+      }
+    }
+
+    // existing handlers:
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canPost && !mutation.isPending && !preparingImages) {
+      event.preventDefault()
+      mutation.mutate()
+    }
+
+    if (event.key === 'Escape' && !suggestion) {
+      event.preventDefault()
+      maybeCancelComposer()
+    }
+  }
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!displayProfile) throw new Error('Not authenticated')
@@ -438,30 +480,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
         maxLength={5000}
         rows={focused || !!quotedPost ? 4 : 2}
         className="composer-textarea"
-        onKeyDown={(event) => {
-          if (suggestion) {
-            const results = suggestion.type === '@' ? mentionResults : hashtagResults
-            const count = results.length
-            if (event.key === 'ArrowDown') { event.preventDefault(); setSuggestionIndex(i => (i + 1) % Math.max(count, 1)); return }
-            if (event.key === 'ArrowUp') { event.preventDefault(); setSuggestionIndex(i => (i - 1 + Math.max(count, 1)) % Math.max(count, 1)); return }
-            if ((event.key === 'Enter' || event.key === 'Tab') && count > 0) {
-              event.preventDefault()
-              const selected = suggestion.type === '@' ? (mentionResults[suggestionIndex] as any).username : hashtagResults[suggestionIndex]
-              insertSuggestion(selected)
-              return
-            }
-            if (event.key === 'Escape') { setSuggestion(null); return }
-          }
-          // existing handlers:
-          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canPost && !mutation.isPending && !preparingImages) {
-            event.preventDefault()
-            mutation.mutate()
-          }
-          if (event.key === 'Escape' && !suggestion) {
-            event.preventDefault()
-            maybeCancelComposer()
-          }
-        }}
+        onKeyDown={handleKeyDown}
         onPaste={(event) => {
           const pastedImages = Array.from(event.clipboardData.files).filter((file) => file.type.startsWith('image/'))
           if (!pastedImages.length) return
