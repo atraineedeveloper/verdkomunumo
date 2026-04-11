@@ -1,32 +1,81 @@
-# Docs
+# Verdkomunumo Documentation
 
-Esta carpeta concentra documentación operativa del proyecto.
+This directory is the operating manual for Verdkomunumo.
 
-## Contenido
+It exists for two audiences:
 
-- [Spec-Driven Development](/c:/Users/DELL/DevProjects/verdkomunumo/docs/spec-driven-development.md)
-- [Feature Spec Template](/c:/Users/DELL/DevProjects/verdkomunumo/docs/templates/spec-template.md)
-- [Project Stabilization Program](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/project-stabilization-program.md)
-- [QA Coverage Matrix](/c:/Users/DELL/DevProjects/verdkomunumo/docs/qa-coverage-matrix.md)
+- humans making product and engineering decisions
+- AI coding agents helping implement, review, and maintain the project
 
-## Specs por flujo
+The goal is to support fast iteration without uncontrolled technical debt.
 
-- [Auth And Session](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/auth-and-session.md)
-- [Feed And Post Composer](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/feed-and-post-composer.md)
-- [Post Detail And Comments](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/post-detail-and-comments.md)
-- [Profiles And Search](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/profiles-and-search.md)
-- [Messages And Notifications](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/messages-and-notifications.md)
-- [Settings And Preferences](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/settings-and-preferences.md)
-- [Admin Moderation](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/admin-moderation.md)
-- [Categories And Taxonomy](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/categories-and-taxonomy.md)
-- [Email Delivery And Webhooks](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/email-delivery-and-webhooks.md)
-- [Suggestions And Feedback](/c:/Users/DELL/DevProjects/verdkomunumo/docs/specs/suggestions-and-feedback.md)
+## How To Use This Directory
 
-## Uso recomendado
+Read these documents in this order when starting significant work:
 
-Para cambios medianos o grandes:
+1. [engineering-principles.md](./engineering-principles.md)
+2. [architecture.md](./architecture.md)
+3. [coding-standards.md](./coding-standards.md)
+4. [testing-standards.md](./testing-standards.md)
+5. [i18n-standards.md](./i18n-standards.md)
+6. [performance-and-reliability.md](./performance-and-reliability.md)
+7. [security-and-privacy.md](./security-and-privacy.md)
+8. [spec-driven-development.md](./spec-driven-development.md)
+9. [vibe-coding-playbook.md](./vibe-coding-playbook.md)
+10. [documentation-governance.md](./documentation-governance.md)
+11. [review-and-release-checklist.md](./review-and-release-checklist.md)
 
-1. crea una spec en `docs/specs/`;
-2. valida alcance, reglas y aceptación;
-3. implementa;
-4. prueba contra la spec.
+## Directory Structure
+
+- [engineering-principles.md](./engineering-principles.md)
+  Project values, non-negotiables, and decision criteria.
+- [architecture.md](./architecture.md)
+  Current technical architecture and expected module boundaries.
+- [coding-standards.md](./coding-standards.md)
+  Rules for TypeScript, React, Supabase access, query handling, and file organization.
+- [testing-standards.md](./testing-standards.md)
+  Testing expectations, required coverage by feature type, and review gates.
+- [i18n-standards.md](./i18n-standards.md)
+  Language, encoding, translations, and text handling rules.
+- [performance-and-reliability.md](./performance-and-reliability.md)
+  Bundle, PWA, caching, loading, and resilience guidance.
+- [security-and-privacy.md](./security-and-privacy.md)
+  Security expectations for auth, data access, secrets, and moderation-sensitive features.
+- [spec-driven-development.md](./spec-driven-development.md)
+  The process for writing specs before medium and large changes.
+- [qa-coverage-matrix.md](./qa-coverage-matrix.md)
+  A practical map of what kinds of tests and checks each feature area should have.
+- [vibe-coding-playbook.md](./vibe-coding-playbook.md)
+  How to move quickly with AI assistance without degrading the codebase.
+- [documentation-governance.md](./documentation-governance.md)
+  Ownership, change triggers, and quality expectations for docs themselves.
+- [review-and-release-checklist.md](./review-and-release-checklist.md)
+  Practical merge and release checklist aligned with the repo standards.
+- [templates/spec-template.md](./templates/spec-template.md)
+  Reusable spec template for new work.
+- [specs/](./specs)
+  Feature-level specifications and stabilization plans.
+
+## Change Policy
+
+Update documentation when any of the following changes:
+
+- architecture or data flow
+- coding conventions
+- test expectations
+- auth or security behavior
+- bundle or deployment strategy
+- feature scope or product workflows
+
+A feature is not fully done if the code changes but the relevant durable documentation remains wrong.
+
+## Intended Relationship With `RULES.md`
+
+`docs/` contains the long-form explanation.
+
+`RULES.md` contains short, high-signal operational constraints that should influence implementation immediately.
+
+When both exist:
+
+- `RULES.md` wins for concise execution rules
+- `docs/` explains the why, examples, and decision boundaries

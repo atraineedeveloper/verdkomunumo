@@ -2,28 +2,9 @@
 
 ## Summary
 
-This flow covers the floating suggestion button and feedback capture path. The goal is to keep user-reported issues easy to send and easy to interpret during stabilization.
+The suggestion flow allows users to contribute product ideas and feedback. It should remain lightweight for users and manageable for administrators.
 
-## Scope
+## Goals
 
-### In
-
-- floating suggestion entry point
-- feedback modal or submission path
-- accessibility and mobile placement
-
-### Out
-
-- external support tooling migrations
-- advanced triage automation
-
-## Business Rules
-
-- the entry point must remain reachable but not block core navigation
-- submission should fail gracefully and preserve user input whenever possible
-
-## Verification
-
-- E2E: open suggestion flow and submit/cancel
-- A11y: floating action and form controls
-- Visual: mobile and desktop placement
+- low-friction submission
+- clear status handling

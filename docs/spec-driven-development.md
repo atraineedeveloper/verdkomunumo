@@ -1,157 +1,43 @@
 # Spec-Driven Development
 
-Esta guía define una versión ligera de Spec-Driven Development para Verdkomunumo.
+Verdkomunumo uses specification-driven development for medium and large changes.
 
-## Objetivo
+This is not bureaucracy for its own sake. It is a tool to preserve quality while moving quickly.
 
-Antes de implementar una feature o cambio relevante, dejamos una especificación corta que responda:
+## When A Spec Is Required
 
-- qué problema se está resolviendo;
-- qué comportamiento se espera;
-- qué restricciones existen;
-- cómo se va a validar.
+Write or update a spec when the change:
 
-La spec no reemplaza el código ni los tests. Sirve para alinear producto, diseño, backend, frontend y QA antes de tocar la implementación.
+- affects multiple screens or workflows
+- changes auth, routing, caching, notifications, or moderation behavior
+- introduces a new product surface
+- changes data shape or requires migrations
+- requires non-trivial testing strategy
+- is large enough that implementation details may drift during work
 
-## Cuándo usarlo
+## Spec Workflow
 
-Usa una spec en `docs/` cuando el cambio tenga al menos una de estas señales:
+1. Define the problem.
+2. Define user-visible goals.
+3. Define explicit non-goals.
+4. Describe the states and flows.
+5. Identify data dependencies and constraints.
+6. Define risks and edge cases.
+7. Define validation and rollout expectations.
+8. Implement against the spec.
+9. Update the spec if reality changes.
 
-- toca más de una capa: UI, estado, API, DB, notificaciones, permisos;
-- cambia reglas de negocio;
-- necesita migraciones o contratos nuevos;
-- puede romper flujos existentes;
-- requiere criterios de aceptación claros;
-- el cambio es lo bastante ambiguo como para que “ir viendo” salga caro.
+## Required Sections
 
-No hace falta para cambios mínimos como:
+Use the template in [templates/spec-template.md](./templates/spec-template.md).
 
-- copy tweaks;
-- estilos aislados;
-- fixes triviales sin impacto de comportamiento;
-- refactors internos sin cambio funcional.
+The minimum expected sections are:
 
-## Flujo recomendado
-
-1. Crear una spec breve en `docs/specs/`.
-2. Revisar huecos, contradicciones y riesgos.
-3. Convertir la spec en plan técnico.
-4. Implementar.
-5. Derivar tests desde la spec.
-6. Validar contra criterios de aceptación.
-7. Si el comportamiento cambió, actualizar la spec.
-
-## Estructura mínima de una spec
-
-Cada spec debe responder, como mínimo:
-
-### 1. Resumen
-
-Qué se quiere lograr y por qué.
-
-### 2. Alcance
-
-Qué entra y qué no entra en esta iteración.
-
-### 3. Reglas de negocio
-
-Las condiciones que el sistema debe respetar siempre.
-
-### 4. UX esperada
-
-Qué ve y hace el usuario.
-
-### 5. Datos y contratos
-
-Tablas, campos, payloads, tipos, validaciones y compatibilidad.
-
-### 6. Errores y casos borde
-
-Qué debe pasar si hay datos incompletos, permisos insuficientes, duplicados, timeouts o estados inesperados.
-
-### 7. Criterios de aceptación
-
-Condiciones concretas para dar el trabajo por correcto.
-
-### 8. Verificación
-
-Qué tests o checks deben cubrir el cambio:
-
-- unitarios;
-- integración;
-- E2E;
-- accesibilidad;
-- visual;
-- migraciones o validaciones SQL.
-
-## Convenciones para este repo
-
-### Ubicación
-
-- Guías generales: `docs/`
-- Specs de features: `docs/specs/`
-- Plantillas: `docs/templates/`
-
-### Nombre de archivo
-
-Usa nombres descriptivos en kebab-case:
-
-- `docs/specs/comment-replies.md`
-- `docs/specs/following-feed-ranking.md`
-- `docs/specs/report-moderation-actions.md`
-
-### Tamaño
-
-Una buena spec aquí debería caber normalmente entre 40 y 120 líneas. Si empieza a parecer un documento legal, está sobredimensionada.
-
-### Nivel de detalle
-
-Debe ser suficiente para implementar sin adivinar reglas centrales, pero no hace falta describir cada clase o cada componente.
-
-## Qué hace buena una spec
-
-- Define comportamiento observable, no solo intención.
-- Declara claramente exclusiones.
-- Expone restricciones desde el inicio.
-- Tiene criterios de aceptación verificables.
-- Permite derivar tests casi de forma directa.
-
-## Qué hace mala una spec
-
-- Mezcla deseos vagos con decisiones obligatorias.
-- Omite casos borde importantes.
-- No define límites de la iteración.
-- Dice “hacerlo como X” sin traducir eso a reglas concretas.
-- No deja claro cómo saber si quedó bien.
-
-## Cómo trabajar conmigo usando este flujo
-
-El flujo más útil es este:
-
-1. Me dices el cambio.
-2. Yo redacto o completo la spec en `docs/specs/`.
-3. Revisamos huecos.
-4. Implemento contra esa spec.
-5. Corro tests alineados a la spec.
-6. Si hay desvíos, ajustamos spec o implementación de forma explícita.
-
-## Relación con tests
-
-La spec define el contrato. Los tests prueban que el contrato se cumple.
-
-Ejemplo práctico:
-
-- Spec: “las respuestas a comentarios solo permiten un nivel”.
-- Implementación: UI + validación + migración.
-- Tests:
-  - DB rechaza respuesta a respuesta;
-  - frontend no ofrece responder una reply;
-  - render muestra replies solo bajo comentarios raíz.
-
-## Regla pragmática
-
-Si una decisión importante aparece por primera vez durante la implementación, esa decisión probablemente debió existir primero en la spec.
-
-## Siguiente paso sugerido
-
-Cuando abras una feature nueva, crea primero una spec usando la plantilla en [docs/templates/spec-template.md](/c:/Users/DELL/DevProjects/verdkomunumo/docs/templates/spec-template.md).
+- summary
+- goals
+- non-goals
+- user flows
+- data and technical notes
+- risks
+- testing and verification
+- rollout or follow-up notes

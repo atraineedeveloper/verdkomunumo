@@ -1,0 +1,68 @@
+{
+  "runtimeAny": [
+    {
+      "file": "src/components/PostComposer.tsx",
+      "snippets": [
+        "onError: (err: any) => {",
+        "const selected = suggestion.type === '@' ? (mentionResults[suggestionIndex] as any).username : hashtagResults[suggestionIndex]",
+        "{t(`cat_name_${cat.slug}` as any)}",
+        "<option key={cat.id} value={cat.id}>{t(`cat_name_${cat.slug}` as any)}</option>"
+      ]
+    },
+    {
+      "file": "src/components/PostItem.tsx",
+      "snippets": [
+        "{t(`cat_name_${post.category.slug}` as any)}",
+        "categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as any) }))}"
+      ]
+    },
+    {
+      "file": "src/pages/admin/AdminDashboardPage.tsx",
+      "snippets": [
+        "{(data?.recentPosts ?? []).map((post: any) => {"
+      ]
+    },
+    {
+      "file": "src/pages/app/ConversationPage.tsx",
+      "snippets": [
+        "queryClient.setQueryData(messageKey, (current: any) => ({"
+      ]
+    },
+    {
+      "file": "src/pages/app/FeedPage.tsx",
+      "snippets": [
+        "profile: any",
+        "editPostMutation: any",
+        "deletePostMutation: any",
+        "likeMutation: any",
+        "{t(`cat_name_${post.category.slug}` as any)}",
+        "categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as any) }))}",
+        "followedIds = (follows ?? []).map((f: any) => f.following_id)",
+        "const posts = (postsRes.data ?? []).map((p: any) => ({",
+        "user_liked: (p.likes ?? []).some((l: any) => l.user_id === profile?.id),"
+      ]
+    },
+    {
+      "file": "src/pages/app/MessagesPage.tsx",
+      "snippets": [
+        "const latestMessageByConversation = new Map<string, any>()"
+      ]
+    }
+  ],
+  "largeFiles": {
+    "src/pages/app/PostDetailPage.tsx": 740,
+    "src/pages/app/FeedPage.tsx": 600,
+    "src/components/PostComposer.tsx": 690,
+    "src/pages/admin/AdminDashboardPage.tsx": 450,
+    "src/pages/app/SearchPage.tsx": 430,
+    "src/pages/app/ProfilePage.tsx": 430,
+    "src/pages/app/SettingsPage.tsx": 420,
+    "src/pages/admin/AdminReportsPage.tsx": 380,
+    "src/lib/i18n/translations.ts": 1850,
+    "src/lib/supabase/database.types.ts": 1000
+  },
+  "mojibakeAllow": [
+    "src/lib/i18n/translations.ts",
+    "src/pages/app/PostDetailPage.tsx"
+  ]
+}
