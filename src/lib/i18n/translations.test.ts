@@ -5,6 +5,20 @@ const EXPECTED_LOCALES: Locale[] = ['eo', 'es', 'en', 'pt', 'ja', 'fr', 'de', 'k
 
 describe('i18n translations', () => {
   describe('LOCALE_LABELS', () => {
+    it('has the correct structure and exact values', () => {
+      expect(LOCALE_LABELS).toEqual({
+        eo: 'Esperanto',
+        es: 'Español',
+        en: 'English',
+        pt: 'Português',
+        ja: '日本語',
+        fr: 'Français',
+        de: 'Deutsch',
+        ko: '한국어',
+        zh: '中文',
+      })
+    })
+
     it('contains all expected locales', () => {
       EXPECTED_LOCALES.forEach((locale) => {
         expect(LOCALE_LABELS).toHaveProperty(locale)
@@ -26,6 +40,20 @@ describe('i18n translations', () => {
   })
 
   describe('LOCALE_COUNTRY', () => {
+    it('has the correct structure and exact values', () => {
+      expect(LOCALE_COUNTRY).toEqual({
+        eo: null,
+        es: 'es',
+        en: 'gb',
+        pt: 'br',
+        ja: 'jp',
+        fr: 'fr',
+        de: 'de',
+        ko: 'kr',
+        zh: 'cn',
+      })
+    })
+
     it('contains all expected locales', () => {
       EXPECTED_LOCALES.forEach((locale) => {
         expect(LOCALE_COUNTRY).toHaveProperty(locale)
