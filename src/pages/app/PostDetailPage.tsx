@@ -622,6 +622,22 @@ function CommentRow(props: CommentRowProps) {
   const canManage = Boolean(currentUserId && currentUserId === comment.user_id)
   const canSaveEdit = hasCommentEditChanges(comment.content, editingValue) && editingValue.trim().length > 0 && editingValue.length <= 2000
 
+  const handleSubmitEdit = (event: React.FormEvent) => {
+    event.preventDefault()
+    onSaveEdit(comment.id)
+  }
+
+  const handleKeyDownEdit = (event: React.KeyboardEvent) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canSaveEdit && !isSaving) {
+      event.preventDefault()
+      onSaveEdit(comment.id)
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onCancelEdit()
+    }
+  }
+
   return (
     <div className={`comment-thread depth-${depth}`}>
       <div className="comment">
@@ -650,11 +666,8 @@ function CommentRow(props: CommentRowProps) {
             )}
           </div>
           {isEditing ? (
-            <form className="comment-edit-form" onSubmit={(event) => { event.preventDefault(); onSaveEdit(comment.id) }}>
-              <MentionTextarea rows={3} maxLength={2000} autoFocus value={editingValue} onValueChange={onChangeEditingValue} onKeyDown={(event) => {
-                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && canSaveEdit && !isSaving) { event.preventDefault(); onSaveEdit(comment.id) }
-                if (event.key === 'Escape') { event.preventDefault(); onCancelEdit() }
-              }} />
+            <form className="comment-edit-form" onSubmit={handleSubmitEdit}>
+              <MentionTextarea rows={3} maxLength={2000} autoFocus value={editingValue} onValueChange={onChangeEditingValue} onKeyDown={handleKeyDownEdit} />
               <div className="comment-edit-actions">
                 <span className="muted small">{2000 - editingValue.length}</span>
                 <button type="button" className="act" onClick={onCancelEdit}>{t('suggestion_cancel')}</button>
