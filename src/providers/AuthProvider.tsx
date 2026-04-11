@@ -30,8 +30,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (profile) {
           setProfile(profile)
         }
-      } catch (error) {
-        console.error('Profile sync failed', error)
+      } catch {
+        // Silently fail profile sync
       }
     }
 
@@ -50,8 +50,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           bootstrapSession(user.id)
           return
         }
-      } catch (error) {
-        console.error('Auth initialization failed', error)
+      } catch {
+        // Silently fail auth initialization
       } finally {
         setInitialized(true)
       }
