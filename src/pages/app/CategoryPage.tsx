@@ -37,17 +37,33 @@ async function fetchCategoryPage(slug: string, userId?: string | null) {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  const postIds = (posts ?? []).map((post) => post.id)
+  const postIds: string[] = []
+  if (posts) {
+    for (const post of posts) {
+      postIds.push(post.id)
+    }
+  }
   let likedPostIds = new Set<string>()
   if (userId && postIds.length > 0) {
     const { data: likes } = await supabase.from('likes').select('post_id').eq('user_id', userId).in('post_id', postIds)
-    likedPostIds = new Set((likes ?? []).map((like) => like.post_id))
+    if (likes) {
+      for (const like of likes) {
+        likedPostIds.add(like.post_id)
+      }
+    }
+  }
+
+  const postsWithLikes: Post[] = []
+  if (posts) {
+    for (const post of posts) {
+      postsWithLikes.push({ ...post, user_liked: likedPostIds.has(post.id) } as Post)
+    }
   }
 
   return {
     category: category as Category,
     categories: (allCategories ?? []) as Category[],
-    posts: ((posts ?? []).map((post) => ({ ...post, user_liked: likedPostIds.has(post.id) })) as Post[]),
+    posts: postsWithLikes,
   }
 }
 
