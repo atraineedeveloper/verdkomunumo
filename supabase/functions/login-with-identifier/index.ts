@@ -1,10 +1,35 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
 
-const corsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-headers': 'authorization, x-client-info, apikey, content-type',
-  'access-control-allow-methods': 'POST, OPTIONS',
-  'content-type': 'application/json; charset=utf-8',
+const ALLOWED_ORIGINS = [
+  'https://verdkomunumo.world',
+  'https://www.verdkomunumo.world',
+  'https://verdkomunumo.vercel.app',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+]
+
+const appUrl = Deno.env.get('VITE_APP_URL')
+if (appUrl) {
+  try {
+    const origin = new URL(appUrl).origin
+    if (!ALLOWED_ORIGINS.includes(origin)) {
+      ALLOWED_ORIGINS.push(origin)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin')
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+
+  return {
+    'access-control-allow-origin': allowedOrigin,
+    'access-control-allow-headers': 'authorization, x-client-info, apikey, content-type',
+    'access-control-allow-methods': 'POST, OPTIONS',
+    'content-type': 'application/json; charset=utf-8',
+  }
 }
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -13,10 +38,10 @@ const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function json(data: unknown, status = 200) {
+function json(data: unknown, headers: Record<string, string>, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: corsHeaders,
+    headers,
   })
 }
 
@@ -25,23 +50,25 @@ function looksLikeEmail(value: string) {
 }
 
 Deno.serve(async (request) => {
+  const corsHeaders = getCorsHeaders(request)
+
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405)
+    return json({ error: 'Method not allowed' }, corsHeaders, 405)
   }
 
   if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
-    return json({ error: 'Missing required env vars' }, 500)
+    return json({ error: 'Missing required env vars' }, corsHeaders, 500)
   }
 
   let payload: unknown
   try {
     payload = await request.json()
   } catch {
-    return json({ error: 'Invalid JSON payload' }, 400)
+    return json({ error: 'Invalid JSON payload' }, corsHeaders, 400)
   }
 
   const record = payload && typeof payload === 'object' ? payload as Record<string, unknown> : null
@@ -49,7 +76,7 @@ Deno.serve(async (request) => {
   const password = typeof record?.password === 'string' ? record.password : ''
 
   if (!identifier || !password) {
-    return json({ error: 'Missing credentials' }, 400)
+    return json({ error: 'Missing credentials' }, corsHeaders, 400)
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -68,7 +95,7 @@ Deno.serve(async (request) => {
     })
 
     if (error || !data || typeof data !== 'string') {
-      return json({ error: 'Invalid login credentials' }, 401)
+      return json({ error: 'Invalid login credentials' }, corsHeaders, 401)
     }
 
     email = data
@@ -80,7 +107,7 @@ Deno.serve(async (request) => {
   })
 
   if (error || !data.session) {
-    return json({ error: 'Invalid login credentials' }, 401)
+    return json({ error: 'Invalid login credentials' }, corsHeaders, 401)
   }
 
   return json({
@@ -88,5 +115,5 @@ Deno.serve(async (request) => {
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
     },
-  })
+  }, corsHeaders)
 })
