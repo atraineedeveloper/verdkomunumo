@@ -20,6 +20,9 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
+      - name: Create fallback .env files
+        run: cp .env.example .env.test && cp .env.example .env
+
       - name: Install Playwright browser
         run: bunx playwright install --with-deps chromium
 
@@ -28,6 +31,9 @@ jobs:
 
       - name: Unit tests
         run: bun run test
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcwMDU5OTEyOSwiZXhwIjoxNjkxMjAzMTI5fQ.test
 
       - name: Build
         run: bun run build

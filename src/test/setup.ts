@@ -28,5 +28,3 @@ if (
 afterEach(() => {
   cleanup()
 })
-process.env.VITE_SUPABASE_URL = "http://localhost:54321"
-process.env.VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcwMDU5OTEyOSwiZXhwIjoxNjkxMjAzMTI5fQ.test"
