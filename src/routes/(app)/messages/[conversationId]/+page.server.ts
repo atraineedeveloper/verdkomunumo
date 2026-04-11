@@ -23,18 +23,19 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
   if (!conversation) throw error(404, 'Konversacio ne trovita')
 
-  const { data: messages } = await locals.supabase
-    .from('messages')
-    .select('*, sender:profiles!sender_id(*)')
-    .eq('conversation_id', params.conversationId)
-    .order('created_at')
-
-  // Mark messages as read
-  await locals.supabase
-    .from('messages')
-    .update({ is_read: true })
-    .eq('conversation_id', params.conversationId)
-    .neq('sender_id', user?.id)
+  const [{ data: messages }] = await Promise.all([
+    locals.supabase
+      .from('messages')
+      .select('*, sender:profiles!sender_id(*)')
+      .eq('conversation_id', params.conversationId)
+      .order('created_at'),
+    // Mark messages as read (parallel to fetching messages)
+    locals.supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('conversation_id', params.conversationId)
+      .neq('sender_id', user?.id)
+  ])
 
   return { conversation, messages: messages ?? [] }
 }
