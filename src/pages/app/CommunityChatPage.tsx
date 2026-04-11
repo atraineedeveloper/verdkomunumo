@@ -142,6 +142,24 @@ export default function CommunityChatPage() {
     },
   })
 
+  const handleSendMessage = () => {
+    const trimmed = composing.trim()
+    if (!trimmed || sendMutation.isPending) return
+    sendMutation.mutate({ content: trimmed, clientNonce: crypto.randomUUID() })
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    handleSendMessage()
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      handleSendMessage()
+    }
+  }
+
   if (isLoading) return <ListSkeleton items={6} avatarSize={28} />
 
   return (
@@ -203,11 +221,7 @@ export default function CommunityChatPage() {
 
           <form
             className="community-compose"
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (!composing.trim()) return
-              sendMutation.mutate({ content: composing.trim(), clientNonce: crypto.randomUUID() })
-            }}
+            onSubmit={handleSubmit}
           >
             <textarea
               ref={textareaRef}
@@ -215,14 +229,7 @@ export default function CommunityChatPage() {
               value={composing}
               onChange={(event) => setComposing(event.target.value)}
               placeholder={t('community_chat_placeholder', { defaultValue: 'Skribu mesaĝon al la komunumo…' })}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault()
-                  if (!sendMutation.isPending && composing.trim()) {
-                    sendMutation.mutate({ content: composing.trim(), clientNonce: crypto.randomUUID() })
-                  }
-                }
-              }}
+              onKeyDown={handleKeyDown}
             />
             <button type="submit" disabled={sendMutation.isPending || composing.trim().length === 0}>
               {sendMutation.isPending ? <InlineSpinner size={13} className="mr-1.5" /> : null}
