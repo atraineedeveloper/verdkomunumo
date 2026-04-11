@@ -1,21 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
-import { TriangleAlert, X } from 'lucide-react'
+import { Heart, MessageSquare, Pencil, Quote, Trash2, TriangleAlert, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import { queryKeys } from '@/lib/query/keys'
-import { getAvatarUrl } from '@/lib/utils'
+import { formatDate, getAvatarUrl } from '@/lib/utils'
+import { addPostLike } from '@/lib/likes'
+import { CATEGORY_COLORS } from '@/lib/icons'
 import { fetchFeedPostsWithFallback, normalizeQuotedPost } from '@/lib/postFeatures'
+import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 import PostComposer from '@/components/PostComposer'
-import { PostItem } from '@/components/PostItem'
+import { PostEditCard } from '@/components/PostEditCard'
+import PostMedia from '@/components/PostMedia'
+import { QuotedPostCard } from '@/components/QuotedPostCard'
+import { LinkPreviewCard } from '@/components/LinkPreviewCard'
+import { PostExcerpt } from '@/components/PostExcerpt'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import type { Post, Category } from '@/lib/types'
 import { feedWithFilter, routes } from '@/lib/routes'
+import { removePostInData, updatePostInData, updatePostLikeInData } from '@/lib/query/optimisticPosts'
+import { postSchema } from '@/lib/validators'
 
 const BETA_KEY = 'verdkomunumo-beta-notice-dismissed'
 const APP_NAME = import.meta.env.VITE_APP_NAME ?? 'Verdkomunumo'
@@ -203,6 +212,9 @@ export default function FeedPage() {
   const toast = useToastStore()
   const [searchParams] = useSearchParams()
   const [showBeta, setShowBeta] = useState(false)
+  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  const [editedContent, setEditedContent] = useState('')
+  const [editedCategoryId, setEditedCategoryId] = useState('')
   const [quotingPost, setQuotingPost] = useState<Post | null>(null)
   const composerRef = useRef<HTMLDivElement>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -294,6 +306,113 @@ export default function FeedPage() {
     return () => observer.disconnect()
   }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
+  const likeMutation = useMutation({
+    mutationFn: async (post: Post) => {
+      if (!profile) throw new Error('Not authenticated')
+      if (post.user_liked) {
+        await supabase.from('likes').delete()
+          .eq('post_id', post.id).eq('user_id', profile.id)
+      } else {
+        await addPostLike(post.id, profile.id)
+      }
+    },
+    onMutate: async (post) => {
+      const queryKey = queryKeys.feed({ filter })
+      await queryClient.cancelQueries({ queryKey })
+      const previousFeed = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, (current: unknown) => updatePostLikeInData(current, post.id))
+
+      return { previousFeed, queryKey }
+    },
+    onError: (_error, _post, context) => {
+      if (context?.previousFeed) {
+        queryClient.setQueryData(context.queryKey, context.previousFeed)
+      }
+      toast.error(t('toast_action_failed'))
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.feed() }),
+  })
+
+  const editPostMutation = useMutation({
+    mutationFn: async ({ postId }: { postId: string }) => {
+      if (!profile) throw new Error('Not authenticated')
+      const parsed = postSchema.parse({
+        content: editedContent.trim(),
+        category_id: editedCategoryId,
+      })
+      const nextUpdatedAt = new Date().toISOString()
+      const { error } = await supabase
+        .from('posts')
+        .update({
+          content: parsed.content,
+          category_id: parsed.category_id,
+          is_edited: true,
+          updated_at: nextUpdatedAt,
+        })
+        .eq('id', postId)
+        .eq('user_id', profile.id)
+      if (error) throw error
+      return { postId, ...parsed, updated_at: nextUpdatedAt }
+    },
+    onMutate: async ({ postId }) => {
+      const queryKey = queryKeys.feed({ filter })
+      await queryClient.cancelQueries({ queryKey })
+      const previousFeed = queryClient.getQueryData(queryKey)
+      const nextUpdatedAt = new Date().toISOString()
+      queryClient.setQueryData(queryKey, (current: unknown) =>
+        updatePostInData(current, postId, {
+          content: editedContent.trim(),
+          category_id: editedCategoryId,
+          is_edited: true,
+          updated_at: nextUpdatedAt,
+        })
+      )
+      return { previousFeed, queryKey }
+    },
+    onSuccess: async (_result, variables) => {
+      setEditingPostId(null)
+      setEditedContent('')
+      setEditedCategoryId('')
+      toast.success(t('settings_saved'))
+      await queryClient.invalidateQueries({ queryKey: queryKeys.feed() })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.post(variables.postId) })
+      await queryClient.invalidateQueries({ queryKey: ['search'] })
+    },
+    onError: (error: Error, _variables, context) => {
+      if (context?.previousFeed) {
+        queryClient.setQueryData(context.queryKey, context.previousFeed)
+      }
+      toast.error(error.message || t('toast_action_failed'))
+    },
+  })
+
+  const deletePostMutation = useMutation({
+    mutationFn: async ({ postId }: { postId: string }) => {
+      if (!profile) throw new Error('Not authenticated')
+      const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', profile.id)
+      if (error) throw error
+      return { postId }
+    },
+    onMutate: async ({ postId }) => {
+      const queryKey = queryKeys.feed({ filter })
+      await queryClient.cancelQueries({ queryKey })
+      const previousFeed = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, (current: unknown) => removePostInData(current, postId))
+      return { previousFeed, queryKey }
+    },
+    onSuccess: async ({ postId }) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.feed() })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.post(postId) })
+      await queryClient.invalidateQueries({ queryKey: ['search'] })
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousFeed) {
+        queryClient.setQueryData(context.queryKey, context.previousFeed)
+      }
+      toast.error(t('toast_action_failed'))
+    },
+  })
+
   const posts: Post[] = feedData?.pages.flatMap((page) => page.posts) ?? []
 
   return (
@@ -356,16 +475,22 @@ export default function FeedPage() {
       ) : (
         <div className="timeline">
           {posts.map(post => (
-            <PostItem
+            <FeedPostItem
               key={post.id}
               post={post}
+              profile={profile}
               categories={categories}
-              filter={filter}
-              onQuote={(quotedPost) => {
-                setQuotingPost(quotedPost)
-                composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
-              }}
+              editingPostId={editingPostId}
+              editedContent={editedContent}
+              editedCategoryId={editedCategoryId}
+              setEditingPostId={setEditingPostId}
+              setEditedContent={setEditedContent}
+              setEditedCategoryId={setEditedCategoryId}
+              editPostMutation={editPostMutation}
+              deletePostMutation={deletePostMutation}
+              likeMutation={likeMutation}
+              setQuotingPost={setQuotingPost}
+              composerRef={composerRef}
             />
           ))}
         </div>

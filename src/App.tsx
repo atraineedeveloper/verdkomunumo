@@ -2,61 +2,34 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/layouts/ProtectedRoute'
 import { FullScreenSpinner } from '@/components/ui/FullScreenSpinner'
-import { lazyRetry } from '@/lib/lazyRetry'
 import { routes } from '@/lib/routes'
 
-const AppLayout = lazy(() =>
-  lazyRetry(() => import('@/layouts/AppLayout').then((module) => ({ default: module.AppLayout })), 'AppLayout')
-)
-const AuthLayout = lazy(() =>
-  lazyRetry(() => import('@/layouts/AuthLayout').then((module) => ({ default: module.AuthLayout })), 'AuthLayout')
-)
-const AdminLayout = lazy(() =>
-  lazyRetry(() => import('@/layouts/AdminLayout').then((module) => ({ default: module.AdminLayout })), 'AdminLayout')
-)
+const AppLayout = lazy(() => import('@/layouts/AppLayout').then((module) => ({ default: module.AppLayout })))
+const AuthLayout = lazy(() => import('@/layouts/AuthLayout').then((module) => ({ default: module.AuthLayout })))
+const AdminLayout = lazy(() => import('@/layouts/AdminLayout').then((module) => ({ default: module.AdminLayout })))
 
-const LoginPage = lazy(() =>
-  lazyRetry(() => import('@/pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })), 'LoginPage')
-)
-const RegisterPage = lazy(() =>
-  lazyRetry(() => import('@/pages/auth/RegisterPage').then((module) => ({ default: module.RegisterPage })), 'RegisterPage')
-)
-const ForgotPasswordPage = lazy(() =>
-  lazyRetry(
-    () => import('@/pages/auth/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })),
-    'ForgotPasswordPage'
-  )
-)
-const ResetPasswordPage = lazy(() =>
-  lazyRetry(
-    () => import('@/pages/auth/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })),
-    'ResetPasswordPage'
-  )
-)
-const AuthCallback = lazy(() =>
-  lazyRetry(() => import('@/pages/auth/AuthCallback').then((module) => ({ default: module.AuthCallback })), 'AuthCallback')
-)
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })))
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then((module) => ({ default: module.RegisterPage })))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })))
+const AuthCallback = lazy(() => import('@/pages/auth/AuthCallback').then((module) => ({ default: module.AuthCallback })))
 
-const LandingPage = lazy(() => lazyRetry(() => import('@/pages/public/LandingPage'), 'LandingPage'))
+const LandingPage = lazy(() => import('@/pages/public/LandingPage'))
 
-const FeedPage = lazy(() => lazyRetry(() => import('@/pages/app/FeedPage'), 'FeedPage'))
-const SearchPage = lazy(() => lazyRetry(() => import('@/pages/app/SearchPage'), 'SearchPage'))
-const NotificationsPage = lazy(() => lazyRetry(() => import('@/pages/app/NotificationsPage'), 'NotificationsPage'))
-const MessagesPage = lazy(() => lazyRetry(() => import('@/pages/app/MessagesPage'), 'MessagesPage'))
-const ConversationPage = lazy(() => lazyRetry(() => import('@/pages/app/ConversationPage'), 'ConversationPage'))
-const CommunityChatPage = lazy(() => lazyRetry(() => import('@/pages/app/CommunityChatPage'), 'CommunityChatPage'))
-const ProfilePage = lazy(() => lazyRetry(() => import('@/pages/app/ProfilePage'), 'ProfilePage'))
-const CategoryPage = lazy(() => lazyRetry(() => import('@/pages/app/CategoryPage'), 'CategoryPage'))
-const PostDetailPage = lazy(() => lazyRetry(() => import('@/pages/app/PostDetailPage'), 'PostDetailPage'))
-const SettingsPage = lazy(() => lazyRetry(() => import('@/pages/app/SettingsPage'), 'SettingsPage'))
+const FeedPage = lazy(() => import('@/pages/app/FeedPage'))
+const SearchPage = lazy(() => import('@/pages/app/SearchPage'))
+const NotificationsPage = lazy(() => import('@/pages/app/NotificationsPage'))
+const MessagesPage = lazy(() => import('@/pages/app/MessagesPage'))
+const ConversationPage = lazy(() => import('@/pages/app/ConversationPage'))
+const CommunityChatPage = lazy(() => import('@/pages/app/CommunityChatPage'))
+const ProfilePage = lazy(() => import('@/pages/app/ProfilePage'))
+const CategoryPage = lazy(() => import('@/pages/app/CategoryPage'))
+const PostDetailPage = lazy(() => import('@/pages/app/PostDetailPage'))
+const SettingsPage = lazy(() => import('@/pages/app/SettingsPage'))
 
-const AdminDashboardPage = lazy(() =>
-  lazyRetry(() => import('@/pages/admin/AdminDashboardPage'), 'AdminDashboardPage')
-)
-const AdminCategoriesPage = lazy(() =>
-  lazyRetry(() => import('@/pages/admin/AdminCategoriesPage'), 'AdminCategoriesPage')
-)
-const AdminReportsPage = lazy(() => lazyRetry(() => import('@/pages/admin/AdminReportsPage'), 'AdminReportsPage'))
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'))
+const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage'))
+const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'))
 
 export default function App() {
   return (
