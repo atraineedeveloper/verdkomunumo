@@ -13,6 +13,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**', 'dev-dist/**'],
+    env: {
+      VITE_SUPABASE_URL: 'http://localhost:54321',
+      VITE_SUPABASE_ANON_KEY: 'fake-anon-key',
+    },
   },
 })
 
