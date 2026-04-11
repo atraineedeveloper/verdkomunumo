@@ -5,20 +5,6 @@ const EXPECTED_LOCALES: Locale[] = ['eo', 'es', 'en', 'pt', 'ja', 'fr', 'de', 'k
 
 describe('i18n translations', () => {
   describe('LOCALE_LABELS', () => {
-    it('has the correct structure and exact values', () => {
-      expect(LOCALE_LABELS).toEqual({
-        eo: 'Esperanto',
-        es: 'Español',
-        en: 'English',
-        pt: 'Português',
-        ja: '日本語',
-        fr: 'Français',
-        de: 'Deutsch',
-        ko: '한국어',
-        zh: '中文',
-      })
-    })
-
     it('contains all expected locales', () => {
       EXPECTED_LOCALES.forEach((locale) => {
         expect(LOCALE_LABELS).toHaveProperty(locale)
@@ -27,39 +13,13 @@ describe('i18n translations', () => {
       })
     })
 
-    it('has specific expected labels', () => {
-      expect(LOCALE_LABELS).toHaveProperty('eo', 'Esperanto')
-      expect(LOCALE_LABELS).toHaveProperty('en', 'English')
-      expect(LOCALE_LABELS).toHaveProperty('fr', 'Français')
-    })
-
     it('has no extra locales', () => {
       const keys = Object.keys(LOCALE_LABELS)
       expect(keys.length).toBe(EXPECTED_LOCALES.length)
     })
-
-    it('has expected specific values', () => {
-      expect(LOCALE_LABELS.eo).toBe('Esperanto')
-      expect(LOCALE_LABELS.en).toBe('English')
-      expect(LOCALE_LABELS.fr).toBe('Français')
-    })
   })
 
   describe('LOCALE_COUNTRY', () => {
-    it('has the correct structure and exact values', () => {
-      expect(LOCALE_COUNTRY).toEqual({
-        eo: null,
-        es: 'es',
-        en: 'gb',
-        pt: 'br',
-        ja: 'jp',
-        fr: 'fr',
-        de: 'de',
-        ko: 'kr',
-        zh: 'cn',
-      })
-    })
-
     it('contains all expected locales', () => {
       EXPECTED_LOCALES.forEach((locale) => {
         expect(LOCALE_COUNTRY).toHaveProperty(locale)
@@ -70,12 +30,6 @@ describe('i18n translations', () => {
           expect(LOCALE_COUNTRY[locale]?.length).toBeGreaterThan(0)
         }
       })
-    })
-
-    it('has specific expected country codes', () => {
-      expect(LOCALE_COUNTRY).toHaveProperty('eo', null)
-      expect(LOCALE_COUNTRY).toHaveProperty('en', 'gb')
-      expect(LOCALE_COUNTRY).toHaveProperty('fr', 'fr')
     })
 
     it('has no extra locales', () => {

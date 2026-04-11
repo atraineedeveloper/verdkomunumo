@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Layers, Users, Flag, Heart, MessageSquare, Shield } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase/client'
-import { RoleManagerSection } from './dashboard/RoleManagerSection'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import { queryKeys } from '@/lib/query/keys'
@@ -262,23 +261,147 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <RoleManagerSection
-        managedUsers={data?.managedUsers ?? []}
-        isLoading={isLoading}
-        isOwner={isOwner}
-        profileId={profile?.id}
-        query={query}
-        roleFilter={roleFilter}
-        roleOptions={roleOptions}
-        pagination={pagination}
-        page={page}
-        totalManagedUsers={data?.totalManagedUsers ?? 0}
-        updateRoleMutationVariables={updateRoleMutation.variables}
-        isUpdatingRole={updateRoleMutation.isPending}
-        onFilterSubmit={handleFilterSubmit}
-        onRoleUpdate={handleRoleUpdate}
-        onPageChange={handlePageChange}
-      />
+      <section className="mb-8">
+        <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="m-0 text-base font-semibold text-[var(--color-text)]">{t('admin_role_manager_title')}</h2>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+              {isOwner ? t('admin_roles_hint_owner') : t('admin_roles_hint_staff')}
+            </p>
+          </div>
+          <form
+            className="flex flex-col gap-3 md:flex-row"
+            onSubmit={handleFilterSubmit}
+          >
+            <input
+              name="q"
+              defaultValue={query}
+              placeholder={t('admin_role_manager_search_placeholder')}
+              className="min-h-[42px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3"
+            />
+            <select
+              name="role"
+              defaultValue={roleFilter}
+              className="min-h-[42px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3"
+            >
+              <option value="all">{t('admin_role_filter_all')}</option>
+              {roleOptions.map((role) => (
+                <option key={role} value={role}>{t(`admin_role_${role}` as never)}</option>
+              ))}
+            </select>
+            <button type="submit" className="rounded-xl bg-[var(--color-primary)] px-4 py-2 text-white">
+              {t('admin_role_filter_apply')}
+            </button>
+          </form>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          {isLoading ? (
+            <div className="p-4"><ListSkeleton items={5} avatarSize={28} /></div>
+          ) : (
+            <table className="min-w-full text-sm">
+              <thead className="border-b border-[var(--color-border)] text-left text-[var(--color-text-muted)]">
+                <tr>
+                  <th className="px-4 py-3">{t('search_users')}</th>
+                  <th className="px-4 py-3">{t('admin_role_current')}</th>
+                  <th className="px-4 py-3">{t('admin_role_updated')}</th>
+                  <th className="px-4 py-3">{t('admin_role_action')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.managedUsers ?? []).length ? (
+                  (data?.managedUsers ?? []).map((managedUser) => {
+                    const LevelIcon = LEVEL_ICONS[managedUser.esperanto_level]
+                    const saving = updateRoleMutation.isPending && updateRoleMutation.variables?.userId === managedUser.id
+                    return (
+                      <tr key={managedUser.id} className="border-b border-[var(--color-border)] last:border-b-0">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <span style={{ color: LEVEL_COLORS[managedUser.esperanto_level] }}>
+                              {LevelIcon && <LevelIcon size={18} strokeWidth={1.75} />}
+                            </span>
+                            <div>
+                              <Link to={routes.profile(managedUser.username)} className="text-[var(--color-text)] no-underline hover:underline">
+                                {managedUser.display_name}
+                              </Link>
+                              <div className="text-xs text-[var(--color-text-muted)]">
+                                @{managedUser.username}{managedUser.email ? ` · ${managedUser.email}` : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-dim)] px-2 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                            <Shield size={12} strokeWidth={2} />
+                            {t(`admin_role_${managedUser.role}` as never)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">{formatDate(managedUser.updated_at ?? managedUser.created_at)}</td>
+                        <td className="px-4 py-3">
+                          {isOwner && managedUser.id !== profile?.id ? (
+                            <form
+                              className="flex items-center gap-2"
+                              onSubmit={handleRoleUpdate}
+                            >
+                              <input type="hidden" name="user_id" value={managedUser.id} />
+                              <select
+                                name="role"
+                                defaultValue={managedUser.role}
+                                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1"
+                              >
+                                {roleOptions.map((role) => (
+                                  <option key={role} value={role}>{t(`admin_role_${role}` as never)}</option>
+                                ))}
+                              </select>
+                              <button type="submit" className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-white" disabled={saving}>
+                                {saving ? <InlineSpinner size={12} /> : null}
+                                {t('settings_save')}
+                              </button>
+                            </form>
+                          ) : (
+                            <span className="text-[var(--color-text-muted)]">{t(`admin_role_${managedUser.role}` as never)}</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                ) : (
+                  <tr>
+                    <td className="px-4 py-8 text-center text-[var(--color-text-muted)]" colSpan={4}>
+                      {t('admin_role_manager_empty')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2 text-sm text-[var(--color-text-muted)] md:flex-row md:items-center md:justify-between">
+          <span>{t('admin_users')} {pagination.start} – {pagination.end} / {data?.totalManagedUsers ?? 0}</span>
+          <div className="flex items-center gap-3">
+            {page > 1 && (
+              <button
+                type="button"
+                className="rounded-lg border border-[var(--color-border)] px-3 py-1.5"
+                onClick={() => handlePageChange(page - 1)}
+              >
+                {t('admin_pagination_previous')}
+              </button>
+            )}
+            <span>{t('admin_pagination_page')} {page} / {pagination.totalPages}</span>
+            {page < pagination.totalPages && (
+              <button
+                type="button"
+                className="rounded-lg border border-[var(--color-border)] px-3 py-1.5"
+                onClick={() => handlePageChange(page + 1)}
+              >
+                {t('admin_pagination_next')}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
 
       <section>
         <h2 className="mb-3 text-base font-semibold text-[var(--color-text)]">{t('admin_new_users')}</h2>
