@@ -4,6 +4,17 @@ import { expectPublicPageReady, gotoAndWait } from './helpers'
 test.describe('visual regression', () => {
   test.describe.configure({ mode: 'serial' })
 
+  test.beforeEach(async ({ page }) => {
+    // Fast fail API requests to prevent flaky visual snapshots caused by React Query retrying failed Supabase endpoints
+    await page.route('**/rest/v1/**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+    })
+  })
+
   test('feed guest page matches baseline', async ({ page }) => {
     await gotoAndWait(page, '/fonto')
     await expectPublicPageReady(page, '/fonto')
