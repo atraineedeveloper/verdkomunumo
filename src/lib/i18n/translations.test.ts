@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LOCALE_LABELS, LOCALE_COUNTRY, translations } from './translations'
-import type { Locale } from '@/lib/types'
+import { LOCALE_LABELS, LOCALE_COUNTRY, translations, type Locale } from './translations'
 
 const EXPECTED_LOCALES: Locale[] = ['eo', 'es', 'en', 'pt', 'ja', 'fr', 'de', 'ko', 'zh']
 
