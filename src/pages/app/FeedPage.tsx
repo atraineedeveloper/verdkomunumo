@@ -30,6 +30,181 @@ const BETA_KEY = 'verdkomunumo-beta-notice-dismissed'
 const APP_NAME = import.meta.env.VITE_APP_NAME ?? 'Verdkomunumo'
 const FEED_PAGE_SIZE = 20
 
+
+function FeedPostItem({
+  post,
+  profile,
+  categories,
+  editingPostId,
+  editedContent,
+  editedCategoryId,
+  setEditingPostId,
+  setEditedContent,
+  setEditedCategoryId,
+  editPostMutation,
+  deletePostMutation,
+  likeMutation,
+  setQuotingPost,
+  composerRef,
+}: {
+  post: Post
+  profile: any
+  categories: Category[]
+  editingPostId: string | null
+  editedContent: string
+  editedCategoryId: string
+  setEditingPostId: (id: string | null) => void
+  setEditedContent: (content: string) => void
+  setEditedCategoryId: (id: string) => void
+  editPostMutation: any
+  deletePostMutation: any
+  likeMutation: any
+  setQuotingPost: (post: Post | null) => void
+  composerRef: React.RefObject<HTMLDivElement>
+}) {
+  const { t } = useTranslation()
+  const likePending = likeMutation.isPending && likeMutation.variables?.id === post.id
+  const isEditing = editingPostId === post.id
+  const isOwnPost = profile?.id === post.user_id
+
+  return (
+    <article className="entry">
+      <div className="left">
+        {post.author && (
+          <Link to={routes.profile(post.author.username)} className="ava-wrap">
+            <PresenceAvatar
+              userId={post.author.id}
+              avatarUrl={post.author.avatar_url}
+              displayName={post.author.display_name}
+              imageClassName="ava"
+            />
+          </Link>
+        )}
+      </div>
+      <div className="right">
+        <div className="meta">
+          {post.author && (
+            <>
+              <Link to={routes.profile(post.author.username)} className="display-name">{post.author.display_name}</Link>
+              <span className="username">@{post.author.username}</span>
+              <span className="dot-sep">·</span>
+              <span className="time">{formatDate(post.created_at)}</span>
+            </>
+          )}
+          {post.category && (
+            <Link
+              to={routes.category(post.category.slug)}
+              className="cat-tag"
+              style={{ color: CATEGORY_COLORS[post.category.slug], background: `${CATEGORY_COLORS[post.category.slug]}15` }}
+            >
+              {t(`cat_name_${post.category.slug}` as any)}
+            </Link>
+          )}
+        </div>
+        {isEditing ? (
+          <PostEditCard
+            categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as any) }))}
+            content={editedContent}
+            categoryId={editedCategoryId}
+            initialContent={post.content}
+            initialCategoryId={post.category_id}
+            pending={editPostMutation.isPending}
+            saveLabel={t('settings_save')}
+            cancelLabel={t('suggestion_cancel')}
+            onContentChange={setEditedContent}
+            onCategoryChange={setEditedCategoryId}
+            onCancel={() => {
+              setEditingPostId(null)
+              setEditedContent('')
+              setEditedCategoryId('')
+            }}
+            onSubmit={() => editPostMutation.mutate({ postId: post.id })}
+          />
+        ) : (
+          <div className="body">
+            <PostExcerpt
+              content={post.content}
+              to={routes.post(post.id)}
+              contentClassName="content"
+              linkClassName="read-more"
+              maxLines={6}
+              maxChars={420}
+            />
+          </div>
+        )}
+        {post.quoted_post && (
+          <QuotedPostCard post={post.quoted_post} />
+        )}
+        {post.link_preview && (
+          <LinkPreviewCard preview={post.link_preview} />
+        )}
+        {!!post.image_urls?.length && (
+          <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />
+        )}
+        <div className="actions">
+          {isOwnPost && !isEditing && (
+            <>
+              <button
+                type="button"
+                className="act"
+                onClick={() => {
+                  setEditingPostId(post.id)
+                  setEditedContent(post.content)
+                  setEditedCategoryId(post.category_id)
+                }}
+              >
+                <Pencil size={14} strokeWidth={1.75} /> <span>{t('post_edit')}</span>
+              </button>
+              <button
+                type="button"
+                className="act danger"
+                disabled={deletePostMutation.isPending && deletePostMutation.variables?.postId === post.id}
+                onClick={() => {
+                  if (window.confirm(`${t('admin_delete')}?`)) {
+                    deletePostMutation.mutate({ postId: post.id })
+                  }
+                }}
+              >
+                {deletePostMutation.isPending && deletePostMutation.variables?.postId === post.id ? <InlineSpinner size={14} /> : <Trash2 size={14} strokeWidth={1.75} />}
+                <span>{t('admin_delete')}</span>
+              </button>
+            </>
+          )}
+          {profile && (
+            <button
+              type="button"
+              className="act"
+              onClick={() => {
+                setQuotingPost(post)
+                composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
+              }}
+            >
+              <Quote size={14} strokeWidth={1.75} /> <span>Citi</span>
+            </button>
+          )}
+          {profile ? (
+            <button
+              type="button"
+              className={`act${post.user_liked ? ' liked' : ''}`}
+              onClick={() => likeMutation.mutate(post)}
+              disabled={likePending}
+              aria-busy={likePending}
+            >
+              {likePending ? <InlineSpinner size={14} /> : <Heart size={14} strokeWidth={1.75} />} <span>{post.likes_count}</span>
+            </button>
+          ) : (
+            <span className="act-count"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</span>
+          )}
+          <Link to={routes.post(post.id)} className="act">
+            <MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span>
+          </Link>
+        </div>
+      </div>
+    </article>
+  )
+}
+
 export default function FeedPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -299,147 +474,25 @@ export default function FeedPage() {
         <p className="empty">{t('feed_empty')}</p>
       ) : (
         <div className="timeline">
-          {posts.map(post => {
-            const likePending = likeMutation.isPending && likeMutation.variables?.id === post.id
-            const isEditing = editingPostId === post.id
-            const isOwnPost = profile?.id === post.user_id
-            return (
-            <article key={post.id} className="entry">
-              <div className="left">
-                {post.author && (
-                  <Link to={routes.profile(post.author.username)} className="ava-wrap">
-                    <PresenceAvatar
-                      userId={post.author.id}
-                      avatarUrl={post.author.avatar_url}
-                      displayName={post.author.display_name}
-                      imageClassName="ava"
-                    />
-                  </Link>
-                )}
-              </div>
-              <div className="right">
-                <div className="meta">
-                  {post.author && (
-                    <>
-                      <Link to={routes.profile(post.author.username)} className="display-name">{post.author.display_name}</Link>
-                      <span className="username">@{post.author.username}</span>
-                      <span className="dot-sep">·</span>
-                      <span className="time">{formatDate(post.created_at)}</span>
-                    </>
-                  )}
-                  {post.category && (
-                    <Link
-                      to={routes.category(post.category.slug)}
-                      className="cat-tag"
-                      style={{ color: CATEGORY_COLORS[post.category.slug], background: `${CATEGORY_COLORS[post.category.slug]}15` }}
-                    >
-                      {t(`cat_name_${post.category.slug}` as any)}
-                    </Link>
-                  )}
-                </div>
-                {isEditing ? (
-                  <PostEditCard
-                    categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as any) }))}
-                    content={editedContent}
-                    categoryId={editedCategoryId}
-                    initialContent={post.content}
-                    initialCategoryId={post.category_id}
-                    pending={editPostMutation.isPending}
-                    saveLabel={t('settings_save')}
-                    cancelLabel={t('suggestion_cancel')}
-                    onContentChange={setEditedContent}
-                    onCategoryChange={setEditedCategoryId}
-                    onCancel={() => {
-                      setEditingPostId(null)
-                      setEditedContent('')
-                      setEditedCategoryId('')
-                    }}
-                    onSubmit={() => editPostMutation.mutate({ postId: post.id })}
-                  />
-                ) : (
-                  <div className="body">
-                    <PostExcerpt
-                      content={post.content}
-                      to={routes.post(post.id)}
-                      contentClassName="content"
-                      linkClassName="read-more"
-                      maxLines={6}
-                      maxChars={420}
-                    />
-                  </div>
-                )}
-                {post.quoted_post && (
-                  <QuotedPostCard post={post.quoted_post} />
-                )}
-                {post.link_preview && (
-                  <LinkPreviewCard preview={post.link_preview} />
-                )}
-                {!!post.image_urls?.length && (
-                  <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />
-                )}
-                <div className="actions">
-                  {isOwnPost && !isEditing && (
-                    <>
-                      <button
-                        type="button"
-                        className="act"
-                        onClick={() => {
-                          setEditingPostId(post.id)
-                          setEditedContent(post.content)
-                          setEditedCategoryId(post.category_id)
-                        }}
-                      >
-                        <Pencil size={14} strokeWidth={1.75} /> <span>{t('post_edit')}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="act danger"
-                        disabled={deletePostMutation.isPending && deletePostMutation.variables?.postId === post.id}
-                        onClick={() => {
-                          if (window.confirm(`${t('admin_delete')}?`)) {
-                            deletePostMutation.mutate({ postId: post.id })
-                          }
-                        }}
-                      >
-                        {deletePostMutation.isPending && deletePostMutation.variables?.postId === post.id ? <InlineSpinner size={14} /> : <Trash2 size={14} strokeWidth={1.75} />}
-                        <span>{t('admin_delete')}</span>
-                      </button>
-                    </>
-                  )}
-                  {profile && (
-                    <button
-                      type="button"
-                      className="act"
-                      onClick={() => {
-                        setQuotingPost(post)
-                        composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                        setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
-                      }}
-                    >
-                      <Quote size={14} strokeWidth={1.75} /> <span>Citi</span>
-                    </button>
-                  )}
-                  {profile ? (
-                    <button
-                      type="button"
-                      className={`act${post.user_liked ? ' liked' : ''}`}
-                      onClick={() => likeMutation.mutate(post)}
-                      disabled={likePending}
-                      aria-busy={likePending}
-                    >
-                      {likePending ? <InlineSpinner size={14} /> : <Heart size={14} strokeWidth={1.75} />} <span>{post.likes_count}</span>
-                    </button>
-                  ) : (
-                    <span className="act-count"><Heart size={14} strokeWidth={1.75} /> {post.likes_count}</span>
-                  )}
-                  <Link to={routes.post(post.id)} className="act">
-                    <MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span>
-                  </Link>
-                </div>
-              </div>
-            </article>
-            )
-          })}
+          {posts.map(post => (
+            <FeedPostItem
+              key={post.id}
+              post={post}
+              profile={profile}
+              categories={categories}
+              editingPostId={editingPostId}
+              editedContent={editedContent}
+              editedCategoryId={editedCategoryId}
+              setEditingPostId={setEditingPostId}
+              setEditedContent={setEditedContent}
+              setEditedCategoryId={setEditedCategoryId}
+              editPostMutation={editPostMutation}
+              deletePostMutation={deletePostMutation}
+              likeMutation={likeMutation}
+              setQuotingPost={setQuotingPost}
+              composerRef={composerRef}
+            />
+          ))}
         </div>
       )}
 
