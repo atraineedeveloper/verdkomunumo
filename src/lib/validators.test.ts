@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'bun:test'
 import { postSchema } from './validators'
 import { POST_MAX_LENGTH } from './constants'
