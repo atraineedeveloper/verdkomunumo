@@ -31,6 +31,12 @@
     {
       "file": "src/pages/app/FeedPage.tsx",
       "snippets": [
+        "profile: any",
+        "editPostMutation: any",
+        "deletePostMutation: any",
+        "likeMutation: any",
+        "{t(`cat_name_${post.category.slug}` as any)}",
+        "categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as any) }))}",
         "followedIds = (follows ?? []).map((f: any) => f.following_id)",
         "const posts = (postsRes.data ?? []).map((p: any) => ({",
         "user_liked: (p.likes ?? []).some((l: any) => l.user_id === profile?.id),"
@@ -45,6 +51,7 @@
   ],
   "largeFiles": {
     "src/pages/app/PostDetailPage.tsx": 740,
+    "src/pages/app/FeedPage.tsx": 550,
     "src/components/PostComposer.tsx": 690,
     "src/pages/admin/AdminDashboardPage.tsx": 450,
     "src/pages/app/SearchPage.tsx": 430,
