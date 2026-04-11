@@ -19,6 +19,7 @@ describe('monitoring', () => {
   })
 
   it('does not initialize Sentry if disabled', async () => {
+    vi.resetModules()
     vi.stubEnv('PROD', false as any)
     vi.stubEnv('VITE_SENTRY_DSN', '')
 
@@ -29,6 +30,7 @@ describe('monitoring', () => {
   })
 
   it('initializes Sentry if enabled', async () => {
+    vi.resetModules()
     vi.stubEnv('PROD', true as any)
     vi.stubEnv('VITE_SENTRY_DSN', 'https://example@sentry.io/123')
     vi.stubEnv('MODE', 'production')
@@ -48,7 +50,31 @@ describe('monitoring', () => {
     }))
   })
 
+  it('initializes Sentry with default values if environment variables are not provided', async () => {
+    vi.resetModules()
+    // Delete environment variables to test defaults for tracesSampleRate etc.
+    vi.unstubAllEnvs()
+    vi.stubEnv('PROD', true as any)
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://example@sentry.io/123')
+    vi.stubEnv('MODE', 'production')
+
+    // We want to verify `import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ?? 0.1` and similar logic
+    // So we don't mock them in this test.
+
+    const { initMonitoring } = await import('./monitoring')
+    initMonitoring()
+
+    expect(Sentry.init).toHaveBeenCalledWith(expect.objectContaining({
+      dsn: 'https://example@sentry.io/123',
+      environment: 'production',
+      tracesSampleRate: 0.1,
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 1,
+    }))
+  })
+
   it('captureAppException does not capture exception if disabled', async () => {
+    vi.resetModules()
     vi.stubEnv('PROD', false as any)
     vi.stubEnv('VITE_SENTRY_DSN', '')
 
@@ -59,6 +85,7 @@ describe('monitoring', () => {
   })
 
   it('captureAppException captures exception if enabled', async () => {
+    vi.resetModules()
     vi.stubEnv('PROD', true as any)
     vi.stubEnv('VITE_SENTRY_DSN', 'https://example@sentry.io/123')
 
