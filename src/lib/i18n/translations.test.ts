@@ -17,6 +17,12 @@ describe('i18n translations', () => {
       const keys = Object.keys(LOCALE_LABELS)
       expect(keys.length).toBe(EXPECTED_LOCALES.length)
     })
+
+    it('has expected specific values', () => {
+      expect(LOCALE_LABELS.eo).toBe('Esperanto')
+      expect(LOCALE_LABELS.en).toBe('English')
+      expect(LOCALE_LABELS.fr).toBe('Français')
+    })
   })
 
   describe('LOCALE_COUNTRY', () => {
