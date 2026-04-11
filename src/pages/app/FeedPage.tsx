@@ -303,6 +303,26 @@ export default function FeedPage() {
             const likePending = likeMutation.isPending && likeMutation.variables?.id === post.id
             const isEditing = editingPostId === post.id
             const isOwnPost = profile?.id === post.user_id
+            const isDeleting = deletePostMutation.isPending && deletePostMutation.variables?.postId === post.id
+
+            const handleEdit = () => {
+              setEditingPostId(post.id)
+              setEditedContent(post.content)
+              setEditedCategoryId(post.category_id)
+            }
+
+            const handleDelete = () => {
+              if (window.confirm(`${t('admin_delete')}?`)) {
+                deletePostMutation.mutate({ postId: post.id })
+              }
+            }
+
+            const handleQuote = () => {
+              setQuotingPost(post)
+              composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
+            }
+
             return (
             <article key={post.id} className="entry">
               <div className="left">
@@ -380,42 +400,22 @@ export default function FeedPage() {
                 <div className="actions">
                   {isOwnPost && !isEditing && (
                     <>
-                      <button
-                        type="button"
-                        className="act"
-                        onClick={() => {
-                          setEditingPostId(post.id)
-                          setEditedContent(post.content)
-                          setEditedCategoryId(post.category_id)
-                        }}
-                      >
+                      <button type="button" className="act" onClick={handleEdit}>
                         <Pencil size={14} strokeWidth={1.75} /> <span>{t('post_edit')}</span>
                       </button>
                       <button
                         type="button"
                         className="act danger"
-                        disabled={deletePostMutation.isPending && deletePostMutation.variables?.postId === post.id}
-                        onClick={() => {
-                          if (window.confirm(`${t('admin_delete')}?`)) {
-                            deletePostMutation.mutate({ postId: post.id })
-                          }
-                        }}
+                        disabled={isDeleting}
+                        onClick={handleDelete}
                       >
-                        {deletePostMutation.isPending && deletePostMutation.variables?.postId === post.id ? <InlineSpinner size={14} /> : <Trash2 size={14} strokeWidth={1.75} />}
+                        {isDeleting ? <InlineSpinner size={14} /> : <Trash2 size={14} strokeWidth={1.75} />}
                         <span>{t('admin_delete')}</span>
                       </button>
                     </>
                   )}
                   {profile && (
-                    <button
-                      type="button"
-                      className="act"
-                      onClick={() => {
-                        setQuotingPost(post)
-                        composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                        setTimeout(() => composerRef.current?.querySelector('textarea')?.focus(), 300)
-                      }}
-                    >
+                    <button type="button" className="act" onClick={handleQuote}>
                       <Quote size={14} strokeWidth={1.75} /> <span>Citi</span>
                     </button>
                   )}

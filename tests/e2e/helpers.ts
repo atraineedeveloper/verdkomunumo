@@ -57,6 +57,7 @@ export async function gotoAndWait(page: Page, path: string) {
 export async function expectPublicPageReady(page: Page, path: string) {
   if (path === routes.feed) {
     await expect(page.locator('body')).toContainText(/Verdkomunumo|beta/i, { timeout: 60_000 })
+    await expect(page.locator('.empty, .entry, .error').first()).toBeVisible({ timeout: 15_000 })
     return
   }
 
