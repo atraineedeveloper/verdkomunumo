@@ -322,14 +322,16 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
 
       let imageUrls: string[] = []
       if (selectedFiles.length > 0) {
-        for (const file of selectedFiles) {
-          const ext = file.name.split('.').pop() ?? 'jpg'
-          const path = `${displayProfile.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-          const { error } = await supabase.storage.from('post-images').upload(path, file)
-          if (error) throw error
-          const { data: { publicUrl } } = supabase.storage.from('post-images').getPublicUrl(path)
-          imageUrls.push(publicUrl)
-        }
+        imageUrls = await Promise.all(
+          selectedFiles.map(async (file) => {
+            const ext = file.name.split('.').pop() ?? 'jpg'
+            const path = `${displayProfile.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+            const { error } = await supabase.storage.from('post-images').upload(path, file)
+            if (error) throw error
+            const { data: { publicUrl } } = supabase.storage.from('post-images').getPublicUrl(path)
+            return publicUrl
+          })
+        )
       }
 
       const payload = {
