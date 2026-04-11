@@ -93,6 +93,32 @@ export default function AdminDashboardPage() {
     queryFn: () => fetchAdminDashboard({ query, role: roleFilter, page, pageSize }),
   })
 
+  const handleFilterSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const params = new URLSearchParams(searchParams)
+    const nextQuery = String(form.get('q') ?? '').trim()
+    const nextRole = String(form.get('role') ?? 'all')
+    if (nextQuery) {
+      params.set('q', nextQuery)
+    } else {
+      params.delete('q')
+    }
+    if (nextRole !== 'all') {
+      params.set('role', nextRole)
+    } else {
+      params.delete('role')
+    }
+    params.delete('page') // Reset to page 1 on new filter
+    setSearchParams(params)
+  }
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('page', String(newPage))
+    setSearchParams(params)
+  }
+
   const deletePostMutation = useMutation({
     mutationFn: async (postId: string) => {
       const { error } = await supabase
@@ -122,6 +148,15 @@ export default function AdminDashboardPage() {
     },
     onError: (error) => toast.error(error.message),
   })
+
+  const handleRoleUpdate = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    updateRoleMutation.mutate({
+      userId: String(form.get('user_id')),
+      role: String(form.get('role')) as UserRole,
+    })
+  }
 
   const pagination = useMemo(
     () => getPaginationRange(page, pageSize, data?.totalManagedUsers ?? 0),
@@ -236,16 +271,7 @@ export default function AdminDashboardPage() {
           </div>
           <form
             className="flex flex-col gap-3 md:flex-row"
-            onSubmit={(event) => {
-              event.preventDefault()
-              const form = new FormData(event.currentTarget)
-              const params = new URLSearchParams()
-              const nextQuery = String(form.get('q') ?? '').trim()
-              const nextRole = String(form.get('role') ?? 'all')
-              if (nextQuery) params.set('q', nextQuery)
-              if (nextRole !== 'all') params.set('role', nextRole)
-              setSearchParams(params)
-            }}
+            onSubmit={handleFilterSubmit}
           >
             <input
               name="q"
@@ -315,14 +341,7 @@ export default function AdminDashboardPage() {
                           {isOwner && managedUser.id !== profile?.id ? (
                             <form
                               className="flex items-center gap-2"
-                              onSubmit={(event) => {
-                                event.preventDefault()
-                                const form = new FormData(event.currentTarget)
-                                updateRoleMutation.mutate({
-                                  userId: String(form.get('user_id')),
-                                  role: String(form.get('role')) as UserRole,
-                                })
-                              }}
+                              onSubmit={handleRoleUpdate}
                             >
                               <input type="hidden" name="user_id" value={managedUser.id} />
                               <select
@@ -365,11 +384,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 className="rounded-lg border border-[var(--color-border)] px-3 py-1.5"
-                onClick={() => {
-                  const params = new URLSearchParams(searchParams)
-                  params.set('page', String(page - 1))
-                  setSearchParams(params)
-                }}
+                onClick={() => handlePageChange(page - 1)}
               >
                 {t('admin_pagination_previous')}
               </button>
@@ -379,11 +394,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 className="rounded-lg border border-[var(--color-border)] px-3 py-1.5"
-                onClick={() => {
-                  const params = new URLSearchParams(searchParams)
-                  params.set('page', String(page + 1))
-                  setSearchParams(params)
-                }}
+                onClick={() => handlePageChange(page + 1)}
               >
                 {t('admin_pagination_next')}
               </button>

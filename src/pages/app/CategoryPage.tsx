@@ -215,6 +215,17 @@ export default function CategoryPage() {
             const isLiking = likeMutation.isPending && likeMutation.variables?.id === post.id
             const isSaving = editPostMutation.isPending && editPostMutation.variables?.postId === post.id
 
+            const handleEditPost = () => {
+              setEditingPostId(post.id)
+              setEditedContent(post.content)
+              setEditedCategoryId(post.category_id)
+            }
+
+            const handleDeletePost = () => {
+              if (!window.confirm(`${t('admin_delete')}?`)) return
+              deletePostMutation.mutate({ postId: post.id })
+            }
+
             return (
               <article key={post.id} className="entry">
                 <div className="left">
@@ -277,11 +288,7 @@ export default function CategoryPage() {
                         <button
                           type="button"
                           className="act"
-                          onClick={() => {
-                            setEditingPostId(post.id)
-                            setEditedContent(post.content)
-                            setEditedCategoryId(post.category_id)
-                          }}
+                          onClick={handleEditPost}
                         >
                           <Pencil size={14} strokeWidth={1.75} /> <span>{t('post_edit')}</span>
                         </button>
@@ -289,11 +296,7 @@ export default function CategoryPage() {
                           type="button"
                           className="act danger"
                           disabled={isDeleting}
-                          onClick={() => {
-                            if (window.confirm(`${t('admin_delete')}?`)) {
-                              deletePostMutation.mutate({ postId: post.id })
-                            }
-                          }}
+                          onClick={handleDeletePost}
                         >
                           {isDeleting ? <InlineSpinner size={14} /> : <Trash2 size={14} strokeWidth={1.75} />} <span>{t('admin_delete')}</span>
                         </button>
