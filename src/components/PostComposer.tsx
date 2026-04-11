@@ -340,7 +340,6 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
           }
           break
         case 'Escape':
-          event.preventDefault()
           setSuggestion(null)
           return
       }
