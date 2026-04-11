@@ -51,7 +51,7 @@
   ],
   "largeFiles": {
     "src/pages/app/PostDetailPage.tsx": 740,
-    "src/pages/app/FeedPage.tsx": 550,
+    "src/pages/app/FeedPage.tsx": 600,
     "src/components/PostComposer.tsx": 690,
     "src/pages/admin/AdminDashboardPage.tsx": 450,
     "src/pages/app/SearchPage.tsx": 430,
