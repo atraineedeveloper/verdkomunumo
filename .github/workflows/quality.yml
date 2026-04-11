@@ -10,6 +10,9 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      VITE_SUPABASE_URL: http://localhost:54321
+      VITE_SUPABASE_ANON_KEY: fake-anon-key
     steps:
       - uses: actions/checkout@v4
 
@@ -28,9 +31,6 @@ jobs:
 
       - name: Unit tests
         run: bun run test
-        env:
-          VITE_SUPABASE_URL: http://localhost:54321
-          VITE_SUPABASE_ANON_KEY: fake-anon-key
 
       - name: Build
         run: bun run build
