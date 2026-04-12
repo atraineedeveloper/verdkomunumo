@@ -77,53 +77,56 @@ export async function resolveLocationFields(
   const region = String(formData.get('region') ?? '').trim()
   const city = String(formData.get('city') ?? '').trim()
   const mapVisible = formData.get('map_visible') === 'on'
+  if (!mapVisible) {
+    return {
+      country,
+      region,
+      city,
+      map_visible: false,
+      location_lat: null,
+      location_lng: null,
+    }
+  }
+
   const locationQuery = [city, region, country].filter(Boolean).join(', ')
+  if (!locationQuery) {
+    throw new Error(
+      t('settings_map_location_required', {
+        defaultValue: 'Choose at least a country, region or city before enabling the public map.',
+      }),
+    )
+  }
+
   const locationChanged =
     country !== (profile.country ?? '') ||
     region !== (profile.region ?? '') ||
     city !== (profile.city ?? '')
 
-  let locationLat: number | null = null
-  let locationLng: number | null = null
+  const needsGeocode =
+    locationChanged ||
+    !profile.map_visible ||
+    profile.location_lat == null ||
+    profile.location_lng == null
 
-  if (mapVisible) {
-    if (!locationQuery) {
-      throw new Error(
-        t('settings_map_location_required', {
-          defaultValue: 'Choose at least a country, region or city before enabling the public map.',
-        }),
-      )
-    }
+  const geocoded = needsGeocode
+    ? await geocode(locationQuery)
+    : { lat: profile.location_lat, lng: profile.location_lng }
 
-    const needsGeocode =
-      locationChanged ||
-      !profile.map_visible ||
-      profile.location_lat == null ||
-      profile.location_lng == null
-
-    const geocoded = needsGeocode
-      ? await geocode(locationQuery)
-      : { lat: profile.location_lat, lng: profile.location_lng }
-
-    if (!geocoded) {
-      throw new Error(
-        t('settings_map_geocode_failed', {
-          defaultValue: 'We could not locate that region. Adjust the location and try again.',
-        }),
-      )
-    }
-
-    locationLat = geocoded.lat
-    locationLng = geocoded.lng
+  if (!geocoded) {
+    throw new Error(
+      t('settings_map_geocode_failed', {
+        defaultValue: 'We could not locate that region. Adjust the location and try again.',
+      }),
+    )
   }
 
   return {
     country,
     region,
     city,
-    map_visible: mapVisible,
-    location_lat: locationLat,
-    location_lng: locationLng,
+    map_visible: true,
+    location_lat: geocoded.lat,
+    location_lng: geocoded.lng,
   }
 }
 

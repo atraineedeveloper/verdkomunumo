@@ -112,7 +112,6 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     theme: 'green',
     role: 'user',
     website: '',
-    location: '',
     country: null,
     region: null,
     city: null,

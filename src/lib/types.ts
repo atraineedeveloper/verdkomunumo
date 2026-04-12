@@ -37,7 +37,6 @@ export interface Profile {
   theme: Theme
   role: UserRole
   website: string
-  location: string
   country: string | null
   region: string | null
   city: string | null

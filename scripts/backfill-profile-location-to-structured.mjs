@@ -17,6 +17,40 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
+const EXACT_LOCATION_OVERRIDES = new Map([
+  [
+    'varsovio',
+    {
+      status: 'matched',
+      reason: 'exact_override',
+      country: 'Poland',
+      region: 'Masovian Voivodeship',
+      city: 'Warsaw',
+    },
+  ],
+])
+
+const ESPERANTO_COUNTRY_ALIASES = new Map([
+  ['britio', 'GB'],
+  ['francujo', 'FR'],
+  ['francio', 'FR'],
+  ['germanujo', 'DE'],
+  ['germanio', 'DE'],
+  ['hispanujo', 'ES'],
+  ['hispanio', 'ES'],
+  ['irlando', 'IE'],
+  ['italujo', 'IT'],
+  ['italio', 'IT'],
+  ['japanujo', 'JP'],
+  ['japanio', 'JP'],
+  ['meksiko', 'MX'],
+  ['pollando', 'PL'],
+  ['polujo', 'PL'],
+  ['portugalujo', 'PT'],
+  ['portugalio', 'PT'],
+  ['usono', 'US'],
+])
+
 function normalize(value) {
   return value
     .normalize('NFD')
@@ -39,7 +73,8 @@ function splitLocation(value) {
 
 function buildCountryIndex() {
   const index = new Map()
-  for (const country of Country.getAllCountries()) {
+  const countries = Country.getAllCountries()
+  for (const country of countries) {
     const aliases = unique([
       country.name,
       country.isoCode,
@@ -49,11 +84,14 @@ function buildCountryIndex() {
       index.set(normalize(alias), country)
     }
   }
-  index.set('usa', Country.getAllCountries().find((country) => country.isoCode === 'US'))
-  index.set('united states', Country.getAllCountries().find((country) => country.isoCode === 'US'))
-  index.set('uk', Country.getAllCountries().find((country) => country.isoCode === 'GB'))
-  index.set('united kingdom', Country.getAllCountries().find((country) => country.isoCode === 'GB'))
-  index.set('mexico', Country.getAllCountries().find((country) => country.isoCode === 'MX'))
+  index.set('usa', countries.find((country) => country.isoCode === 'US'))
+  index.set('united states', countries.find((country) => country.isoCode === 'US'))
+  index.set('uk', countries.find((country) => country.isoCode === 'GB'))
+  index.set('united kingdom', countries.find((country) => country.isoCode === 'GB'))
+  index.set('mexico', countries.find((country) => country.isoCode === 'MX'))
+  for (const [alias, isoCode] of ESPERANTO_COUNTRY_ALIASES) {
+    index.set(alias, countries.find((country) => country.isoCode === isoCode) ?? null)
+  }
   return index
 }
 
@@ -84,6 +122,11 @@ function inferStructuredLocation(rawLocation, current) {
   const location = String(rawLocation ?? '').trim()
   if (!location) {
     return { status: 'skip', reason: 'empty_location' }
+  }
+
+  const exactOverride = EXACT_LOCATION_OVERRIDES.get(normalize(location))
+  if (exactOverride) {
+    return exactOverride
   }
 
   if (current.country || current.region || current.city) {

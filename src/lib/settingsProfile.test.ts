@@ -13,7 +13,6 @@ function buildProfile(overrides: Partial<Profile> = {}): Profile {
     theme: 'green',
     role: 'user',
     website: '',
-    location: '',
     country: null,
     region: null,
     city: null,
@@ -83,7 +82,31 @@ describe('settingsProfile helpers', () => {
     })
   })
 
-  it('requires location input before enabling the public map', async () => {
+  it('never geocodes when the public map is disabled', async () => {
+    const profile = buildProfile({
+      country: 'Mexico',
+      region: 'Nuevo Leon',
+      city: 'Monterrey',
+      location_lat: 25.68,
+      location_lng: -100.31,
+      map_visible: true,
+    })
+    const geocode = vi.fn().mockRejectedValue(new Error('should not run'))
+
+    const result = await resolveLocationFields(
+      profile,
+      buildFormData({ country: 'Mexico', region: 'Nuevo Leon', city: 'Monterrey' }),
+      ((key: string) => key) as never,
+      geocode,
+    )
+
+    expect(geocode).not.toHaveBeenCalled()
+    expect(result.map_visible).toBe(false)
+    expect(result.location_lat).toBeNull()
+    expect(result.location_lng).toBeNull()
+  })
+
+  it('requires structured location input before enabling the public map', async () => {
     const profile = buildProfile()
     const t = vi.fn().mockReturnValue('location required')
 
@@ -105,7 +128,6 @@ describe('settingsProfile helpers', () => {
       resolveLocationFields(
         profile,
         buildFormData({
-          location: 'Bogota, Colombia',
           map_visible: 'on',
         }),
         t as never,

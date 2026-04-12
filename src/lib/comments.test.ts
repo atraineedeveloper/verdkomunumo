@@ -69,7 +69,6 @@ describe('comments utils', () => {
             theme: 'green',
             role: 'user',
             website: '',
-            location: '',
             followers_count: 0,
             following_count: 0,
             posts_count: 0,
