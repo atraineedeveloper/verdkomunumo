@@ -26,6 +26,7 @@ const ProfilePage = lazy(() => import('@/pages/app/ProfilePage'))
 const CategoryPage = lazy(() => import('@/pages/app/CategoryPage'))
 const PostDetailPage = lazy(() => import('@/pages/app/PostDetailPage'))
 const SettingsPage = lazy(() => import('@/pages/app/SettingsPage'))
+const SamideanojPage = lazy(() => import('@/pages/app/SamideanojPage'))
 
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'))
 const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage'))
@@ -53,6 +54,7 @@ export default function App() {
           <Route path={routes.profilePattern} element={<ProfilePage />} />
           <Route path={routes.categoryPattern} element={<CategoryPage />} />
           <Route path={routes.postPattern} element={<PostDetailPage />} />
+          <Route path={routes.samideanoj} element={<SamideanojPage />} />
         </Route>
 
         {/* Private routes — require login */}

@@ -35,6 +35,12 @@ export function Sidebar({ categories = [] }: SidebarProps) {
         >
           {t('nav_chat', { defaultValue: 'Babilejo' })}
         </Link>
+        <Link
+          to={routes.samideanoj}
+          className={`flex items-center gap-2 px-2 py-[0.42rem] text-[0.875rem] font-medium rounded-[6px] no-underline transition-all ${pathname === routes.samideanoj ? 'text-[var(--color-primary)] font-semibold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-alt)]'}`}
+        >
+          {t('nav_samideanoj', { defaultValue: 'Samideanoj Proksime' })}
+        </Link>
       </nav>
 
       <div className="flex flex-col gap-2">

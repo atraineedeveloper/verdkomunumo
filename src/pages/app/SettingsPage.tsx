@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
@@ -12,9 +12,17 @@ import i18n from '@/lib/i18n'
 import { optimizeImageFiles, replaceInputFiles } from '@/lib/browser/images'
 import { ESPERANTO_LEVELS } from '@/lib/constants'
 import { EMAIL_NOTIFICATION_OPTIONS, isKnownNotificationType } from '@/lib/emailPreferences'
+import { queryKeys } from '@/lib/query/keys'
 import { getAvatarUrl } from '@/lib/utils'
 import type { EsperantoLevel, Profile, Theme } from '@/lib/types'
 import { LocaleFlag } from '@/components/ui/LocaleFlag'
+import {
+  getAllCountries,
+  getStatesOfCountry,
+  getCitiesOfState,
+  countryNameToIso,
+  stateNameToIso,
+} from '@/lib/countries'
 
 const themeValues: Theme[] = ['green', 'dark', 'vivid', 'minimal']
 const themeKeys = ['theme_green', 'theme_dark', 'theme_vivid', 'theme_minimal'] as const
@@ -26,6 +34,10 @@ type SettingsForm = {
   bio: string
   esperanto_level: EsperantoLevel
   location: string
+  country: string
+  region: string
+  city: string
+  map_visible: boolean
   website: string
   email_notifications_enabled: boolean
   email_notify_like: boolean
@@ -44,6 +56,10 @@ function formFromProfile(profile: Profile): SettingsForm {
     bio: profile.bio ?? '',
     esperanto_level: profile.esperanto_level ?? 'komencanto',
     location: profile.location ?? '',
+    country: profile.country ?? '',
+    region: profile.region ?? '',
+    city: profile.city ?? '',
+    map_visible: profile.map_visible ?? false,
     website: profile.website ?? '',
     email_notifications_enabled: profile.email_notifications_enabled ?? true,
     email_notify_like: profile.email_notify_like ?? true,
@@ -56,8 +72,26 @@ function formFromProfile(profile: Profile): SettingsForm {
   }
 }
 
+async function geocodeRegion(query: string) {
+  const params = new URLSearchParams({ q: query, format: 'json', limit: '1' })
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`)
+
+  if (!res.ok) {
+    throw new Error(`Geocoding failed with status ${res.status}`)
+  }
+
+  const data: Array<{ lat: string; lon: string }> = await res.json()
+  if (!data.length) return null
+
+  return {
+    lat: Number.parseFloat(data[0].lat),
+    lng: Number.parseFloat(data[0].lon),
+  }
+}
+
 export default function SettingsPage() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const profile = useAuthStore((s) => s.profile)
@@ -73,6 +107,10 @@ export default function SettingsPage() {
     bio: profile?.bio ?? '',
     esperanto_level: profile?.esperanto_level ?? 'komencanto',
     location: profile?.location ?? '',
+    country: profile?.country ?? '',
+    region: profile?.region ?? '',
+    city: profile?.city ?? '',
+    map_visible: profile?.map_visible ?? false,
     website: profile?.website ?? '',
     email_notifications_enabled: profile?.email_notifications_enabled ?? true,
     email_notify_like: profile?.email_notify_like ?? false,
@@ -133,12 +171,62 @@ export default function SettingsPage() {
         return formData.has(name) ? formData.get(name) === 'on' : fallback
       }
 
+      const country = String(formData.get('country') ?? '')
+      const region = String(formData.get('region') ?? '')
+      const city = String(formData.get('city') ?? '')
+      const map_visible = readCheckbox('map_visible', false)
+      const locationQuery = [city, region, country].filter(Boolean).join(', ')
+      const locationChanged =
+        country !== (profile.country ?? '') ||
+        region !== (profile.region ?? '') ||
+        city !== (profile.city ?? '')
+
+      let location_lat: number | null = null
+      let location_lng: number | null = null
+
+      if (map_visible) {
+        if (!locationQuery) {
+          throw new Error(
+            t('settings_map_location_required', {
+              defaultValue: 'Choose at least a country, region or city before enabling the public map.',
+            }),
+          )
+        }
+
+        const needsGeocode =
+          locationChanged ||
+          !profile.map_visible ||
+          profile.location_lat == null ||
+          profile.location_lng == null
+
+        const geocoded = needsGeocode
+          ? await geocodeRegion(locationQuery)
+          : { lat: profile.location_lat, lng: profile.location_lng }
+
+        if (!geocoded) {
+          throw new Error(
+            t('settings_map_geocode_failed', {
+              defaultValue: 'We could not locate that region. Adjust the location and try again.',
+            }),
+          )
+        }
+
+        location_lat = geocoded.lat
+        location_lng = geocoded.lng
+      }
+
       const payload = {
         username,
         display_name: String(formData.get('display_name') ?? ''),
         bio: String(formData.get('bio') ?? ''),
         website: String(formData.get('website') ?? ''),
         location: String(formData.get('location') ?? ''),
+        country,
+        region,
+        city,
+        location_lat,
+        location_lng,
+        map_visible,
         esperanto_level: String(formData.get('esperanto_level') ?? '') as EsperantoLevel,
         email_notifications_enabled: readCheckbox('email_notifications_enabled', profile.email_notifications_enabled ?? true),
         email_notify_like: readCheckbox('email_notify_like', profile.email_notify_like ?? true),
@@ -156,8 +244,9 @@ export default function SettingsPage() {
       if (error) throw error
       return { ...profile, ...payload }
     },
-    onSuccess: (nextProfile) => {
+    onSuccess: async (nextProfile) => {
       setProfile(nextProfile)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.mapUsers() })
       toast.success(t('toast_profile_saved'))
     },
     onError: (error: Error) => toast.error(error.message || t('toast_action_failed')),
@@ -190,7 +279,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Helmet><title>{t('settings_title')} — Verdkomunumo</title></Helmet>
+      <Helmet><title>{t('settings_title')} - Verdkomunumo</title></Helmet>
       <h1 className="page-title">{t('settings_title')}</h1>
 
       <section className="section">
@@ -238,6 +327,91 @@ export default function SettingsPage() {
             </select>
           </div>
 
+          {/* --- Location (cascading dropdowns) --- */}
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="country">{t('settings_country', { defaultValue: 'Lando' })}</label>
+              <select
+                id="country"
+                name="country"
+                value={form.country ?? ''}
+                onChange={(e) => {
+                  const next = e.target.value
+                  setForm((prev) => ({ ...prev, country: next, region: '', city: '' }))
+                }}
+              >
+                <option value="">-</option>
+                {getAllCountries(i18n.language).map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="region">{t('settings_region', { defaultValue: 'Regiono' })}</label>
+              {(() => {
+                const countryIso = form.country ? countryNameToIso(form.country) : null
+                const states = countryIso ? getStatesOfCountry(countryIso) : []
+                return states.length > 0 ? (
+                  <select
+                    id="region"
+                    name="region"
+                    value={form.region ?? ''}
+                    onChange={(e) => {
+                      const next = e.target.value
+                      setForm((prev) => ({ ...prev, region: next, city: '' }))
+                    }}
+                  >
+                    <option value="">-</option>
+                    {states.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id="region"
+                    name="region"
+                    type="text"
+                    value={form.region ?? ''}
+                    onChange={(e) => setForm((prev) => ({ ...prev, region: e.target.value, city: '' }))}
+                    placeholder={t('settings_region', { defaultValue: 'Regiono' })}
+                  />
+                )
+              })()}
+            </div>
+
+            <div className="field">
+              <label htmlFor="city">{t('settings_city', { defaultValue: 'Urbo' })}</label>
+              {(() => {
+                const countryIso = form.country ? countryNameToIso(form.country) : null
+                const stateIso = (countryIso && form.region) ? stateNameToIso(countryIso, form.region) : null
+                const cities = (countryIso && stateIso) ? getCitiesOfState(countryIso, stateIso) : []
+                return cities.length > 0 ? (
+                  <select
+                    id="city"
+                    name="city"
+                    value={form.city ?? ''}
+                    onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                  >
+                    <option value="">-</option>
+                    {cities.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id="city"
+                    name="city"
+                    type="text"
+                    value={form.city ?? ''}
+                    onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                    placeholder={t('settings_city', { defaultValue: 'Urbo' })}
+                  />
+                )
+              })()}
+            </div>
+          </div>
+          
           <div className="field-row">
             <div className="field">
               <label htmlFor="location">{t('settings_location')}</label>
@@ -247,6 +421,16 @@ export default function SettingsPage() {
               <label htmlFor="website">{t('settings_website')}</label>
               <input id="website" name="website" type="url" placeholder="https://" value={form.website} onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))} />
             </div>
+          </div>
+
+          <div className="field">
+            <label className="toggle-row" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+              <div>
+                <span className="toggle-title">{t('settings_map_visible', { defaultValue: 'Montri min en la publika mapo por trovi Esperantistojn proksime' })}</span>
+                <span className="toggle-sub">{t('settings_map_visible_hint', { defaultValue: 'Uzantoj povos trovi vian profilon laŭ via regiono aŭ urbo en la formo de grupaj montriloj.' })}</span>
+              </div>
+              <input type="checkbox" name="map_visible" checked={form.map_visible} onChange={(e) => setForm((prev) => ({ ...prev, map_visible: e.target.checked }))} />
+            </label>
           </div>
 
           <button className="btn-primary" type="submit" disabled={updateProfileMutation.isPending}>

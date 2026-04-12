@@ -23,6 +23,7 @@ export const routes = {
   admin: '/administrado',
   adminCategories: '/administrado/kategorioj',
   adminReports: '/administrado/raportoj',
+  samideanoj: '/samideanoj',
 } as const
 
 export function feedWithFilter(filter?: 'all' | 'following') {

@@ -37,6 +37,12 @@ export interface Profile {
   role: UserRole
   website: string
   location: string
+  country: string | null
+  region: string | null
+  city: string | null
+  location_lat: number | null
+  location_lng: number | null
+  map_visible: boolean
   followers_count: number
   following_count: number
   posts_count: number

@@ -12,4 +12,5 @@ export const queryKeys = {
   adminDashboard: (params?: object) => params ? ['admin-dashboard', params] as const : ['admin-dashboard'] as const,
   adminCategories: () => ['admin-categories'] as const,
   adminReports: (params?: object) => params ? ['admin-reports', params] as const : ['admin-reports'] as const,
+  mapUsers: () => ['map-users'] as const,
 }
