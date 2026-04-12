@@ -53,7 +53,7 @@ async function fetchPostDetail(postId: string, userId?: string | null) {
     supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
   ])
 
-  if (error || !post) throw new Error('AfiÅo ne trovita')
+  if (error || !post) throw new Error('Afiŝo ne trovita')
   if (categoriesRes.error) throw categoriesRes.error
 
   const { data: comments, error: commentsError } = await supabase
@@ -400,9 +400,9 @@ export default function PostDetailPage() {
   if (!post) return null
 
   return (
-    <>
+      <>
       <Helmet>
-        <title>{post.author?.display_name ?? 'AfiÅo'} â€” Verdkomunumo</title>
+        <title>{post.author?.display_name ?? 'Afiŝo'} — Verdkomunumo</title>
       </Helmet>
       <Link to={routes.feed} className="back">{t('post_back')}</Link>
       <article className="post">
@@ -659,9 +659,9 @@ function CommentRow(props: CommentRowProps) {
               <>
                 <Link to={routes.profile(comment.author.username)} className="dname">{comment.author.display_name}</Link>
                 <span className="muted">@{comment.author.username}</span>
-                <span className="muted">Â·</span>
+                <span className="muted">·</span>
                 <span className="muted small">{formatDate(comment.created_at)}</span>
-                {comment.is_edited && <><span className="muted">Â·</span><span className="muted small">{t('post_edited')}</span></>}
+                {comment.is_edited && <><span className="muted">·</span><span className="muted small">{t('post_edited')}</span></>}
               </>
             )}
           </div>

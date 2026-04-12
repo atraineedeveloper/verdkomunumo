@@ -43,6 +43,7 @@ function groupByLocation(users: MapUser[]): Map<string, MapUser[]> {
 
 function UserCard({ user }: { user: MapUser }) {
   const levelColor = LEVEL_COLORS[user.esperanto_level as EsperantoLevel] ?? 'var(--color-primary)'
+  const locationLabel = [user.city, user.region, user.country].filter(Boolean).join(', ') || user.location
 
   return (
     <Link to={routes.profile(user.username)} className="map-user-card">
@@ -57,9 +58,7 @@ function UserCard({ user }: { user: MapUser }) {
         <span className="map-user-level" style={{ color: levelColor }}>
           {user.esperanto_level}
         </span>
-        <span className="map-user-location">
-          {[user.city, user.region, user.country].filter(Boolean).join(', ')}
-        </span>
+        <span className="map-user-location">{locationLabel}</span>
       </div>
     </Link>
   )
@@ -163,7 +162,7 @@ export default function SamideanojPage() {
                       <Popup>
                         <div className="map-popup">
                           <strong className="map-popup-title">
-                            {group[0].city || group[0].region || group[0].country}
+                            {group[0].city || group[0].region || group[0].country || group[0].location}
                           </strong>
                           <span className="map-popup-count">
                             {group.length} {t('map_popup_users', { defaultValue: 'users' })}
@@ -188,7 +187,7 @@ export default function SamideanojPage() {
             <aside className="map-sidebar">
               <div className="map-sidebar-header">
                 <span className="map-sidebar-title">
-                  {selectedUsers[0].city || selectedUsers[0].region || selectedUsers[0].country}
+                  {selectedUsers[0].city || selectedUsers[0].region || selectedUsers[0].country || selectedUsers[0].location}
                 </span>
                 <button
                   type="button"

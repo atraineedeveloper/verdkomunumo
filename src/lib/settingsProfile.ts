@@ -75,9 +75,9 @@ export async function resolveLocationFields(
   t: TFunction,
   geocode: GeocodeFn = geocodeRegion,
 ) {
-  const country = String(formData.get('country') ?? '')
-  const region = String(formData.get('region') ?? '')
-  const city = String(formData.get('city') ?? '')
+  const country = String(formData.get('country') ?? '').trim()
+  const region = String(formData.get('region') ?? '').trim()
+  const city = String(formData.get('city') ?? '').trim()
   const mapVisible = formData.get('map_visible') === 'on'
   const locationQuery = [city, region, country].filter(Boolean).join(', ')
   const locationChanged =
@@ -139,11 +139,11 @@ export async function buildProfilePayload(
   const locationFields = await resolveLocationFields(profile, formData, t, geocode)
 
   return {
-    username: String(formData.get('username') ?? ''),
-    display_name: String(formData.get('display_name') ?? ''),
-    bio: String(formData.get('bio') ?? ''),
-    website: String(formData.get('website') ?? ''),
-    location: String(formData.get('location') ?? ''),
+    username: String(formData.get('username') ?? '').trim(),
+    display_name: String(formData.get('display_name') ?? '').trim(),
+    bio: String(formData.get('bio') ?? '').trim(),
+    website: String(formData.get('website') ?? '').trim(),
+    location: String(formData.get('location') ?? '').trim(),
     esperanto_level: String(formData.get('esperanto_level') ?? '') as EsperantoLevel,
     email_notifications_enabled: profile.email_notifications_enabled ?? true,
     email_notify_like: profile.email_notify_like ?? true,

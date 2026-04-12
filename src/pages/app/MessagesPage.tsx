@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toasts'
 import { queryKeys } from '@/lib/query/keys'
 import { formatDate, getAvatarUrl } from '@/lib/utils'
-import type { Conversation, Profile } from '@/lib/types'
+import type { Conversation, Message, Profile } from '@/lib/types'
 import { routes } from '@/lib/routes'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { ListSkeleton } from '@/components/ui/ListSkeleton'
@@ -34,7 +34,7 @@ async function fetchConversations(userId: string) {
     participantsByConversation.set(row.conversation_id, participants)
   }
 
-  const latestMessageByConversation = new Map<string, any>()
+  const latestMessageByConversation = new Map<string, Message>()
   const unreadCountByConversation = new Map<string, number>()
   const lastReadAtByConversation = new Map(memberships.map((membership) => [membership.conversation_id, membership.last_read_at ?? new Date(0).toISOString()]))
 

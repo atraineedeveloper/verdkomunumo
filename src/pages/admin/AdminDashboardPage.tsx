@@ -12,7 +12,7 @@ import { getPaginationRange, normalizeAdminRoleFilter } from '@/lib/admin/utils'
 import { formatDate, hasRequiredRole } from '@/lib/utils'
 import { CATEGORY_COLORS, CATEGORY_ICONS, LEVEL_COLORS, LEVEL_ICONS } from '@/lib/icons'
 import { routes } from '@/lib/routes'
-import type { Profile, UserRole } from '@/lib/types'
+import type { Category, Post, Profile, UserRole } from '@/lib/types'
 import { ListSkeleton } from '@/components/ui/ListSkeleton'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 
@@ -22,6 +22,11 @@ interface ManagedUser extends Profile {
   role: UserRole
   updated_at: string
   created_at: string
+}
+
+interface AdminRecentPost extends Post {
+  author?: Profile
+  category?: Category
 }
 
 async function fetchAdminDashboard({
@@ -68,7 +73,7 @@ async function fetchAdminDashboard({
       categories: categoriesRes.count ?? 0,
       pendingSuggestions: suggestionsRes.count ?? 0,
     },
-    recentPosts: postsRes.data ?? [],
+    recentPosts: (postsRes.data ?? []) as AdminRecentPost[],
     recentUsers: (usersRes.data ?? []) as ManagedUser[],
     managedUsers: (managedUsersRes.data ?? []) as ManagedUser[],
     totalManagedUsers: managedUsersRes.count ?? 0,
@@ -212,16 +217,20 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {(data?.recentPosts ?? []).map((post: any) => {
+                {(data?.recentPosts ?? []).map((post) => {
                   const CatIcon = post.category ? CATEGORY_ICONS[post.category.slug] : null
                   const catColor = post.category ? CATEGORY_COLORS[post.category.slug] : undefined
                   const deleting = deletePostMutation.isPending && deletePostMutation.variables === post.id
                   return (
                     <tr key={post.id} className="border-b border-[var(--color-border)] last:border-b-0">
                       <td className="px-4 py-3">
-                        <Link to={routes.profile(post.author?.username)} className="text-[var(--color-text)] no-underline hover:underline">
-                          {post.author?.display_name}
-                        </Link>
+                        {post.author?.username ? (
+                          <Link to={routes.profile(post.author.username)} className="text-[var(--color-text)] no-underline hover:underline">
+                            {post.author.display_name}
+                          </Link>
+                        ) : (
+                          <span className="text-[var(--color-text)]">{post.author?.display_name ?? '—'}</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {post.category && (

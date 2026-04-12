@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildEmailPreferencesPayload, formFromProfile, resolveLocationFields, type SettingsForm } from './settingsProfile'
+import { buildEmailPreferencesPayload, buildProfilePayload, formFromProfile, resolveLocationFields, type SettingsForm } from './settingsProfile'
 import type { Profile } from './types'
 
 function buildProfile(overrides: Partial<Profile> = {}): Profile {
@@ -96,6 +96,26 @@ describe('settingsProfile helpers', () => {
     ).rejects.toThrow('location required')
   })
 
+  it('requires structured location fields for map geocoding', async () => {
+    const profile = buildProfile({ map_visible: false })
+    const geocode = vi.fn()
+    const t = vi.fn().mockReturnValue('location required')
+
+    await expect(
+      resolveLocationFields(
+        profile,
+        buildFormData({
+          location: 'Bogota, Colombia',
+          map_visible: 'on',
+        }),
+        t as never,
+        geocode,
+      ),
+    ).rejects.toThrow('location required')
+
+    expect(geocode).not.toHaveBeenCalled()
+  })
+
   it('re-geocodes when map visibility is enabled with a new location', async () => {
     const profile = buildProfile({ map_visible: false })
     const geocode = vi.fn().mockResolvedValue({ lat: 25.67, lng: -100.30 })
@@ -149,5 +169,35 @@ describe('settingsProfile helpers', () => {
     })
     expect(buildEmailPreferencesPayload(form)).not.toHaveProperty('country')
     expect(buildEmailPreferencesPayload(form)).not.toHaveProperty('location_lat')
+  })
+
+  it('trims profile fields before building the payload', async () => {
+    const profile = buildProfile()
+    const geocode = vi.fn().mockResolvedValue({ lat: 25.67, lng: -100.3 })
+    const payload = await buildProfilePayload(
+      profile,
+      buildFormData({
+        username: '  ada  ',
+        display_name: '  Ada Lovelace  ',
+        bio: '  hello world  ',
+        website: '  https://example.com  ',
+        location: '  Monterrey, Mexico  ',
+        country: 'Mexico',
+        region: 'Nuevo Leon',
+        city: 'Monterrey',
+        esperanto_level: 'komencanto',
+        map_visible: 'on',
+      }),
+      ((key: string) => key) as never,
+      undefined,
+      geocode,
+    )
+
+    expect(payload.username).toBe('ada')
+    expect(payload.display_name).toBe('Ada Lovelace')
+    expect(payload.bio).toBe('hello world')
+    expect(payload.website).toBe('https://example.com')
+    expect(payload.location).toBe('Monterrey, Mexico')
+    expect(geocode).toHaveBeenCalledWith('Monterrey, Nuevo Leon, Mexico')
   })
 })

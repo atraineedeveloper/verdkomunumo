@@ -1,5 +1,12 @@
+import { useEffect, useState } from 'react'
 import i18n from '@/lib/i18n'
-import { getAllCountries } from '@/lib/countries'
+import {
+  countryNameToIso,
+  getAllCountries,
+  getCitiesOfState,
+  getStatesOfCountry,
+  stateNameToIso,
+} from '@/lib/countries'
 import { ESPERANTO_LEVELS } from '@/lib/constants'
 import { getAvatarUrl } from '@/lib/utils'
 import type { SettingsForm } from '@/lib/settingsProfile'
@@ -29,6 +36,65 @@ export function ProfileSettingsSection({
   isPending,
   t,
 }: ProfileSettingsSectionProps) {
+  const [countries, setCountries] = useState<Array<{ label: string; value: string }>>([])
+  const [states, setStates] = useState<Array<{ label: string; value: string; isoCode: string }>>([])
+  const [cities, setCities] = useState<Array<{ label: string; value: string }>>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    void getAllCountries(i18n.language).then((nextCountries) => {
+      if (!cancelled) setCountries(nextCountries)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [i18n.language])
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!form.country) {
+      setStates([])
+      setCities([])
+      return
+    }
+
+    void countryNameToIso(form.country)
+      .then((countryIso) => (countryIso ? getStatesOfCountry(countryIso) : []))
+      .then((nextStates) => {
+        if (!cancelled) setStates(nextStates)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [form.country])
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!form.country || !form.region) {
+      setCities([])
+      return
+    }
+
+    void countryNameToIso(form.country)
+      .then(async (countryIso) => {
+        if (!countryIso) return []
+        const stateIso = await stateNameToIso(countryIso, form.region)
+        return stateIso ? getCitiesOfState(countryIso, stateIso) : []
+      })
+      .then((nextCities) => {
+        if (!cancelled) setCities(nextCities)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [form.country, form.region])
+
   return (
     <section className="section">
       <h2 className="section-title">{t('settings_profile')}</h2>
@@ -112,10 +178,15 @@ export function ProfileSettingsSection({
               id="country"
               name="country"
               value={form.country}
-              onChange={(event) => onFormChange((current) => ({ ...current, country: event.target.value }))}
+              onChange={(event) => onFormChange((current) => ({
+                ...current,
+                country: event.target.value,
+                region: '',
+                city: '',
+              }))}
             >
               <option value="">-</option>
-              {getAllCountries(i18n.language).map((country) => (
+              {countries.map((country) => (
                 <option key={country.value} value={country.value}>{country.label}</option>
               ))}
             </select>
@@ -123,26 +194,58 @@ export function ProfileSettingsSection({
 
           <div className="field">
             <label htmlFor="region">{t('settings_region')}</label>
-            <input
-              id="region"
-              name="region"
-              type="text"
-              value={form.region}
-              onChange={(event) => onFormChange((current) => ({ ...current, region: event.target.value }))}
-              placeholder={t('settings_region')}
-            />
+            {states.length > 0 ? (
+              <select
+                id="region"
+                name="region"
+                value={form.region}
+                onChange={(event) => onFormChange((current) => ({
+                  ...current,
+                  region: event.target.value,
+                  city: '',
+                }))}
+              >
+                <option value="">-</option>
+                {states.map((state) => (
+                  <option key={state.isoCode} value={state.value}>{state.label}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id="region"
+                name="region"
+                type="text"
+                value={form.region}
+                onChange={(event) => onFormChange((current) => ({ ...current, region: event.target.value, city: '' }))}
+                placeholder={t('settings_region')}
+              />
+            )}
           </div>
 
           <div className="field">
             <label htmlFor="city">{t('settings_city')}</label>
-            <input
-              id="city"
-              name="city"
-              type="text"
-              value={form.city}
-              onChange={(event) => onFormChange((current) => ({ ...current, city: event.target.value }))}
-              placeholder={t('settings_city')}
-            />
+            {cities.length > 0 ? (
+              <select
+                id="city"
+                name="city"
+                value={form.city}
+                onChange={(event) => onFormChange((current) => ({ ...current, city: event.target.value }))}
+              >
+                <option value="">-</option>
+                {cities.map((city) => (
+                  <option key={city.value} value={city.value}>{city.label}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id="city"
+                name="city"
+                type="text"
+                value={form.city}
+                onChange={(event) => onFormChange((current) => ({ ...current, city: event.target.value }))}
+                placeholder={t('settings_city')}
+              />
+            )}
           </div>
         </div>
 

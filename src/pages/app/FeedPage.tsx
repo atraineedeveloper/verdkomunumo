@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { UseMutationResult } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import { Heart, MessageSquare, Pencil, Quote, Trash2, TriangleAlert, X } from 'lucide-react'
@@ -21,7 +22,7 @@ import { LinkPreviewCard } from '@/components/LinkPreviewCard'
 import { PostExcerpt } from '@/components/PostExcerpt'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
-import type { Post, Category } from '@/lib/types'
+import type { Post, Category, Profile } from '@/lib/types'
 import { feedWithFilter, routes } from '@/lib/routes'
 import { removePostInData, updatePostInData, updatePostLikeInData } from '@/lib/query/optimisticPosts'
 import { postSchema } from '@/lib/validators'
@@ -30,6 +31,31 @@ const BETA_KEY = 'verdkomunumo-beta-notice-dismissed'
 const APP_NAME = import.meta.env.VITE_APP_NAME ?? 'Verdkomunumo'
 const FEED_PAGE_SIZE = 20
 
+interface FeedLikeRow {
+  user_id: string
+}
+
+interface FeedPostRecord extends Post {
+  likes?: FeedLikeRow[] | null
+}
+
+interface FollowRow {
+  following_id: string
+}
+
+interface FeedPageData {
+  posts: Post[]
+  page: number
+}
+
+type FeedInfiniteData = {
+  pages: FeedPageData[]
+  pageParams: number[]
+}
+
+type FeedLikeMutation = UseMutationResult<void, Error, Post, { previousFeed: FeedInfiniteData | undefined; queryKey: ReturnType<typeof queryKeys.feed> } | undefined>
+type FeedEditMutation = UseMutationResult<{ postId: string; content: string; category_id: string; updated_at: string }, Error, { postId: string }, { previousFeed: FeedInfiniteData | undefined; queryKey: ReturnType<typeof queryKeys.feed> } | undefined>
+type FeedDeleteMutation = UseMutationResult<{ postId: string }, Error, { postId: string }, { previousFeed: FeedInfiniteData | undefined; queryKey: ReturnType<typeof queryKeys.feed> } | undefined>
 
 function FeedPostItem({
   post,
@@ -48,7 +74,7 @@ function FeedPostItem({
   composerRef,
 }: {
   post: Post
-  profile: any
+  profile: Profile | null
   categories: Category[]
   editingPostId: string | null
   editedContent: string
@@ -56,9 +82,9 @@ function FeedPostItem({
   setEditingPostId: (id: string | null) => void
   setEditedContent: (content: string) => void
   setEditedCategoryId: (id: string) => void
-  editPostMutation: any
-  deletePostMutation: any
-  likeMutation: any
+  editPostMutation: FeedEditMutation
+  deletePostMutation: FeedDeleteMutation
+  likeMutation: FeedLikeMutation
   setQuotingPost: (post: Post | null) => void
   composerRef: React.RefObject<HTMLDivElement>
 }) {
@@ -94,16 +120,16 @@ function FeedPostItem({
           {post.category && (
             <Link
               to={routes.category(post.category.slug)}
-              className="cat-tag"
-              style={{ color: CATEGORY_COLORS[post.category.slug], background: `${CATEGORY_COLORS[post.category.slug]}15` }}
-            >
-              {t(`cat_name_${post.category.slug}` as any)}
+            className="cat-tag"
+            style={{ color: CATEGORY_COLORS[post.category.slug], background: `${CATEGORY_COLORS[post.category.slug]}15` }}
+          >
+              {t(`cat_name_${post.category.slug}` as never)}
             </Link>
           )}
         </div>
         {isEditing ? (
           <PostEditCard
-            categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as any) }))}
+            categories={categories.map((category) => ({ ...category, name: t(`cat_name_${category.slug}` as never) }))}
             content={editedContent}
             categoryId={editedCategoryId}
             initialContent={post.content}
@@ -219,6 +245,7 @@ export default function FeedPage() {
   const composerRef = useRef<HTMLDivElement>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const filter = searchParams.get('filter') === 'following' ? 'following' : 'all'
+  const feedQueryKey = queryKeys.feed({ filter, profileId: profile?.id ?? null })
 
   useEffect(() => {
     setShowBeta(localStorage.getItem(BETA_KEY) !== 'true')
@@ -252,7 +279,7 @@ export default function FeedPage() {
     fetchNextPage,
     error,
   } = useInfiniteQuery({
-    queryKey: queryKeys.feed({ filter, profileId: profile?.id ?? null }),
+    queryKey: feedQueryKey,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       let followedIds: string[] | undefined
@@ -263,7 +290,7 @@ export default function FeedPage() {
           .eq('follower_id', profile.id)
 
         if (followsError) throw followsError
-        followedIds = (follows ?? []).map((f: any) => f.following_id)
+        followedIds = ((follows ?? []) as FollowRow[]).map((follow) => follow.following_id)
         if (followedIds.length === 0) {
           return { posts: [], page: pageParam }
         }
@@ -277,10 +304,14 @@ export default function FeedPage() {
 
       if (postsRes.error) throw postsRes.error
 
-      const posts = (postsRes.data ?? []).map((p: any) => ({
-        ...normalizeQuotedPost(p),
-        user_liked: (p.likes ?? []).some((l: any) => l.user_id === profile?.id),
-        likes_count: p.likes?.length ?? 0,
+      const rawPosts = Array.isArray(postsRes.data)
+        ? (postsRes.data as unknown as FeedPostRecord[])
+        : []
+
+      const posts = rawPosts.map((post) => ({
+        ...normalizeQuotedPost(post),
+        user_liked: (post.likes ?? []).some((like) => like.user_id === profile?.id),
+        likes_count: post.likes?.length ?? 0,
       }))
 
       return { posts, page: pageParam }
@@ -317,9 +348,9 @@ export default function FeedPage() {
       }
     },
     onMutate: async (post) => {
-      const queryKey = queryKeys.feed({ filter })
+      const queryKey = feedQueryKey
       await queryClient.cancelQueries({ queryKey })
-      const previousFeed = queryClient.getQueryData(queryKey)
+      const previousFeed = queryClient.getQueryData<FeedInfiniteData>(queryKey)
       queryClient.setQueryData(queryKey, (current: unknown) => updatePostLikeInData(current, post.id))
 
       return { previousFeed, queryKey }
@@ -355,9 +386,9 @@ export default function FeedPage() {
       return { postId, ...parsed, updated_at: nextUpdatedAt }
     },
     onMutate: async ({ postId }) => {
-      const queryKey = queryKeys.feed({ filter })
+      const queryKey = feedQueryKey
       await queryClient.cancelQueries({ queryKey })
-      const previousFeed = queryClient.getQueryData(queryKey)
+      const previousFeed = queryClient.getQueryData<FeedInfiniteData>(queryKey)
       const nextUpdatedAt = new Date().toISOString()
       queryClient.setQueryData(queryKey, (current: unknown) =>
         updatePostInData(current, postId, {
@@ -394,9 +425,9 @@ export default function FeedPage() {
       return { postId }
     },
     onMutate: async ({ postId }) => {
-      const queryKey = queryKeys.feed({ filter })
+      const queryKey = feedQueryKey
       await queryClient.cancelQueries({ queryKey })
-      const previousFeed = queryClient.getQueryData(queryKey)
+      const previousFeed = queryClient.getQueryData<FeedInfiniteData>(queryKey)
       queryClient.setQueryData(queryKey, (current: unknown) => removePostInData(current, postId))
       return { previousFeed, queryKey }
     },

@@ -8,6 +8,17 @@ import { sentryVitePlugin } from '@sentry/vite-plugin'
 const sentryEnabled = Boolean(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT)
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('country-state-city')) {
+            return 'location-data'
+          }
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -58,6 +69,7 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/_/, /\/[^/?]+\.[^/]+$/],
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        globIgnores: ['**/assets/location-data-*.js'],
       },
       devOptions: {
         enabled: true,

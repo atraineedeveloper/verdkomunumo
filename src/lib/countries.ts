@@ -5,46 +5,54 @@ export interface LocationOption {
   value: string
 }
 
-const COUNTRY_CODES = [
-  'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ',
-  'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS',
-  'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN',
-  'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE',
-  'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF',
-  'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HM',
-  'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM',
-  'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC',
-  'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK',
-  'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA',
-  'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG',
-  'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW',
-  'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS',
-  'ST', 'SV', 'SX', 'SY', 'SZ', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO',
-  'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'UM', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI',
-  'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW',
-] as const
+type CountryStateCityModule = typeof import('country-state-city')
 
-const englishDisplayNames = new Intl.DisplayNames(['en'], { type: 'region' })
+let countryStateCityModulePromise: Promise<CountryStateCityModule> | null = null
 
-const COUNTRIES_WITH_CODES = COUNTRY_CODES.reduce<Array<{ code: string; englishName: string }>>((list, code) => {
-  const englishName = englishDisplayNames.of(code)
-  if (englishName) {
-    list.push({ code, englishName })
+async function loadCountryStateCity() {
+  if (!countryStateCityModulePromise) {
+    countryStateCityModulePromise = import('country-state-city')
   }
-  return list
-}, [])
 
-export function getAllCountries(locale?: string): LocationOption[] {
+  return countryStateCityModulePromise
+}
+
+export async function getAllCountries(locale?: string): Promise<LocationOption[]> {
+  const { Country } = await loadCountryStateCity()
   const useEsperanto = locale === 'eo'
 
-  return COUNTRIES_WITH_CODES
+  return Country.getAllCountries()
     .map((country) => ({
-      label: useEsperanto ? toEsperantoCountryName(country.englishName) : country.englishName,
-      value: country.englishName,
+      label: useEsperanto ? toEsperantoCountryName(country.name) : country.name,
+      value: country.name,
     }))
     .sort((left, right) => left.label.localeCompare(right.label))
 }
 
-export const COUNTRIES = COUNTRIES_WITH_CODES
-  .map((country) => country.englishName)
-  .sort((left, right) => left.localeCompare(right))
+export async function countryNameToIso(name: string): Promise<string | null> {
+  const { Country } = await loadCountryStateCity()
+  const match = Country.getAllCountries().find((country) => country.name === name)
+  return match?.isoCode ?? null
+}
+
+export async function getStatesOfCountry(countryIso: string): Promise<Array<LocationOption & { isoCode: string }>> {
+  const { State } = await loadCountryStateCity()
+
+  return State.getStatesOfCountry(countryIso)
+    .map((state) => ({ label: state.name, value: state.name, isoCode: state.isoCode }))
+    .sort((left, right) => left.label.localeCompare(right.label))
+}
+
+export async function stateNameToIso(countryIso: string, name: string): Promise<string | null> {
+  const { State } = await loadCountryStateCity()
+  const match = State.getStatesOfCountry(countryIso).find((state) => state.name === name)
+  return match?.isoCode ?? null
+}
+
+export async function getCitiesOfState(countryIso: string, stateIso: string): Promise<LocationOption[]> {
+  const { City } = await loadCountryStateCity()
+
+  return City.getCitiesOfState(countryIso, stateIso)
+    .map((city) => ({ label: city.name, value: city.name }))
+    .sort((left, right) => left.label.localeCompare(right.label))
+}

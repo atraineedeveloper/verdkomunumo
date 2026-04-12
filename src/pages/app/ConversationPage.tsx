@@ -41,6 +41,8 @@ async function fetchConversationPage(conversationId: string, userId: string) {
   }
 }
 
+type ConversationThreadData = Awaited<ReturnType<typeof fetchConversationPage>>
+
 export default function ConversationPage() {
   const { conversationId = '' } = useParams()
   const { t } = useTranslation()
@@ -87,7 +89,7 @@ export default function ConversationPage() {
       const content = composing.trim()
       const messageKey = queryKeys.messages(conversationId)
       await queryClient.cancelQueries({ queryKey: messageKey })
-      const previousThread = queryClient.getQueryData(messageKey)
+      const previousThread = queryClient.getQueryData<ConversationThreadData>(messageKey)
       const optimisticMessage = {
         id: `optimistic-${Date.now()}`,
         conversation_id: conversationId,
@@ -103,10 +105,13 @@ export default function ConversationPage() {
         },
       } as Message
 
-      queryClient.setQueryData(messageKey, (current: any) => ({
-        ...(current ?? {}),
-        messages: [...(current?.messages ?? []), optimisticMessage],
-      }))
+      queryClient.setQueryData<ConversationThreadData | undefined>(messageKey, (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          messages: [...current.messages, optimisticMessage],
+        }
+      })
 
       return { previousThread, messageKey }
     },
