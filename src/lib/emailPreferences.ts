@@ -11,7 +11,7 @@ export type EmailPreferenceField =
   | 'email_notify_category_approved'
   | 'email_notify_category_rejected'
 
-export const EMAIL_NOTIFICATION_FIELDS: Record<NotificationType, EmailPreferenceField> = {
+export const EMAIL_NOTIFICATION_FIELDS: Partial<Record<NotificationType, EmailPreferenceField>> = {
   like: 'email_notify_like',
   comment: 'email_notify_comment',
   follow: 'email_notify_follow',
@@ -97,6 +97,7 @@ export function isEmailPreferenceEnabled(
 ) {
   if (profile.email_notifications_enabled === false) return false
   const field = EMAIL_NOTIFICATION_FIELDS[type]
+  if (!field) return false
   return profile[field] !== false
 }
 

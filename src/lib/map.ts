@@ -7,7 +7,6 @@ export interface MapUser {
   display_name: string
   avatar_url: string | null
   esperanto_level: EsperantoLevel
-  location: string
   country: string
   region: string
   city: string
@@ -15,10 +14,14 @@ export interface MapUser {
   location_lng: number
 }
 
+export function formatStructuredLocation(parts: Pick<MapUser, 'country' | 'region' | 'city'>): string {
+  return [parts.city, parts.region, parts.country].filter(Boolean).join(', ')
+}
+
 export async function fetchMapUsers(): Promise<MapUser[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_url, esperanto_level, location, country, region, city, location_lat, location_lng')
+    .select('id, username, display_name, avatar_url, esperanto_level, country, region, city, location_lat, location_lng')
     .eq('map_visible', true)
     .not('location_lat', 'is', null)
     .not('location_lng', 'is', null)
@@ -31,7 +34,6 @@ export async function fetchMapUsers(): Promise<MapUser[]> {
     display_name: row.display_name ?? '',
     avatar_url: row.avatar_url ?? null,
     esperanto_level: (row.esperanto_level ?? 'komencanto') as EsperantoLevel,
-    location: row.location ?? '',
     country: row.country ?? '',
     region: row.region ?? '',
     city: row.city ?? '',

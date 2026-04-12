@@ -10,6 +10,7 @@ export type NotificationType =
   | 'follow'
   | 'message'
   | 'mention'
+  | 'quote'
   | 'category_approved'
   | 'category_rejected'
 

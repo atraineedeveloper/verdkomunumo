@@ -24,6 +24,7 @@ const TYPE_TITLES: Record<NotificationType, string> = {
   mention: 'Vi estis menciita',
   message: 'Nova mesaĝo',
   like: 'Nova ŝato',
+  quote: 'Via afiŝo estis citita',
   category_approved: 'Kategorio akceptita',
   category_rejected: 'Kategorio malakceptita',
 }
@@ -34,6 +35,7 @@ const TYPE_ICONS: Record<NotificationType, string> = {
   mention: 'at-sign',
   message: 'message-square',
   like: 'heart',
+  quote: 'quote',
   category_approved: 'check-circle',
   category_rejected: 'shield-alert',
 }
@@ -57,10 +59,8 @@ export function usePushNotifications(userId: string | undefined) {
         async (payload) => {
           const notif = payload.new as RawNotification
 
-          // Always refresh the badge count
           queryClient.invalidateQueries({ queryKey: queryKeys.appLayout() })
 
-          // In-App Toast Notification mechanism
           if (isTabVisible()) {
             const title = TYPE_TITLES[notif.type] ?? 'Verdkomunumo'
             const icon = TYPE_ICONS[notif.type] ?? 'info'
@@ -69,7 +69,6 @@ export function usePushNotifications(userId: string | undefined) {
             return
           }
 
-          // Native OS/Browser Notification mechanism
           if (!shouldNotify(notif.type)) return
 
           const granted = await requestPermission()
@@ -79,10 +78,12 @@ export function usePushNotifications(userId: string | undefined) {
             TYPE_TITLES[notif.type] ?? 'Verdkomunumo',
             notif.message || TYPE_TITLES[notif.type],
           )
-        }
+        },
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [userId, queryClient])
 }

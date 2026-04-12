@@ -127,7 +127,7 @@ export default function PostDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.post(id),
     queryFn: () => fetchPostDetail(id, user?.id),
     enabled: Boolean(id),
@@ -397,7 +397,26 @@ export default function PostDetailPage() {
   })
 
   if (isLoading) return <TimelineSkeleton items={2} />
-  if (!post) return null
+  if (error || !post) {
+    return (
+      <>
+        <Helmet>
+          <title>{t('err_not_found')} - Verdkomunumo</title>
+        </Helmet>
+        <div className="post-missing">
+          <h1>{t('err_not_found')}</h1>
+          <p>{t('post_missing_message', { defaultValue: 'This post does not exist anymore or was removed.' })}</p>
+          <Link to={routes.feed} className="btn">{t('err_back')}</Link>
+        </div>
+        <style>{`
+          .post-missing { display: grid; gap: 0.9rem; justify-items: start; padding: 2rem 0; }
+          .post-missing h1 { margin: 0; font-size: 1.35rem; color: var(--color-text); }
+          .post-missing p { margin: 0; color: var(--color-text-muted); max-width: 38rem; line-height: 1.6; }
+          .btn { background: var(--color-primary); color: #fff; border: none; border-radius: 5px; padding: .55rem .95rem; font-size: .825rem; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+        `}</style>
+      </>
+    )
+  }
 
   return (
       <>
@@ -453,6 +472,7 @@ export default function PostDetailPage() {
         )}
         {!!post.image_urls?.length && <PostMedia urls={post.image_urls} alt={post.author?.display_name ?? ''} />}
         {post.quoted_post && <QuotedPostCard post={post.quoted_post} />}
+        {!post.quoted_post && post.quoted_post_id && <QuotedPostCard post={post} clickable={false} unavailable />}
         {post.link_preview && <LinkPreviewCard preview={post.link_preview} />}
         <div className="post-footer">
           <span className="time">{formatDate(post.created_at)}</span>

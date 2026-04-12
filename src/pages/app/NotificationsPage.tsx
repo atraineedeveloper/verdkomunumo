@@ -12,14 +12,15 @@ import { routes } from '@/lib/routes'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { ListSkeleton } from '@/components/ui/ListSkeleton'
 
-const notifKeyMap: Record<NotificationType, string> = {
-  like: 'notif_liked_post',
-  comment: 'notif_commented',
-  follow: 'notif_followed',
-  message: 'notif_message',
-  mention: 'notif_mention',
-  category_approved: 'notif_category_approved',
-  category_rejected: 'notif_category_rejected',
+const notifCopyMap: Record<NotificationType, { key: string; defaultValue: string }> = {
+  like: { key: 'notif_liked_post', defaultValue: 'liked your post' },
+  comment: { key: 'notif_commented', defaultValue: 'commented on your post' },
+  follow: { key: 'notif_followed', defaultValue: 'started following you' },
+  message: { key: 'notif_message', defaultValue: 'sent you a message' },
+  mention: { key: 'notif_mention', defaultValue: 'mentioned you' },
+  quote: { key: 'notif_quote', defaultValue: 'quoted your post' },
+  category_approved: { key: 'notif_category_approved', defaultValue: 'approved your category suggestion' },
+  category_rejected: { key: 'notif_category_rejected', defaultValue: 'rejected your category suggestion' },
 }
 
 function notifLink(notif: Notification): string {
@@ -120,7 +121,7 @@ export default function NotificationsPage() {
               <div className="body">
                 <p className="text">
                   {notif.actor && <strong>{notif.actor.display_name} </strong>}
-                  {t(notifKeyMap[notif.type])}
+                  {t(notifCopyMap[notif.type].key, { defaultValue: notifCopyMap[notif.type].defaultValue })}
                 </p>
                 <span className="time">{formatDate(notif.created_at)}</span>
               </div>

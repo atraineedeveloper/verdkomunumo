@@ -1,7 +1,7 @@
 import type { NotificationType } from '@/lib/types'
 
-// Types that warrant a browser push notification (likes are excluded — too noisy)
-const NOTIFIABLE_TYPES = new Set<NotificationType>(['comment', 'follow', 'mention', 'message'])
+// Types that warrant a browser push notification. Likes stay excluded because they are too noisy.
+const NOTIFIABLE_TYPES = new Set<NotificationType>(['comment', 'follow', 'mention', 'message', 'quote'])
 
 export function shouldNotify(type: NotificationType): boolean {
   return NOTIFIABLE_TYPES.has(type)
@@ -26,5 +26,9 @@ export function showBrowserNotification(title: string, body: string, onClick?: (
     icon: '/favicon.ico',
     tag: `verdkomunumo-${Date.now()}`,
   })
-  if (onClick) n.onclick = () => { window.focus(); n.close(); onClick() }
+  if (onClick) n.onclick = () => {
+    window.focus()
+    n.close()
+    onClick()
+  }
 }

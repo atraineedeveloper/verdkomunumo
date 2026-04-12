@@ -6,7 +6,6 @@ export type SettingsForm = {
   display_name: string
   bio: string
   esperanto_level: EsperantoLevel
-  location: string
   country: string
   region: string
   city: string
@@ -35,7 +34,6 @@ export function formFromProfile(profile: Profile): SettingsForm {
     display_name: profile.display_name ?? '',
     bio: profile.bio ?? '',
     esperanto_level: profile.esperanto_level ?? 'komencanto',
-    location: profile.location ?? '',
     country: profile.country ?? '',
     region: profile.region ?? '',
     city: profile.city ?? '',
@@ -143,7 +141,6 @@ export async function buildProfilePayload(
     display_name: String(formData.get('display_name') ?? '').trim(),
     bio: String(formData.get('bio') ?? '').trim(),
     website: String(formData.get('website') ?? '').trim(),
-    location: String(formData.get('location') ?? '').trim(),
     esperanto_level: String(formData.get('esperanto_level') ?? '') as EsperantoLevel,
     email_notifications_enabled: profile.email_notifications_enabled ?? true,
     email_notify_like: profile.email_notify_like ?? true,

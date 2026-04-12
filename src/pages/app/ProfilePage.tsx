@@ -24,6 +24,10 @@ import { updatePostLikeInData } from '@/lib/query/optimisticPosts'
 import { removePostInData, updatePostInData } from '@/lib/query/optimisticPosts'
 import { postSchema } from '@/lib/validators'
 
+function formatProfileLocation(profile: Pick<Profile, 'country' | 'region' | 'city'>) {
+  return [profile.city, profile.region, profile.country].filter(Boolean).join(', ')
+}
+
 async function fetchProfilePage(username: string, userId?: string | null) {
   const { data: profile, error } = await supabase.from('profiles').select('*').eq('username', username).single()
   if (error || !profile) throw new Error('Uzanto ne trovita')
@@ -218,6 +222,7 @@ export default function ProfilePage() {
 
   const levelInfo = ESPERANTO_LEVELS[profile.esperanto_level as EsperantoLevel]
   const LevelIcon = LEVEL_ICONS[profile.esperanto_level]
+  const structuredLocation = formatProfileLocation(profile)
 
   return (
     <>
@@ -267,7 +272,7 @@ export default function ProfilePage() {
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
 
           <div className="profile-meta">
-            {profile.location && <span><MapPin size={13} strokeWidth={1.75} /> {profile.location}</span>}
+            {structuredLocation && <span><MapPin size={13} strokeWidth={1.75} /> {structuredLocation}</span>}
             {profile.website && <a href={profile.website} target="_blank" rel="noopener"><ExternalLink size={13} strokeWidth={1.75} /> {profile.website}</a>}
           </div>
 

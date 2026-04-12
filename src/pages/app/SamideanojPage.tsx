@@ -8,7 +8,7 @@ import { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import { LEVEL_COLORS } from '@/lib/icons'
-import { fetchMapUsers, type MapUser } from '@/lib/map'
+import { fetchMapUsers, formatStructuredLocation, type MapUser } from '@/lib/map'
 import { queryKeys } from '@/lib/query/keys'
 import { routes } from '@/lib/routes'
 import type { EsperantoLevel } from '@/lib/types'
@@ -43,7 +43,7 @@ function groupByLocation(users: MapUser[]): Map<string, MapUser[]> {
 
 function UserCard({ user }: { user: MapUser }) {
   const levelColor = LEVEL_COLORS[user.esperanto_level as EsperantoLevel] ?? 'var(--color-primary)'
-  const locationLabel = [user.city, user.region, user.country].filter(Boolean).join(', ') || user.location
+  const locationLabel = formatStructuredLocation(user)
 
   return (
     <Link to={routes.profile(user.username)} className="map-user-card">
@@ -162,7 +162,7 @@ export default function SamideanojPage() {
                       <Popup>
                         <div className="map-popup">
                           <strong className="map-popup-title">
-                            {group[0].city || group[0].region || group[0].country || group[0].location}
+                            {formatStructuredLocation(group[0])}
                           </strong>
                           <span className="map-popup-count">
                             {group.length} {t('map_popup_users', { defaultValue: 'users' })}
@@ -187,7 +187,7 @@ export default function SamideanojPage() {
             <aside className="map-sidebar">
               <div className="map-sidebar-header">
                 <span className="map-sidebar-title">
-                  {selectedUsers[0].city || selectedUsers[0].region || selectedUsers[0].country || selectedUsers[0].location}
+                  {formatStructuredLocation(selectedUsers[0])}
                 </span>
                 <button
                   type="button"

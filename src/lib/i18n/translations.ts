@@ -223,7 +223,7 @@ const translations = {
     cat_name_teknologio: 'Teknologio',
     cat_name_vojagoj: 'Vojaĝoj',
     cat_name_helpo: 'Helpo',
-    cat_name_ludoj: 'Videoluĵoj',
+    cat_name_ludoj: 'Videoludoj',
     cat_desc_generala: 'Ĝenerala diskutado kaj liberaj temoj',
     cat_desc_lernado: 'Lernado kaj praktikado de Esperanto',
     cat_desc_kulturo: 'Kulturo, libroj, muziko kaj filmo',
@@ -236,6 +236,7 @@ const translations = {
     // Errors
     err_not_found: 'Paĝo ne trovita',
     err_back: 'Reveni',
+    post_missing_message: 'Ĉi tiu afiŝo ne plu ekzistas aŭ estis forigita.',
 
     // Post detail
     post_back: '← Reen al fonto',
@@ -492,6 +493,7 @@ const translations = {
 
     err_not_found: 'Página no encontrada',
     err_back: 'Volver',
+    post_missing_message: 'Esta publicación ya no existe o fue eliminada.',
 
     post_back: '← Volver al inicio',
     post_comments: 'Comentarios',
@@ -707,6 +709,7 @@ const translations = {
 
     err_not_found: 'Page not found',
     err_back: 'Go back',
+    post_missing_message: 'This post does not exist anymore or was removed.',
 
     post_back: '← Back to feed',
     post_comments: 'Comments',

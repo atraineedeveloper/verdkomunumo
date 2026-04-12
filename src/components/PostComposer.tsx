@@ -418,7 +418,7 @@ export default function PostComposer({ categories, defaultCategoryId = '', quote
               <X size={12} />
             </button>
           </div>
-          <QuotedPostCard post={quotedPost} />
+          <QuotedPostCard post={quotedPost} clickable={false} />
         </div>
       )}
 

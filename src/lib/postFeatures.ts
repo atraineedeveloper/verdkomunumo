@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Post } from '@/lib/types'
 
-const OPTIONAL_POST_FEATURES_STORAGE_KEY = 'verdkomunumo:optional-post-features'
+// Versioned to invalidate stale "unsupported" caches after the quoted-post schema shipped.
+const OPTIONAL_POST_FEATURES_STORAGE_KEY = 'verdkomunumo:optional-post-features:v2'
 
 const BASE_POST_SELECT = `
   *,
@@ -40,6 +41,15 @@ const ENHANCED_DETAIL_POST_SELECT = `
 `
 
 let optionalPostFeaturesSupported: boolean | null = null
+
+type PostWithOptionalQuote = Post & {
+  quoted_post_id?: string | null
+  quoted_post?: Post | null
+}
+
+type QuotedPostPreview = Pick<Post, 'id' | 'content' | 'image_urls' | 'user_id' | 'is_deleted'> & {
+  author?: Post['author']
+}
 
 function readOptionalPostFeaturesSupport() {
   if (optionalPostFeaturesSupported !== null) return optionalPostFeaturesSupported
@@ -102,6 +112,45 @@ export function normalizeQuotedPost<T extends { quoted_post?: Post | null }>(pos
   return post
 }
 
+async function hydrateMissingQuotedPosts<T extends PostWithOptionalQuote>(posts: T[]): Promise<T[]> {
+  const missingQuotedIds = [...new Set(
+    posts
+      .filter((post) => post.quoted_post_id && !post.quoted_post)
+      .map((post) => post.quoted_post_id)
+      .filter((quotedPostId): quotedPostId is string => typeof quotedPostId === 'string' && quotedPostId.length > 0),
+  )]
+
+  if (missingQuotedIds.length === 0) return posts
+
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      content,
+      image_urls,
+      user_id,
+      is_deleted,
+      author:profiles!posts_user_id_fkey(id,username,display_name,avatar_url)
+    `)
+    .in('id', missingQuotedIds)
+    .eq('is_deleted', false)
+
+  if (error || !data) return posts
+
+  const quotedPostsById = new Map(
+    ((data as unknown) as QuotedPostPreview[]).map((quotedPost) => [
+      quotedPost.id,
+      quotedPost as Post,
+    ]),
+  )
+
+  return posts.map((post) => {
+    if (!post.quoted_post_id || post.quoted_post) return post
+    const quotedPost = quotedPostsById.get(post.quoted_post_id)
+    return quotedPost ? { ...post, quoted_post: quotedPost } : post
+  })
+}
+
 export async function fetchFeedPostsWithFallback(options?: {
   filterUserIds?: string[]
   page?: number
@@ -124,34 +173,62 @@ export async function fetchFeedPostsWithFallback(options?: {
     return query
   }
 
+  const loadAndHydratePosts = async (selectClause: string) => {
+    const result = await loadPosts(selectClause)
+    if (!result.error && Array.isArray(result.data)) {
+      return {
+        ...result,
+        data: await hydrateMissingQuotedPosts((result.data as unknown) as PostWithOptionalQuote[]),
+      }
+    }
+    return result
+  }
+
   const support = readOptionalPostFeaturesSupport()
   if (support === false) {
-    return loadPosts(BASE_POST_SELECT)
+    return loadAndHydratePosts(BASE_POST_SELECT)
   }
 
   const enhanced = await loadPosts(ENHANCED_FEED_POST_SELECT)
 
   if (enhanced.error && isOptionalPostFeaturesError(enhanced.error)) {
     writeOptionalPostFeaturesSupport(false)
-    return loadPosts(BASE_POST_SELECT)
+    return loadAndHydratePosts(BASE_POST_SELECT)
   }
 
   if (!enhanced.error) {
     writeOptionalPostFeaturesSupport(true)
+    if (Array.isArray(enhanced.data)) {
+      return {
+        ...enhanced,
+        data: await hydrateMissingQuotedPosts((enhanced.data as unknown) as PostWithOptionalQuote[]),
+      }
+    }
   }
 
   return enhanced
 }
 
 export async function fetchPostDetailWithFallback(postId: string) {
-  const support = readOptionalPostFeaturesSupport()
-  if (support === false) {
-    return supabase
+  const loadBaseDetail = async () => {
+    const result = await supabase
       .from('posts')
       .select('*, author:profiles!user_id(*), category:categories!category_id(*)')
       .eq('id', postId)
       .eq('is_deleted', false)
       .single()
+
+    if (!result.error && result.data) {
+      const [hydrated] = await hydrateMissingQuotedPosts([result.data as PostWithOptionalQuote])
+      return { ...result, data: hydrated }
+    }
+
+    return result
+  }
+
+  const support = readOptionalPostFeaturesSupport()
+  if (support === false) {
+    return loadBaseDetail()
   }
 
   const enhanced = await supabase
@@ -163,16 +240,15 @@ export async function fetchPostDetailWithFallback(postId: string) {
 
   if (enhanced.error && isOptionalPostFeaturesError(enhanced.error)) {
     writeOptionalPostFeaturesSupport(false)
-    return supabase
-      .from('posts')
-      .select('*, author:profiles!user_id(*), category:categories!category_id(*)')
-      .eq('id', postId)
-      .eq('is_deleted', false)
-      .single()
+    return loadBaseDetail()
   }
 
   if (!enhanced.error) {
     writeOptionalPostFeaturesSupport(true)
+    if (enhanced.data) {
+      const [hydrated] = await hydrateMissingQuotedPosts([enhanced.data as PostWithOptionalQuote])
+      return { ...enhanced, data: hydrated }
+    }
   }
 
   return enhanced

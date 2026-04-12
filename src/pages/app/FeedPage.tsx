@@ -161,6 +161,9 @@ function FeedPostItem({
         {post.quoted_post && (
           <QuotedPostCard post={post.quoted_post} />
         )}
+        {!post.quoted_post && post.quoted_post_id && (
+          <QuotedPostCard post={post} clickable={false} unavailable />
+        )}
         {post.link_preview && (
           <LinkPreviewCard preview={post.link_preview} />
         )}

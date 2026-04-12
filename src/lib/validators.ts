@@ -49,7 +49,6 @@ export const profileEditSchema = z.object({
   display_name: z.string().min(1, 'Requerido').max(50, 'Máximo 50 caracteres'),
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   website: z.string().url('URL no válida').optional().or(z.literal('')),
-  location: z.string().max(100, 'Máximo 100 caracteres').optional(),
   esperanto_level: z.enum(['komencanto', 'progresanto', 'flua'])
 })
 

@@ -181,7 +181,6 @@ describe('settingsProfile helpers', () => {
         display_name: '  Ada Lovelace  ',
         bio: '  hello world  ',
         website: '  https://example.com  ',
-        location: '  Monterrey, Mexico  ',
         country: 'Mexico',
         region: 'Nuevo Leon',
         city: 'Monterrey',
@@ -197,7 +196,7 @@ describe('settingsProfile helpers', () => {
     expect(payload.display_name).toBe('Ada Lovelace')
     expect(payload.bio).toBe('hello world')
     expect(payload.website).toBe('https://example.com')
-    expect(payload.location).toBe('Monterrey, Mexico')
+    expect(payload).not.toHaveProperty('location')
     expect(geocode).toHaveBeenCalledWith('Monterrey, Nuevo Leon, Mexico')
   })
 })

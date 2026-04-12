@@ -249,28 +249,16 @@ export function ProfileSettingsSection({
           </div>
         </div>
 
-        <div className="field-row">
-          <div className="field">
-            <label htmlFor="location">{t('settings_location')}</label>
-            <input
-              id="location"
-              name="location"
-              type="text"
-              value={form.location}
-              onChange={(event) => onFormChange((current) => ({ ...current, location: event.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="website">{t('settings_website')}</label>
-            <input
-              id="website"
-              name="website"
-              type="url"
-              placeholder="https://"
-              value={form.website}
-              onChange={(event) => onFormChange((current) => ({ ...current, website: event.target.value }))}
-            />
-          </div>
+        <div className="field">
+          <label htmlFor="website">{t('settings_website')}</label>
+          <input
+            id="website"
+            name="website"
+            type="url"
+            placeholder="https://"
+            value={form.website}
+            onChange={(event) => onFormChange((current) => ({ ...current, website: event.target.value }))}
+          />
         </div>
 
         <div className="field">
