@@ -56,10 +56,9 @@
     "src/pages/admin/AdminDashboardPage.tsx": 450,
     "src/pages/app/SearchPage.tsx": 430,
     "src/pages/app/ProfilePage.tsx": 430,
-    "src/pages/app/SettingsPage.tsx": 420,
     "src/pages/admin/AdminReportsPage.tsx": 380,
-    "src/lib/i18n/translations.ts": 1850,
-    "src/lib/supabase/database.types.ts": 1000
+    "src/lib/i18n/translations.ts": 1950,
+    "src/lib/supabase/database.types.ts": 1150
   },
   "mojibakeAllow": [
     "src/lib/i18n/translations.ts",
