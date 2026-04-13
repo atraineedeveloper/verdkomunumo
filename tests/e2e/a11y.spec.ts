@@ -9,6 +9,10 @@ test.describe('accessibility', () => {
     test(`has no critical axe violations on ${path}`, async ({ page }, testInfo) => {
       await gotoAndWait(page, path)
       await expectPublicPageReady(page, path)
+
+      // Wait for any potential re-renders to settle before analyzing
+      await page.waitForTimeout(1000)
+
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa'])
         .analyze()
