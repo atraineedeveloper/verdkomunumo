@@ -13,4 +13,6 @@ export const queryKeys = {
   adminCategories: () => ['admin-categories'] as const,
   adminReports: (params?: object) => params ? ['admin-reports', params] as const : ['admin-reports'] as const,
   mapUsers: () => ['map-users'] as const,
+  postLikes: (postId: string) => ['post-likes', postId] as const,
+  commentLikes: (commentId: string) => ['comment-likes', commentId] as const,
 }

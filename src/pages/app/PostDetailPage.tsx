@@ -23,6 +23,7 @@ import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import { PresenceAvatar } from '@/components/ui/PresenceAvatar'
 import { MentionTextarea } from '@/components/MentionTextarea'
+import { LikeUsersDialog, LikeUsersSummary } from '@/components/LikeUsersDialog'
 import { hasCommentEditChanges } from '@/lib/editor'
 import type { Comment, ContentReportReason, Post } from '@/lib/types'
 import { routes } from '@/lib/routes'
@@ -126,6 +127,7 @@ export default function PostDetailPage() {
   const [editedPostCategoryId, setEditedPostCategoryId] = useState('')
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
+  const [showPostLikes, setShowPostLikes] = useState(false)
 
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.post(id),
@@ -494,6 +496,12 @@ export default function PostDetailPage() {
             <span className="muted stat-line"><MessageSquare size={14} strokeWidth={1.75} /> {post.comments_count}</span>
           </div>
         </div>
+        <LikeUsersSummary
+          targetType="post"
+          targetId={post.id}
+          likesCount={post.likes_count}
+          onOpen={() => setShowPostLikes(true)}
+        />
         <details className="report-box">
           <summary><Flag size={14} strokeWidth={1.8} /> {t('report_post')}</summary>
           <form className="report-form" onSubmit={(e) => { e.preventDefault(); reportPostMutation.mutate() }}>
@@ -514,6 +522,12 @@ export default function PostDetailPage() {
           </form>
         </details>
       </article>
+      <LikeUsersDialog
+        open={showPostLikes}
+        onClose={() => setShowPostLikes(false)}
+        targetType="post"
+        targetId={post.id}
+      />
       {user ? (
         <div className={`compose ${replyTarget ? 'opacity-50 pointer-events-none' : ''}`}>
           <form onSubmit={(e) => { e.preventDefault(); commentMutation.mutate() }}>
@@ -610,6 +624,7 @@ function CommentRow(props: CommentRowProps) {
   const { t } = useTranslation()
   const [reason, setReason] = useState<ContentReportReason>('spam')
   const [details, setDetails] = useState('')
+  const [showCommentLikes, setShowCommentLikes] = useState(false)
   const {
     comment,
     depth,
@@ -729,6 +744,18 @@ function CommentRow(props: CommentRowProps) {
               </form>
             </details>
           </div>
+          <LikeUsersSummary
+            targetType="comment"
+            targetId={comment.id}
+            likesCount={comment.likes_count}
+            onOpen={() => setShowCommentLikes(true)}
+          />
+          <LikeUsersDialog
+            open={showCommentLikes}
+            onClose={() => setShowCommentLikes(false)}
+            targetType="comment"
+            targetId={comment.id}
+          />
         </div>
       </div>
       {renderReplyComposer?.(comment.id)}

@@ -22,8 +22,11 @@ i18n
     interpolation: { escapeValue: false },
   })
 
+document.documentElement.lang = savedLocale ?? DEFAULT_LOCALE
+
 i18n.on('languageChanged', (lng) => {
   localStorage.setItem(STORAGE_KEY, lng)
+  document.documentElement.lang = lng
 })
 
 export default i18n

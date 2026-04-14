@@ -22,6 +22,7 @@ import { LinkPreviewCard } from '@/components/LinkPreviewCard'
 import { PostExcerpt } from '@/components/PostExcerpt'
 import { InlineSpinner } from '@/components/ui/InlineSpinner'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
+import { LikeUsersDialog, LikeUsersSummary } from '@/components/LikeUsersDialog'
 import type { Post, Category, Profile } from '@/lib/types'
 import { feedWithFilter, routes } from '@/lib/routes'
 import { removePostInData, updatePostInData, updatePostLikeInData } from '@/lib/query/optimisticPosts'
@@ -89,6 +90,7 @@ function FeedPostItem({
   composerRef: React.RefObject<HTMLDivElement>
 }) {
   const { t } = useTranslation()
+  const [showLikes, setShowLikes] = useState(false)
   const likePending = likeMutation.isPending && likeMutation.variables?.id === post.id
   const isEditing = editingPostId === post.id
   const isOwnPost = profile?.id === post.user_id
@@ -229,6 +231,18 @@ function FeedPostItem({
             <MessageSquare size={14} strokeWidth={1.75} /> <span>{post.comments_count}</span>
           </Link>
         </div>
+        <LikeUsersSummary
+          targetType="post"
+          targetId={post.id}
+          likesCount={post.likes_count}
+          onOpen={() => setShowLikes(true)}
+        />
+        <LikeUsersDialog
+          open={showLikes}
+          onClose={() => setShowLikes(false)}
+          targetType="post"
+          targetId={post.id}
+        />
       </div>
     </article>
   )
