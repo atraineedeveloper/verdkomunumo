@@ -62,7 +62,7 @@ describe('ProtectedRoute', () => {
     expect(screen.getByLabelText('Loading permissions')).toBeInTheDocument()
   })
 
-  it('redirects users without the required role to the feed', () => {
+  it('redirects users without the required role to the map', () => {
     useAuthStore.setState({
       user: { id: 'user-1' } as never,
       profile: { id: 'user-1', role: 'user', username: 'ada' } as never,
@@ -72,7 +72,7 @@ describe('ProtectedRoute', () => {
 
     renderProtectedRoute()
 
-    expect(screen.getByText('/fonto')).toBeInTheDocument()
+    expect(screen.getByText('/')).toBeInTheDocument()
   })
 
   it('renders children when the role requirement is met', () => {

@@ -46,7 +46,7 @@ function UserCard({ user }: { user: MapUser }) {
   const locationLabel = formatStructuredLocation(user)
 
   return (
-    <Link to={routes.profile(user.username)} className="map-user-card">
+    <article className="map-user-card">
       <img
         src={getAvatarUrl(user.avatar_url ?? '', user.display_name)}
         alt={user.display_name}
@@ -60,7 +60,7 @@ function UserCard({ user }: { user: MapUser }) {
         </span>
         <span className="map-user-location">{locationLabel}</span>
       </div>
-    </Link>
+    </article>
   )
 }
 

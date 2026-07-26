@@ -1,7 +1,8 @@
 export const routes = {
   landing: '/',
-  home: '/fonto',
-  feed: '/fonto',
+  map: '/',
+  home: '/',
+  feed: '/',
   search: '/sercxi',
   notifications: '/sciigoj',
   messages: '/mesagxoj',

@@ -20,6 +20,13 @@ This document describes the intended architecture of Verdkomunumo as it exists t
 
 The client is a single-page application with route-level lazy loading.
 
+The authenticated product surface is intentionally map-first. The user map is
+the home route, and profile settings are the only secondary product route so a
+member can manage the identity, location, privacy, appearance, and account
+preferences needed by that map. Legacy social-network surfaces such as feeds,
+posts, categories, messaging, chat, notifications, public profiles, search, and
+moderation dashboards are not mounted by the client.
+
 The browser is responsible for:
 
 - route transitions
