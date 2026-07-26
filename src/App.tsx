@@ -27,9 +27,12 @@ export default function App() {
           <Route path={routes.resetPassword} element={<ResetPasswordPage />} />
         </Route>
 
-        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        <Route element={<AppLayout />}>
           <Route index element={<SamideanojPage />} />
           <Route path={routes.samideanoj} element={<Navigate to={routes.map} replace />} />
+        </Route>
+
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path={routes.settings} element={<SettingsPage />} />
         </Route>
 

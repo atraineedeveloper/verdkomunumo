@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildEmailPreferencesPayload, buildProfilePayload, formFromProfile, resolveLocationFields, type SettingsForm } from './settingsProfile'
+import { buildProfilePayload, formFromProfile, resolveLocationFields } from './settingsProfile'
 import type { Profile } from './types'
 
 function buildProfile(overrides: Partial<Profile> = {}): Profile {
@@ -176,21 +176,6 @@ describe('settingsProfile helpers', () => {
         geocode,
       ),
     ).rejects.toThrow('geocode failed')
-  })
-
-  it('builds email settings without touching location fields', () => {
-    const form = {
-      ...formFromProfile(buildProfile()),
-      email_notifications_enabled: false,
-      email_notify_message: false,
-    } satisfies SettingsForm
-
-    expect(buildEmailPreferencesPayload(form)).toMatchObject({
-      email_notifications_enabled: false,
-      email_notify_message: false,
-    })
-    expect(buildEmailPreferencesPayload(form)).not.toHaveProperty('country')
-    expect(buildEmailPreferencesPayload(form)).not.toHaveProperty('location_lat')
   })
 
   it('trims profile fields before building the payload', async () => {

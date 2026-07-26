@@ -1,19 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
 import { AppearanceSettingsSection } from '@/components/settings/AppearanceSettingsSection'
-import { EmailPreferencesSection } from '@/components/settings/EmailPreferencesSection'
 import { ProfileSettingsSection } from '@/components/settings/ProfileSettingsSection'
 import { settingsStyles } from '@/components/settings/settingsStyles'
-import { EMAIL_NOTIFICATION_OPTIONS, isKnownNotificationType } from '@/lib/emailPreferences'
 import { type Locale } from '@/lib/i18n'
 import i18n from '@/lib/i18n'
 import { optimizeImageFiles, replaceInputFiles } from '@/lib/browser/images'
 import { queryKeys } from '@/lib/query/keys'
 import {
-  buildEmailPreferencesPayload,
   buildProfilePayload,
   formFromProfile,
   type SettingsForm,
@@ -27,7 +23,6 @@ import { useToastStore } from '@/stores/toasts'
 export default function SettingsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [searchParams] = useSearchParams()
   const user = useAuthStore((state) => state.user)
   const profile = useAuthStore((state) => state.profile)
   const setProfile = useAuthStore((state) => state.setProfile)
@@ -35,31 +30,12 @@ export default function SettingsPage() {
   const toast = useToastStore()
   const locale = i18n.language as Locale
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const appliedEmailLinkRef = useRef<string | null>(null)
   const [form, setForm] = useState<SettingsForm>(() => formFromProfile(profile ?? ({} as Profile)))
-
-  const highlightedEmailType = isKnownNotificationType(searchParams.get('email')) ? searchParams.get('email') : null
-  const emailLinkIntent = searchParams.get('unsubscribe') === '1'
 
   useEffect(() => {
     if (!profile) return
     setForm(formFromProfile(profile))
   }, [profile])
-
-  useEffect(() => {
-    if (!profile || !highlightedEmailType || !emailLinkIntent) return
-    const option = EMAIL_NOTIFICATION_OPTIONS.find((entry) => entry.type === highlightedEmailType)
-    if (!option) return
-
-    const key = `${highlightedEmailType}:unsubscribe:${profile.id}`
-    if (appliedEmailLinkRef.current === key) return
-
-    appliedEmailLinkRef.current = key
-    setForm((current) => ({
-      ...current,
-      [option.field]: false,
-    }))
-  }, [emailLinkIntent, highlightedEmailType, profile])
 
   const updateProfileMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -99,22 +75,6 @@ export default function SettingsPage() {
     onError: (error: Error) => toast.error(error.message || t('toast_action_failed')),
   })
 
-  const updateEmailPreferencesMutation = useMutation({
-    mutationFn: async () => {
-      if (!user || !profile) throw new Error('Ne ensalutinta')
-
-      const payload = buildEmailPreferencesPayload(form)
-      const { error } = await supabase.from('profiles').update(payload).eq('id', user.id)
-      if (error) throw error
-      return { ...profile, ...payload }
-    },
-    onSuccess: (nextProfile) => {
-      setProfile(nextProfile)
-      toast.success(t('toast_profile_saved'))
-    },
-    onError: (error: Error) => toast.error(error.message || t('toast_action_failed')),
-  })
-
   const updateThemeMutation = useMutation({
     mutationFn: async (theme: Theme) => {
       if (!user) throw new Error('Ne ensalutinta')
@@ -147,11 +107,6 @@ export default function SettingsPage() {
     updateProfileMutation.mutate(new FormData(event.currentTarget))
   }
 
-  function onEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    updateEmailPreferencesMutation.mutate()
-  }
-
   if (!profile) return null
 
   return (
@@ -179,16 +134,6 @@ export default function SettingsPage() {
         onLocaleChange={(nextLocale) => { void i18n.changeLanguage(nextLocale) }}
         onThemeChange={(theme) => updateThemeMutation.mutate(theme)}
         themePending={updateThemeMutation.isPending}
-        t={t}
-      />
-
-      <EmailPreferencesSection
-        emailLinkIntent={emailLinkIntent}
-        form={form}
-        highlightedEmailType={highlightedEmailType}
-        isPending={updateEmailPreferencesMutation.isPending}
-        onFormChange={onFormChange}
-        onSubmit={onEmailSubmit}
         t={t}
       />
 

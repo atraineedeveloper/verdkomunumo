@@ -11,14 +11,6 @@ export type SettingsForm = {
   city: string
   map_visible: boolean
   website: string
-  email_notifications_enabled: boolean
-  email_notify_like: boolean
-  email_notify_comment: boolean
-  email_notify_follow: boolean
-  email_notify_message: boolean
-  email_notify_mention: boolean
-  email_notify_category_approved: boolean
-  email_notify_category_rejected: boolean
 }
 
 export type GeocodeResult = {
@@ -39,14 +31,6 @@ export function formFromProfile(profile: Profile): SettingsForm {
     city: profile.city ?? '',
     map_visible: profile.map_visible ?? false,
     website: profile.website ?? '',
-    email_notifications_enabled: profile.email_notifications_enabled ?? true,
-    email_notify_like: profile.email_notify_like ?? true,
-    email_notify_comment: profile.email_notify_comment ?? true,
-    email_notify_follow: profile.email_notify_follow ?? true,
-    email_notify_message: profile.email_notify_message ?? true,
-    email_notify_mention: profile.email_notify_mention ?? true,
-    email_notify_category_approved: profile.email_notify_category_approved ?? true,
-    email_notify_category_rejected: profile.email_notify_category_rejected ?? true,
   }
 }
 
@@ -145,30 +129,8 @@ export async function buildProfilePayload(
     bio: String(formData.get('bio') ?? '').trim(),
     website: String(formData.get('website') ?? '').trim(),
     esperanto_level: String(formData.get('esperanto_level') ?? '') as EsperantoLevel,
-    email_notifications_enabled: profile.email_notifications_enabled ?? true,
-    email_notify_like: profile.email_notify_like ?? true,
-    email_notify_comment: profile.email_notify_comment ?? true,
-    email_notify_follow: profile.email_notify_follow ?? true,
-    email_notify_message: profile.email_notify_message ?? true,
-    email_notify_mention: profile.email_notify_mention ?? true,
-    email_notify_category_approved: profile.email_notify_category_approved ?? true,
-    email_notify_category_rejected: profile.email_notify_category_rejected ?? true,
     ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
     ...locationFields,
-    updated_at: new Date().toISOString(),
-  }
-}
-
-export function buildEmailPreferencesPayload(form: SettingsForm) {
-  return {
-    email_notifications_enabled: form.email_notifications_enabled,
-    email_notify_like: form.email_notify_like,
-    email_notify_comment: form.email_notify_comment,
-    email_notify_follow: form.email_notify_follow,
-    email_notify_message: form.email_notify_message,
-    email_notify_mention: form.email_notify_mention,
-    email_notify_category_approved: form.email_notify_category_approved,
-    email_notify_category_rejected: form.email_notify_category_rejected,
     updated_at: new Date().toISOString(),
   }
 }

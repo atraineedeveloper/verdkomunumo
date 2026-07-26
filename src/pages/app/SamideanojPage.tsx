@@ -74,16 +74,15 @@ export default function SamideanojPage() {
     queryKey: queryKeys.mapUsers(),
     queryFn: fetchMapUsers,
     staleTime: 5 * 60 * 1000,
-    enabled: isLoggedIn,
   })
 
   const locationGroups = useMemo(() => groupByLocation(users), [users])
   const selectedUsers = selectedKey ? (locationGroups.get(selectedKey) ?? []) : []
   const totalCount = users.length
 
-  if (isLoggedIn && isLoading) return <TimelineSkeleton items={3} />
+  if (isLoading) return <TimelineSkeleton items={3} />
 
-  if (isLoggedIn && isError) {
+  if (isError) {
     return (
       <div className="map-error">
         <p>{t('toast_action_failed')}</p>
@@ -107,31 +106,15 @@ export default function SamideanojPage() {
         <header className="map-header">
           <h1 className="map-heading">{t('map_title', { defaultValue: 'Samideanoj Proksime' })}</h1>
           <p className="map-sub">
-            {!isLoggedIn
-              ? t('map_guest_hint', {
-                  defaultValue: 'Sign in to explore nearby Esperantists who opted into the map.',
-                })
-              : totalCount > 0
-                ? t('map_count', { count: totalCount, defaultValue: '{{count}} users are sharing their location' })
-                : t('map_empty', { defaultValue: 'No users have enabled the map yet.' })}
+            {totalCount > 0
+              ? t('map_count', { count: totalCount, defaultValue: '{{count}} users are sharing their location' })
+              : t('map_empty', { defaultValue: 'No users have enabled the map yet.' })}
           </p>
         </header>
 
         <div className="map-layout">
           <div className="map-container-wrap">
-            {!isLoggedIn ? (
-              <div className="map-empty-state">
-                <span className="map-empty-icon">Map</span>
-                <p>
-                  {t('map_guest_cta', {
-                    defaultValue: 'Log in to browse nearby members and contact people who share their location.',
-                  })}
-                </p>
-                <Link to={routes.login} className="map-settings-link">
-                  {t('nav_login')}
-                </Link>
-              </div>
-            ) : totalCount === 0 ? (
+            {totalCount === 0 ? (
               <div className="map-empty-state">
                 <span className="map-empty-icon">Map</span>
                 <p>
@@ -139,8 +122,8 @@ export default function SamideanojPage() {
                     defaultValue: 'Enable "Show me on the map" in settings to appear here.',
                   })}
                 </p>
-                <Link to={routes.settings} className="map-settings-link">
-                  {t('nav_settings')}
+                <Link to={isLoggedIn ? routes.settings : routes.register} className="map-settings-link">
+                  {isLoggedIn ? t('nav_settings') : t('auth_register', { defaultValue: 'Register' })}
                 </Link>
               </div>
             ) : (
@@ -183,7 +166,7 @@ export default function SamideanojPage() {
             )}
           </div>
 
-          {selectedKey && selectedUsers.length > 0 && isLoggedIn && (
+          {selectedKey && selectedUsers.length > 0 && (
             <aside className="map-sidebar">
               <div className="map-sidebar-header">
                 <span className="map-sidebar-title">

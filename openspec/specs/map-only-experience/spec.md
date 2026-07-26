@@ -9,8 +9,9 @@ other members by approximate structured location.
 
 ### Requirement: The map is the product home
 
-The system SHALL require authentication for the product and SHALL render the
-user map at the root route after authentication.
+The system SHALL render the user map at the root route without requiring
+authentication. Only members who explicitly enabled map visibility and have a
+geocoded location SHALL appear.
 
 #### Scenario: Authenticated member opens the application
 
@@ -19,7 +20,12 @@ user map at the root route after authentication.
 
 #### Scenario: Guest opens the application
 
-- WHEN a guest opens a protected product route
+- WHEN a guest opens the root route
+- THEN the guest can browse the opted-in members on the map without signing in
+
+#### Scenario: Guest opens settings
+
+- WHEN a guest opens the profile settings route
 - THEN the guest is redirected to login with the original destination preserved
 
 ### Requirement: Product navigation is map-only
@@ -37,7 +43,7 @@ dashboards.
 ### Requirement: Members retain profile configuration
 
 The system SHALL preserve the profile settings needed to manage member identity,
-location, map visibility, appearance, and account preferences.
+location, map visibility, and appearance.
 
 #### Scenario: Member changes map visibility
 

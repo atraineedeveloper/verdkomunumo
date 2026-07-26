@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, Map, Palette, Settings } from 'lucide-react'
+import { LogIn, LogOut, Map, Palette, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { APP_NAME } from '@/lib/constants'
 import { routes } from '@/lib/routes'
@@ -15,6 +15,7 @@ export function Navbar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const clearAuth = useAuthStore((state) => state.clear)
+  const user = useAuthStore((state) => state.user)
   const { theme, setTheme } = useThemeStore()
   const [isSigningOut, setIsSigningOut] = useState(false)
 
@@ -46,13 +47,15 @@ export function Navbar() {
             <Map size={16} aria-hidden />
             <span className="hidden sm:inline">{t('nav_samideanoj', { defaultValue: 'Mapo' })}</span>
           </Link>
-          <Link
-            to={routes.settings}
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[6px] text-[0.82rem] font-medium text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)]"
-          >
-            <Settings size={16} aria-hidden />
-            <span className="hidden sm:inline">{t('nav_settings')}</span>
-          </Link>
+          {user && (
+            <Link
+              to={routes.settings}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[6px] text-[0.82rem] font-medium text-[var(--color-text-muted)] no-underline hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)]"
+            >
+              <Settings size={16} aria-hidden />
+              <span className="hidden sm:inline">{t('nav_settings')}</span>
+            </Link>
+          )}
           <button
             type="button"
             onClick={cycleTheme}
@@ -62,16 +65,26 @@ export function Navbar() {
           >
             <Palette size={16} aria-hidden />
           </button>
-          <button
-            type="button"
-            onClick={() => void handleLogout()}
-            disabled={isSigningOut}
-            className="flex items-center justify-center w-[36px] h-[36px] rounded-[6px] bg-transparent border-0 text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-danger)] disabled:opacity-50"
-            title={t('nav_logout')}
-            aria-label={t('nav_logout')}
-          >
-            <LogOut size={16} aria-hidden />
-          </button>
+          {user ? (
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={isSigningOut}
+              className="flex items-center justify-center w-[36px] h-[36px] rounded-[6px] bg-transparent border-0 text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-danger)] disabled:opacity-50"
+              title={t('nav_logout')}
+              aria-label={t('nav_logout')}
+            >
+              <LogOut size={16} aria-hidden />
+            </button>
+          ) : (
+            <Link
+              to={routes.login}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-[6px] text-[0.82rem] font-semibold bg-[var(--color-primary)] text-white no-underline hover:opacity-90"
+            >
+              <LogIn size={16} aria-hidden />
+              <span>{t('nav_login')}</span>
+            </Link>
+          )}
         </div>
       </div>
     </nav>
