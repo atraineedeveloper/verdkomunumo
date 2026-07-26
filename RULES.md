@@ -8,7 +8,7 @@ Read this before editing code. Use `docs/` for the longer explanation.
 
 1. this file
 2. `docs/README.md`
-3. the relevant feature spec in `docs/specs/`
+3. the relevant feature spec in `openspec/specs/`
 
 ## Non-Negotiable Rules
 
@@ -61,9 +61,10 @@ Read this before editing code. Use `docs/` for the longer explanation.
 
 ## Documentation Rules
 
-- medium and large changes need a spec or a spec update in `docs/specs/`
-- update durable docs when behavior, architecture, or standards change
-- code is not done if the docs are now misleading
+- medium and large changes need an OpenSpec change: `/opsx:propose` (or `openspec new change`) in your AI assistant, producing a proposal + delta spec under `openspec/changes/<id>/`
+- archive the change (`/opsx:archive` or `openspec archive <id>`) once implemented so its delta merges into `openspec/specs/`
+- update durable docs (this file, `docs/`) when behavior, architecture, or standards change
+- code is not done if the docs or specs are now misleading
 
 ## Validation Rules
 

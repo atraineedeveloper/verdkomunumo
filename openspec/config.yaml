@@ -1,0 +1,25 @@
+schema: spec-driven
+
+context: |
+  Verdkomunumo: React 18 + Vite + TypeScript (strict) + Supabase (Postgres, RLS, Storage, Edge Functions) + Bun.
+  State: TanStack React Query for server state, Zustand for cross-cutting client state, local useState for local UI state.
+  Forms: react-hook-form + Zod. Query keys live in src/lib/query/keys.ts — never an undefined array element.
+  i18n: all user-facing strings go through i18next (src/lib/i18n); locales eo/es/en/pt/ja/fr/de/ko/zh. No hardcoded product copy.
+  Auth: Supabase Auth; do not null out profile/auth state on TOKEN_REFRESHED-type events for the same user (guest/auth flicker is a known regression class).
+  Roles: profiles.role in (user, moderator, admin, owner), gated client-side via ProtectedRoute minRole and server-side via RLS — the two must be kept in sync, do not add a client-only gate for a new sensitive action without a matching RLS policy.
+  Avoid new runtime `any` in production code; keep files under ~350 lines before extracting.
+  Full rulebook: RULES.md and docs/coding-standards.md, docs/i18n-standards.md, docs/architecture.md.
+
+rules:
+  proposal:
+    - State which existing spec(s) in openspec/specs/ this change modifies or extends
+    - Call out any auth, role/RLS, cache-key, or i18n impact explicitly
+  specs:
+    - Every requirement needs at least one GIVEN/WHEN/THEN scenario grounded in actual or clearly intended behavior, not a restatement of the requirement
+    - Prefer MUST/SHALL; use SHOULD only for a deliberate soft recommendation
+  design:
+    - Note which React Query keys are touched and whether an optimistic update is involved
+    - Note any new or changed RLS policy alongside any new client-side role gate
+  tasks:
+    - Include a task for i18n keys when new user-facing text is introduced
+    - Include a task for updating the relevant openspec/specs/ domain if behavior diverges from it during implementation

@@ -29,9 +29,9 @@ Use for architecture, standards, testing, security, performance, and engineering
 
 ### Feature Specs
 
-`docs/specs/*.md`
+`openspec/specs/<domain>/spec.md`
 
-Use for product or technical changes that require durable scope, behavior, and verification notes.
+Use for product or technical changes that require durable scope, behavior, and verification notes. Managed through the OpenSpec workflow (see [spec-driven-development.md](./spec-driven-development.md)) rather than edited by hand — propose a change, then archive it to merge the delta in.
 
 ## Update Triggers
 

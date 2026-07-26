@@ -41,7 +41,7 @@ For medium and large work:
 
 - run the relevant checks
 - review the diff for accidental complexity
-- update docs/specs if behavior or standards changed
+- update the relevant `openspec/specs/` domain (via a change) or `docs/` if behavior or standards changed
 - record follow-up debt if you intentionally defer something
 
 ## Prompting Guidance For AI Agents
@@ -76,4 +76,4 @@ A change is done only when:
 - important states are handled
 - standards are respected
 - tests or verification are performed
-- docs/specs are still accurate
+- `openspec/specs/` and `docs/` are still accurate

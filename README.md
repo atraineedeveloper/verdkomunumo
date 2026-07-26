@@ -121,12 +121,12 @@ The repository includes a full engineering handbook in [`docs/`](./docs/).
 - i18n standards: [`docs/i18n-standards.md`](./docs/i18n-standards.md)
 - performance and reliability guide: [`docs/performance-and-reliability.md`](./docs/performance-and-reliability.md)
 - security and privacy guide: [`docs/security-and-privacy.md`](./docs/security-and-privacy.md)
-- process guide: [`docs/spec-driven-development.md`](./docs/spec-driven-development.md)
-- reusable template: [`docs/templates/spec-template.md`](./docs/templates/spec-template.md)
+- process guide (OpenSpec workflow): [`docs/spec-driven-development.md`](./docs/spec-driven-development.md)
+- feature specs (source of truth): [`openspec/specs/`](./openspec/specs/)
 - vibe coding playbook: [`docs/vibe-coding-playbook.md`](./docs/vibe-coding-playbook.md)
 - documentation governance: [`docs/documentation-governance.md`](./docs/documentation-governance.md)
 - review and release checklist: [`docs/review-and-release-checklist.md`](./docs/review-and-release-checklist.md)
-- stabilization program: [`docs/specs/project-stabilization-program.md`](./docs/specs/project-stabilization-program.md)
+- stabilization program: [`docs/project-stabilization-program.md`](./docs/project-stabilization-program.md)
 - QA coverage matrix: [`docs/qa-coverage-matrix.md`](./docs/qa-coverage-matrix.md)
 
 ## Deployment

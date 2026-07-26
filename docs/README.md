@@ -42,7 +42,7 @@ Read these documents in this order when starting significant work:
 - [security-and-privacy.md](./security-and-privacy.md)
   Security expectations for auth, data access, secrets, and moderation-sensitive features.
 - [spec-driven-development.md](./spec-driven-development.md)
-  The process for writing specs before medium and large changes.
+  The OpenSpec-based process for proposing, writing, and archiving specs before medium and large changes.
 - [qa-coverage-matrix.md](./qa-coverage-matrix.md)
   A practical map of what kinds of tests and checks each feature area should have.
 - [vibe-coding-playbook.md](./vibe-coding-playbook.md)
@@ -51,10 +51,10 @@ Read these documents in this order when starting significant work:
   Ownership, change triggers, and quality expectations for docs themselves.
 - [review-and-release-checklist.md](./review-and-release-checklist.md)
   Practical merge and release checklist aligned with the repo standards.
-- [templates/spec-template.md](./templates/spec-template.md)
-  Reusable spec template for new work.
-- [specs/](./specs)
-  Feature-level specifications and stabilization plans.
+- [project-stabilization-program.md](./project-stabilization-program.md)
+  Recurring quality/tech-debt priorities (not a behavior spec).
+
+Feature-level behavior specs live in `openspec/specs/` (repo root), managed through the OpenSpec workflow — see [spec-driven-development.md](./spec-driven-development.md).
 
 ## Change Policy
 
