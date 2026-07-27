@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next'
-import type { EsperantoLevel, Profile, SocialLink } from '@/lib/types'
+import type { EsperantoLevel, Profile, ProfilePrivateDetails, Sex, SocialLink } from '@/lib/types'
 import { contactEmailSchema, socialLinksSchema } from '@/lib/validators'
 import { SOCIAL_PLATFORM_META } from '@/lib/constants'
 
@@ -15,6 +15,8 @@ export type SettingsForm = {
   website: string
   contact_email: string
   social_links: SocialLink[]
+  sex: Sex | ''
+  birth_date: string
 }
 
 export type GeocodeResult = {
@@ -24,7 +26,7 @@ export type GeocodeResult = {
 
 export type GeocodeFn = (query: string) => Promise<GeocodeResult | null>
 
-export function formFromProfile(profile: Profile): SettingsForm {
+export function formFromProfile(profile: Profile, privateDetails?: ProfilePrivateDetails | null): SettingsForm {
   return {
     username: profile.username ?? '',
     display_name: profile.display_name ?? '',
@@ -37,6 +39,8 @@ export function formFromProfile(profile: Profile): SettingsForm {
     website: profile.website ?? '',
     contact_email: profile.contact_email ?? '',
     social_links: profile.social_links ?? [],
+    sex: privateDetails?.sex ?? '',
+    birth_date: privateDetails?.birth_date ?? '',
   }
 }
 
@@ -156,6 +160,16 @@ export function resolveContactEmail(formData: FormData, t: TFunction): string {
   }
 
   return contactEmail
+}
+
+export function resolvePrivateDetails(formData: FormData): Pick<ProfilePrivateDetails, 'sex' | 'birth_date'> {
+  const sex = String(formData.get('sex') ?? '').trim()
+  const birthDate = String(formData.get('birth_date') ?? '').trim()
+
+  return {
+    sex: sex === 'male' || sex === 'female' ? sex : null,
+    birth_date: birthDate === '' ? null : birthDate,
+  }
 }
 
 export async function buildProfilePayload(

@@ -14,7 +14,7 @@ export function SocialLinksEditor({ links, onChange, t }: SocialLinksEditorProps
       <span className="field-label">{t('settings_social_links')}</span>
       <span className="field-hint">{t('settings_social_links_hint')}</span>
       {links.map((link, index) => (
-        <div className="field-row" key={index}>
+        <div className="social-link-row" key={index}>
           <BrandIcon icon={SOCIAL_PLATFORM_META[link.platform].icon} className="social-platform-preview" />
           <select
             name="social_platform"

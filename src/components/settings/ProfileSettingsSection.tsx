@@ -119,6 +119,8 @@ export function ProfileSettingsSection({
           </div>
         </div>
 
+        <h3 className="subsection-title">{t('settings_section_identity')}</h3>
+
         <div className="field">
           <label htmlFor="username">Uzantnomo</label>
           <input
@@ -171,6 +173,36 @@ export function ProfileSettingsSection({
             ))}
           </select>
         </div>
+
+        <div className="field-row">
+          <div className="field">
+            <label htmlFor="sex">{t('settings_sex')}</label>
+            <select
+              id="sex"
+              name="sex"
+              value={form.sex}
+              onChange={(event) => onFormChange((current) => ({ ...current, sex: event.target.value as SettingsForm['sex'] }))}
+            >
+              <option value="">-</option>
+              <option value="male">{t('settings_sex_male')}</option>
+              <option value="female">{t('settings_sex_female')}</option>
+            </select>
+          </div>
+
+          <div className="field">
+            <label htmlFor="birth_date">{t('settings_birth_date')}</label>
+            <input
+              id="birth_date"
+              name="birth_date"
+              type="date"
+              value={form.birth_date}
+              onChange={(event) => onFormChange((current) => ({ ...current, birth_date: event.target.value }))}
+            />
+          </div>
+        </div>
+        <span className="field-hint">{t('settings_private_fields_hint')}</span>
+
+        <h3 className="subsection-title">{t('settings_section_location')}</h3>
 
         <div className="field-row">
           <div className="field">
@@ -251,6 +283,23 @@ export function ProfileSettingsSection({
         </div>
 
         <div className="field">
+          <label className="toggle-row" style={{ marginTop: '0.5rem', marginBottom: '0' }}>
+            <div>
+              <span className="toggle-title">{t('settings_map_visible')}</span>
+              <span className="toggle-sub">{t('settings_map_visible_hint')}</span>
+            </div>
+            <input
+              type="checkbox"
+              name="map_visible"
+              checked={form.map_visible}
+              onChange={(event) => onFormChange((current) => ({ ...current, map_visible: event.target.checked }))}
+            />
+          </label>
+        </div>
+
+        <h3 className="subsection-title">{t('settings_section_contact')}</h3>
+
+        <div className="field">
           <label htmlFor="website">{t('settings_website')}</label>
           <input
             id="website"
@@ -280,21 +329,6 @@ export function ProfileSettingsSection({
           onChange={(updater) => onFormChange((current) => ({ ...current, social_links: updater(current.social_links) }))}
           t={t}
         />
-
-        <div className="field">
-          <label className="toggle-row" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
-            <div>
-              <span className="toggle-title">{t('settings_map_visible')}</span>
-              <span className="toggle-sub">{t('settings_map_visible_hint')}</span>
-            </div>
-            <input
-              type="checkbox"
-              name="map_visible"
-              checked={form.map_visible}
-              onChange={(event) => onFormChange((current) => ({ ...current, map_visible: event.target.checked }))}
-            />
-          </label>
-        </div>
 
         <button className="btn-primary" type="submit" disabled={isPending}>
           {isPending ? t('settings_saving') : t('settings_save')}

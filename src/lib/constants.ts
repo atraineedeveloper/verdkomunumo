@@ -1,4 +1,7 @@
-import { siX, siInstagram, siTelegram, siMastodon, siFacebook, siWhatsapp, siThreads, siDuolingo } from 'simple-icons'
+import {
+  siX, siInstagram, siTelegram, siMastodon, siFacebook, siWhatsapp, siThreads, siDuolingo,
+  siDiscord, siLine, siMatrix, siPatreon, siReddit, siSinaweibo, siTumblr, siTiktok, siYoutube, siVk, siWechat
+} from 'simple-icons'
 import type { SimpleIcon } from 'simple-icons'
 import type { EsperantoLevel, SocialPlatform } from './types'
 
@@ -16,7 +19,18 @@ export const SOCIAL_PLATFORMS: readonly SocialPlatform[] = [
   'facebook',
   'duolingo',
   'threads',
-  'whatsapp'
+  'whatsapp',
+  'discord',
+  'line',
+  'matrix',
+  'patreon',
+  'reddit',
+  'weibo',
+  'tumblr',
+  'tiktok',
+  'youtube',
+  'vk',
+  'wechat'
 ] as const
 
 export const SOCIAL_PLATFORM_META: Record<SocialPlatform, { label: string; icon: SimpleIcon }> = {
@@ -27,10 +41,21 @@ export const SOCIAL_PLATFORM_META: Record<SocialPlatform, { label: string; icon:
   facebook: { label: 'Facebook', icon: siFacebook },
   duolingo: { label: 'Duolingo', icon: siDuolingo },
   threads: { label: 'Threads', icon: siThreads },
-  whatsapp: { label: 'WhatsApp', icon: siWhatsapp }
+  whatsapp: { label: 'WhatsApp', icon: siWhatsapp },
+  discord: { label: 'Discord', icon: siDiscord },
+  line: { label: 'Line', icon: siLine },
+  matrix: { label: 'Matrix', icon: siMatrix },
+  patreon: { label: 'Patreon', icon: siPatreon },
+  reddit: { label: 'Reddit', icon: siReddit },
+  weibo: { label: 'Weibo', icon: siSinaweibo },
+  tumblr: { label: 'Tumblr', icon: siTumblr },
+  tiktok: { label: 'TikTok', icon: siTiktok },
+  youtube: { label: 'YouTube', icon: siYoutube },
+  vk: { label: 'VK', icon: siVk },
+  wechat: { label: 'WeChat', icon: siWechat }
 }
 
-export const SOCIAL_LINKS_MAX = 8
+export const SOCIAL_LINKS_MAX = 19
 
 export const CATEGORIES = [
   { name: 'Ĝenerala', slug: 'generala', icon: '💬' },

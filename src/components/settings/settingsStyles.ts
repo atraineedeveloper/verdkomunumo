@@ -16,6 +16,11 @@ export const settingsStyles = `
   .avatar-name { font-size: 0.95rem; font-weight: 600; color: var(--color-text); }
   .avatar-sub { font-size: 0.8rem; color: var(--color-text-muted); }
   .field-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .subsection-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); margin: 1.75rem 0 1rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); }
+  .subsection-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+  .social-link-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .social-link-row select { width: auto; flex: 0 1 170px; }
+  .social-link-row input { width: auto; flex: 1 1 200px; }
   label { font-size: 0.875rem; font-weight: 500; color: var(--color-text); }
   input,textarea,select { padding: 0.5rem 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--color-bg); color: var(--color-text); font-size: 0.9rem; font-family: inherit; transition: border-color 0.15s; width: 100%; box-sizing: border-box; }
   input:focus,textarea:focus,select:focus { border-color: var(--color-primary); outline: none; }
@@ -45,4 +50,11 @@ export const settingsStyles = `
   .lang-btn-big { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border: 2px solid var(--color-border); border-radius: 0.75rem; background: var(--color-bg); color: var(--color-text); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: border-color 0.15s, transform 0.1s; width: 100%; text-align: left; }
   .lang-btn-big.active { border-color: var(--color-primary); background: var(--color-primary); color: white; }
   .lang-flag { width: 28px; height: 21px; border-radius: 3px; display: block; box-shadow: 0 0 0 1px rgba(0,0,0,0.1); flex-shrink: 0; }
+
+  @media (max-width: 520px) {
+    .field-row { flex-direction: column; gap: 0; }
+    .field-row .field { width: 100%; }
+    .social-link-row select { flex-basis: 100%; }
+    .social-link-row input { flex-basis: 100%; }
+  }
 `

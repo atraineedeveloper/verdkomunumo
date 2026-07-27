@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      profile_private_details: {
+        Row: {
+          birth_date: string | null
+          id: string
+          sex: string | null
+          updated_at: string
+        }
+        Insert: {
+          birth_date?: string | null
+          id: string
+          sex?: string | null
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          id?: string
+          sex?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_private_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

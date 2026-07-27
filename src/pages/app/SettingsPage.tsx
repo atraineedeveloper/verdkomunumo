@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { AppearanceSettingsSection } from '@/components/settings/AppearanceSettingsSection'
 import { ProfileSettingsSection } from '@/components/settings/ProfileSettingsSection'
@@ -12,11 +12,12 @@ import { queryKeys } from '@/lib/query/keys'
 import {
   buildProfilePayload,
   formFromProfile,
+  resolvePrivateDetails,
   type SettingsForm,
 } from '@/lib/settingsProfile'
 import { supabase } from '@/lib/supabase/client'
 import { assertUsernameAvailable } from '@/lib/username'
-import type { Profile, Theme } from '@/lib/types'
+import type { Profile, ProfilePrivateDetails, Theme } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useToastStore } from '@/stores/toasts'
@@ -33,10 +34,24 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [form, setForm] = useState<SettingsForm>(() => formFromProfile(profile ?? ({} as Profile)))
 
+  const privateDetailsQuery = useQuery({
+    queryKey: queryKeys.profilePrivateDetails(user?.id ?? ''),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profile_private_details')
+        .select('sex, birth_date')
+        .eq('id', user!.id)
+        .maybeSingle()
+      if (error) throw error
+      return data as ProfilePrivateDetails | null
+    },
+    enabled: Boolean(user),
+  })
+
   useEffect(() => {
     if (!profile) return
-    setForm(formFromProfile(profile))
-  }, [profile])
+    setForm(formFromProfile(profile, privateDetailsQuery.data))
+  }, [profile, privateDetailsQuery.data])
 
   const updateProfileMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -57,12 +72,20 @@ export default function SettingsPage() {
       }
 
       const payload = await buildProfilePayload(profile, formData, t, avatarUrl)
-      const { error } = await supabase.from('profiles').update(payload).eq('id', user.id)
+      const privateDetails = resolvePrivateDetails(formData)
+
+      const [{ error }, { error: privateError }] = await Promise.all([
+        supabase.from('profiles').update(payload).eq('id', user.id),
+        supabase.from('profile_private_details').upsert({ id: user.id, ...privateDetails }),
+      ])
       if (error) throw error
-      return { ...profile, ...payload }
+      if (privateError) throw privateError
+
+      return { profile: { ...profile, ...payload }, privateDetails }
     },
-    onSuccess: async (nextProfile) => {
+    onSuccess: async ({ profile: nextProfile, privateDetails }) => {
       setProfile(nextProfile)
+      queryClient.setQueryData(queryKeys.profilePrivateDetails(user!.id), privateDetails)
       await queryClient.invalidateQueries({ queryKey: queryKeys.mapUsers() })
       toast.success(t('toast_profile_saved'))
     },

@@ -24,11 +24,20 @@ export type ContentReportReason =
   | 'other'
 export type ContentReportStatus = 'pending' | 'resolved' | 'dismissed'
 
-export type SocialPlatform = 'twitter' | 'instagram' | 'telegram' | 'mastodon' | 'facebook' | 'duolingo' | 'threads' | 'whatsapp'
+export type SocialPlatform =
+  | 'twitter' | 'instagram' | 'telegram' | 'mastodon' | 'facebook' | 'duolingo' | 'threads' | 'whatsapp'
+  | 'discord' | 'line' | 'matrix' | 'patreon' | 'reddit' | 'weibo' | 'tumblr' | 'tiktok' | 'youtube' | 'vk' | 'wechat'
 
 export interface SocialLink {
   platform: SocialPlatform
   url: string
+}
+
+export type Sex = 'male' | 'female'
+
+export interface ProfilePrivateDetails {
+  sex: Sex | null
+  birth_date: string | null
 }
 
 export interface Profile {
