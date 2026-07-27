@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async'
 import { supabase } from '@/lib/supabase/client'
 import { registerSchema } from '@/lib/validators'
 import { routes } from '@/lib/routes'
+import { assertUsernameAvailable } from '@/lib/username'
 import type { z } from 'zod'
 
 type RegisterInput = z.infer<typeof registerSchema>
@@ -35,14 +36,7 @@ export function RegisterPage() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterInput) => {
-      // Check username availability
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', data.username)
-        .maybeSingle()
-
-      if (existing) throw new Error('Tiu uzantnomo jam estas uzata')
+      await assertUsernameAvailable(data.username)
 
       const { error } = await supabase.auth.signUp({
         email: data.email,

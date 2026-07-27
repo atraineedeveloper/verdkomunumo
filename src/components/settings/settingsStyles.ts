@@ -22,6 +22,10 @@ export const settingsStyles = `
   .btn-primary { padding: 0.5rem 1.25rem; background: var(--color-primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
   .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   .btn-primary:not(:disabled):hover { opacity: 0.9; }
+  .btn-secondary { padding: 0.4rem 0.9rem; background: transparent; color: var(--color-text); border: 1px solid var(--color-border); border-radius: 0.5rem; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: border-color 0.15s; align-self: flex-start; }
+  .btn-secondary:hover { border-color: var(--color-primary); }
+  .field-label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--color-text); margin-bottom: 0.2rem; }
+  .field-hint { display: block; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
   .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; }
   .theme-btn { padding: 0.75rem 1rem; border: 2px solid var(--color-border); border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: border-color 0.15s, transform 0.1s; width: 100%; text-align: left; }
   .theme-btn:hover,.lang-btn-big:hover { transform: translateY(-1px); }

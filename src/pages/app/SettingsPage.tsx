@@ -15,6 +15,7 @@ import {
   type SettingsForm,
 } from '@/lib/settingsProfile'
 import { supabase } from '@/lib/supabase/client'
+import { assertUsernameAvailable } from '@/lib/username'
 import type { Profile, Theme } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
@@ -42,14 +43,7 @@ export default function SettingsPage() {
       if (!user || !profile) throw new Error('Ne ensalutinta')
 
       const username = String(formData.get('username') ?? '')
-      const { data: existingUsername } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', username)
-        .neq('id', user.id)
-        .maybeSingle()
-
-      if (existingUsername) throw new Error('Tiu uzantnomo jam estas uzata')
+      await assertUsernameAvailable(username, user.id)
 
       const avatar = formData.get('avatar')
       let avatarUrl: string | undefined

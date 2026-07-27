@@ -1,5 +1,7 @@
 import type { TFunction } from 'i18next'
-import type { EsperantoLevel, Profile } from '@/lib/types'
+import type { EsperantoLevel, Profile, SocialLink } from '@/lib/types'
+import { contactEmailSchema, socialLinksSchema } from '@/lib/validators'
+import { SOCIAL_PLATFORM_META } from '@/lib/constants'
 
 export type SettingsForm = {
   username: string
@@ -11,6 +13,8 @@ export type SettingsForm = {
   city: string
   map_visible: boolean
   website: string
+  contact_email: string
+  social_links: SocialLink[]
 }
 
 export type GeocodeResult = {
@@ -31,6 +35,8 @@ export function formFromProfile(profile: Profile): SettingsForm {
     city: profile.city ?? '',
     map_visible: profile.map_visible ?? false,
     website: profile.website ?? '',
+    contact_email: profile.contact_email ?? '',
+    social_links: profile.social_links ?? [],
   }
 }
 
@@ -114,6 +120,44 @@ export async function resolveLocationFields(
   }
 }
 
+export function resolveSocialLinks(formData: FormData, t: TFunction): SocialLink[] {
+  const platforms = formData.getAll('social_platform').map((value) => String(value))
+  const urls = formData.getAll('social_url').map((value) => String(value).trim())
+
+  const links = platforms
+    .map((platform, index) => ({ platform: platform as SocialLink['platform'], url: urls[index] ?? '' }))
+    .filter((link) => link.url !== '')
+
+  const result = socialLinksSchema.safeParse(links)
+  if (!result.success) {
+    const firstIssue = result.error.issues[0]
+    const index = typeof firstIssue?.path[0] === 'number' ? firstIssue.path[0] : 0
+    const invalidLink = links[index]
+    throw new Error(
+      t('settings_social_link_invalid_at', {
+        position: index + 1,
+        platform: invalidLink ? SOCIAL_PLATFORM_META[invalidLink.platform].label : '',
+        defaultValue: 'Social link {{position}} ({{platform}}) is not a valid URL.',
+      }),
+    )
+  }
+
+  return result.data as SocialLink[]
+}
+
+export function resolveContactEmail(formData: FormData, t: TFunction): string {
+  const contactEmail = String(formData.get('contact_email') ?? '').trim()
+
+  const result = contactEmailSchema.safeParse(contactEmail)
+  if (!result.success) {
+    throw new Error(
+      t('settings_contact_email_invalid', { defaultValue: 'Enter a valid contact email or leave it blank.' }),
+    )
+  }
+
+  return contactEmail
+}
+
 export async function buildProfilePayload(
   profile: Profile,
   formData: FormData,
@@ -122,12 +166,16 @@ export async function buildProfilePayload(
   geocode: GeocodeFn = geocodeRegion,
 ) {
   const locationFields = await resolveLocationFields(profile, formData, t, geocode)
+  const contactEmail = resolveContactEmail(formData, t)
+  const socialLinks = resolveSocialLinks(formData, t)
 
   return {
     username: String(formData.get('username') ?? '').trim(),
     display_name: String(formData.get('display_name') ?? '').trim(),
     bio: String(formData.get('bio') ?? '').trim(),
     website: String(formData.get('website') ?? '').trim(),
+    contact_email: contactEmail === '' ? null : contactEmail,
+    social_links: socialLinks,
     esperanto_level: String(formData.get('esperanto_level') ?? '') as EsperantoLevel,
     ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
     ...locationFields,

@@ -19,6 +19,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           city: string | null
+          contact_email: string | null
           country: string | null
           created_at: string | null
           display_name: string
@@ -28,6 +29,7 @@ export type Database = {
           location_lng: number | null
           map_visible: boolean | null
           region: string | null
+          social_links: Json
           theme: string | null
           updated_at: string | null
           username: string
@@ -37,6 +39,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          contact_email?: string | null
           country?: string | null
           created_at?: string | null
           display_name: string
@@ -46,6 +49,7 @@ export type Database = {
           location_lng?: number | null
           map_visible?: boolean | null
           region?: string | null
+          social_links?: Json
           theme?: string | null
           updated_at?: string | null
           username: string
@@ -55,6 +59,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          contact_email?: string | null
           country?: string | null
           created_at?: string | null
           display_name?: string
@@ -64,6 +69,7 @@ export type Database = {
           location_lng?: number | null
           map_visible?: boolean | null
           region?: string | null
+          social_links?: Json
           theme?: string | null
           updated_at?: string | null
           username?: string
@@ -76,6 +82,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_username_available: {
+        Args: { check_username: string; exclude_id?: string }
+        Returns: boolean
+      }
       resolve_login_email: {
         Args: { login_identifier: string }
         Returns: string

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { POST_MAX_LENGTH, COMMENT_MAX_LENGTH, MESSAGE_MAX_LENGTH } from './constants'
+import { POST_MAX_LENGTH, COMMENT_MAX_LENGTH, MESSAGE_MAX_LENGTH, SOCIAL_PLATFORMS } from './constants'
 
 export const registerSchema = z.object({
   email: z.string().email('Email no válido'),
@@ -40,6 +40,17 @@ export const messageSchema = z.object({
     .max(MESSAGE_MAX_LENGTH, `Máximo ${MESSAGE_MAX_LENGTH} caracteres`)
 })
 
+export const contactEmailSchema = z.string().email('Email no válido').optional().or(z.literal(''))
+
+export const socialLinksSchema = z
+  .array(
+    z.object({
+      platform: z.enum(SOCIAL_PLATFORMS as [string, ...string[]]),
+      url: z.string().url('URL no válida')
+    })
+  )
+  .max(5, 'Máximo 5 redes sociales')
+
 export const profileEditSchema = z.object({
   username: z
     .string()
@@ -49,6 +60,8 @@ export const profileEditSchema = z.object({
   display_name: z.string().min(1, 'Requerido').max(50, 'Máximo 50 caracteres'),
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   website: z.string().url('URL no válida').optional().or(z.literal('')),
+  contact_email: contactEmailSchema,
+  social_links: socialLinksSchema,
   esperanto_level: z.enum(['komencanto', 'progresanto', 'flua'])
 })
 

@@ -8,6 +8,7 @@ import { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
 import { LEVEL_COLORS } from '@/lib/icons'
+import { SOCIAL_PLATFORM_META } from '@/lib/constants'
 import { fetchMapUsers, formatStructuredLocation, type MapUser } from '@/lib/map'
 import { queryKeys } from '@/lib/query/keys'
 import { routes } from '@/lib/routes'
@@ -42,8 +43,10 @@ function groupByLocation(users: MapUser[]): Map<string, MapUser[]> {
 }
 
 function UserCard({ user }: { user: MapUser }) {
+  const { t } = useTranslation()
   const levelColor = LEVEL_COLORS[user.esperanto_level as EsperantoLevel] ?? 'var(--color-primary)'
   const locationLabel = formatStructuredLocation(user)
+  const hasLinks = Boolean(user.website) || Boolean(user.contact_email) || user.social_links.length > 0
 
   return (
     <article className="map-user-card">
@@ -59,6 +62,42 @@ function UserCard({ user }: { user: MapUser }) {
           {user.esperanto_level}
         </span>
         <span className="map-user-location">{locationLabel}</span>
+        {hasLinks && (
+          <div className="map-user-links">
+            {user.website && (
+              <a
+                href={user.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+                title={t('settings_website')}
+              >
+                🔗
+              </a>
+            )}
+            {user.contact_email && (
+              <a
+                href={`mailto:${user.contact_email}`}
+                onClick={(event) => event.stopPropagation()}
+                title={t('settings_contact_email')}
+              >
+                ✉️
+              </a>
+            )}
+            {user.social_links.map((link) => (
+              <a
+                key={link.platform}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+                title={SOCIAL_PLATFORM_META[link.platform].label}
+              >
+                {SOCIAL_PLATFORM_META[link.platform].emoji}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </article>
   )
@@ -219,6 +258,8 @@ export default function SamideanojPage() {
         .map-user-username { font-size: 0.78rem; color: var(--color-text-muted); }
         .map-user-level { font-size: 0.75rem; font-weight: 500; }
         .map-user-location { font-size: 0.75rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .map-user-links { display: flex; gap: 0.4rem; margin-top: 0.15rem; }
+        .map-user-links a { font-size: 0.85rem; text-decoration: none; line-height: 1; }
         .map-popup { display: flex; flex-direction: column; gap: 0.35rem; min-width: 120px; }
         .map-popup-title { font-size: 0.875rem; font-weight: 700; color: #111; }
         .map-popup-count { font-size: 0.8rem; color: #555; }

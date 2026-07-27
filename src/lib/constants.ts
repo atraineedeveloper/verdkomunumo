@@ -1,10 +1,28 @@
-import type { EsperantoLevel } from './types'
+import type { EsperantoLevel, SocialPlatform } from './types'
 
 export const ESPERANTO_LEVELS: Record<EsperantoLevel, { label: string; emoji: string }> = {
   komencanto: { label: 'Komencanto', emoji: '🌱' },
   progresanto: { label: 'Progresanto', emoji: '🌿' },
   flua: { label: 'Flua', emoji: '🌳' }
 }
+
+export const SOCIAL_PLATFORMS: readonly SocialPlatform[] = [
+  'twitter',
+  'instagram',
+  'telegram',
+  'mastodon',
+  'facebook'
+] as const
+
+export const SOCIAL_PLATFORM_META: Record<SocialPlatform, { label: string; emoji: string }> = {
+  twitter: { label: 'X / Twitter', emoji: '🐦' },
+  instagram: { label: 'Instagram', emoji: '📷' },
+  telegram: { label: 'Telegram', emoji: '✈️' },
+  mastodon: { label: 'Mastodon', emoji: '🐘' },
+  facebook: { label: 'Facebook', emoji: '📘' }
+}
+
+export const SOCIAL_LINKS_MAX = 5
 
 export const CATEGORIES = [
   { name: 'Ĝenerala', slug: 'generala', icon: '💬' },

@@ -24,6 +24,13 @@ export type ContentReportReason =
   | 'other'
 export type ContentReportStatus = 'pending' | 'resolved' | 'dismissed'
 
+export type SocialPlatform = 'twitter' | 'instagram' | 'telegram' | 'mastodon' | 'facebook'
+
+export interface SocialLink {
+  platform: SocialPlatform
+  url: string
+}
+
 export interface Profile {
   id: string
   email?: string
@@ -34,6 +41,8 @@ export interface Profile {
   esperanto_level: EsperantoLevel
   theme: Theme
   website: string
+  contact_email: string | null
+  social_links: SocialLink[]
   country: string | null
   region: string | null
   city: string | null

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildProfilePayload, formFromProfile, resolveLocationFields } from './settingsProfile'
+import { buildProfilePayload, formFromProfile, resolveContactEmail, resolveLocationFields, resolveSocialLinks } from './settingsProfile'
 import type { Profile } from './types'
 
 function buildProfile(overrides: Partial<Profile> = {}): Profile {
@@ -12,6 +12,8 @@ function buildProfile(overrides: Partial<Profile> = {}): Profile {
     esperanto_level: 'komencanto',
     theme: 'green',
     website: '',
+    contact_email: null,
+    social_links: [],
     country: null,
     region: null,
     city: null,
@@ -24,10 +26,14 @@ function buildProfile(overrides: Partial<Profile> = {}): Profile {
   }
 }
 
-function buildFormData(values: Record<string, string>) {
+function buildFormData(values: Record<string, string | string[]>) {
   const formData = new FormData()
   for (const [key, value] of Object.entries(values)) {
-    formData.set(key, value)
+    if (Array.isArray(value)) {
+      for (const item of value) formData.append(key, item)
+    } else {
+      formData.set(key, value)
+    }
   }
   return formData
 }
@@ -193,5 +199,88 @@ describe('settingsProfile helpers', () => {
     expect(payload.website).toBe('https://example.com')
     expect(payload).not.toHaveProperty('location')
     expect(geocode).toHaveBeenCalledWith('Monterrey, Nuevo Leon, Mexico')
+  })
+
+  it('accepts a blank contact email', () => {
+    const result = resolveContactEmail(buildFormData({ contact_email: '' }), ((key: string) => key) as never)
+    expect(result).toBe('')
+  })
+
+  it('rejects an invalid contact email', () => {
+    const t = vi.fn().mockReturnValue('invalid email')
+
+    expect(() =>
+      resolveContactEmail(buildFormData({ contact_email: 'not-an-email' }), t as never),
+    ).toThrow('invalid email')
+  })
+
+  it('collects valid social links and drops blank rows', () => {
+    const result = resolveSocialLinks(
+      buildFormData({
+        social_platform: ['twitter', 'instagram'],
+        social_url: ['https://x.com/ada', ''],
+      }),
+      ((key: string) => key) as never,
+    )
+
+    expect(result).toEqual([{ platform: 'twitter', url: 'https://x.com/ada' }])
+  })
+
+  it('rejects a social link with an invalid URL', () => {
+    const t = vi.fn().mockReturnValue('invalid link')
+
+    expect(() =>
+      resolveSocialLinks(
+        buildFormData({ social_platform: ['telegram'], social_url: ['not-a-url'] }),
+        t as never,
+      ),
+    ).toThrow('invalid link')
+  })
+
+  it('identifies which social link is invalid when there are several', () => {
+    const t = vi.fn().mockReturnValue('invalid link')
+
+    expect(() =>
+      resolveSocialLinks(
+        buildFormData({
+          social_platform: ['twitter', 'telegram'],
+          social_url: ['https://x.com/ada', 'not-a-url'],
+        }),
+        t as never,
+      ),
+    ).toThrow('invalid link')
+
+    expect(t).toHaveBeenCalledWith(
+      'settings_social_link_invalid_at',
+      expect.objectContaining({ position: 2, platform: 'Telegram' }),
+    )
+  })
+
+  it('includes contact email and social links in the profile payload', async () => {
+    const profile = buildProfile()
+    const geocode = vi.fn().mockResolvedValue({ lat: 25.67, lng: -100.3 })
+    const payload = await buildProfilePayload(
+      profile,
+      buildFormData({
+        username: 'ada',
+        display_name: 'Ada',
+        bio: '',
+        website: '',
+        contact_email: 'ada@example.com',
+        social_platform: ['mastodon'],
+        social_url: ['https://mastodon.social/@ada'],
+        country: 'Mexico',
+        region: 'Nuevo Leon',
+        city: 'Monterrey',
+        esperanto_level: 'komencanto',
+        map_visible: 'on',
+      }),
+      ((key: string) => key) as never,
+      undefined,
+      geocode,
+    )
+
+    expect(payload.contact_email).toBe('ada@example.com')
+    expect(payload.social_links).toEqual([{ platform: 'mastodon', url: 'https://mastodon.social/@ada' }])
   })
 })

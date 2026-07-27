@@ -10,6 +10,7 @@ import {
 import { ESPERANTO_LEVELS } from '@/lib/constants'
 import { getAvatarUrl } from '@/lib/utils'
 import type { SettingsForm } from '@/lib/settingsProfile'
+import { SocialLinksEditor } from './SocialLinksEditor'
 
 interface ProfileSettingsSectionProps {
   displayName: string
@@ -260,6 +261,25 @@ export function ProfileSettingsSection({
             onChange={(event) => onFormChange((current) => ({ ...current, website: event.target.value }))}
           />
         </div>
+
+        <div className="field">
+          <label htmlFor="contact_email">{t('settings_contact_email')}</label>
+          <input
+            id="contact_email"
+            name="contact_email"
+            type="email"
+            placeholder="you@example.com"
+            value={form.contact_email}
+            onChange={(event) => onFormChange((current) => ({ ...current, contact_email: event.target.value }))}
+          />
+          <span className="field-hint">{t('settings_contact_email_hint')}</span>
+        </div>
+
+        <SocialLinksEditor
+          links={form.social_links}
+          onChange={(updater) => onFormChange((current) => ({ ...current, social_links: updater(current.social_links) }))}
+          t={t}
+        />
 
         <div className="field">
           <label className="toggle-row" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
