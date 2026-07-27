@@ -6,7 +6,7 @@ context: |
   Forms: react-hook-form + Zod. Query keys live in src/lib/query/keys.ts — never an undefined array element.
   i18n: all user-facing strings go through i18next (src/lib/i18n); locales eo/es/en/pt/ja/fr/de/ko/zh. No hardcoded product copy.
   Auth: Supabase Auth; do not null out profile/auth state on TOKEN_REFRESHED-type events for the same user (guest/auth flicker is a known regression class).
-  Roles: profiles.role in (user, moderator, admin, owner), gated client-side via ProtectedRoute minRole and server-side via RLS — the two must be kept in sync, do not add a client-only gate for a new sensitive action without a matching RLS policy.
+  Product scope: auth, profile settings, and an authenticated member map only (no feed/posts/comments/messaging/notifications/admin — those were deliberately removed).
   Avoid new runtime `any` in production code; keep files under ~350 lines before extracting.
   Full rulebook: RULES.md and docs/coding-standards.md, docs/i18n-standards.md, docs/architecture.md.
 

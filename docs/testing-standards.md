@@ -44,7 +44,7 @@ Use for:
 
 - auth flows
 - critical navigation
-- feed, detail, and messaging flows
+- auth and map flows
 - regressions involving route transitions
 - browser behavior that cannot be trusted from unit tests alone
 
@@ -71,11 +71,9 @@ Use for:
 When time is limited, prioritize tests for:
 
 1. auth/session continuity
-2. optimistic updates
-3. route transitions
-4. moderation-sensitive actions
-5. encoding and translation-sensitive UI
-6. data normalization
+2. route transitions
+3. encoding and translation-sensitive UI
+4. data normalization (map/profile data)
 
 ## Manual Verification
 

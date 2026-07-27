@@ -18,7 +18,7 @@ Every change should be evaluated against production behavior:
 - query cache correctness
 - PWA update behavior
 - mobile usability
-- moderation and abuse cases
+- map visibility and location-data correctness
 - translation consistency
 
 ### 3. Fast Iteration Without Silent Damage

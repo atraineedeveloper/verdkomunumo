@@ -6,7 +6,7 @@ This is not bureaucracy for its own sake. It is a tool to preserve quality while
 
 ## Where Things Live
 
-- `openspec/specs/<domain>/spec.md` — the source of truth for current, verified system behavior, organized by domain (`auth-and-session`, `feed-and-post-composer`, `post-detail-and-comments`, `comment-replies`, `messages-and-notifications`, `profiles-and-search`, `categories-and-taxonomy`, `settings-and-preferences`, `suggestions-and-feedback`, `admin-moderation`, `email-delivery-and-webhooks`).
+- `openspec/specs/<domain>/spec.md` — the source of truth for current, verified system behavior, organized by domain (`auth-and-session`, `settings-and-preferences`, `map-only-experience`).
 - `openspec/changes/<id>/` — an in-progress change: `proposal.md` (why/what), `specs/` (delta requirements), `design.md` (how), `tasks.md` (checklist).
 - `openspec/changes/archive/` — completed changes, kept for history.
 - `openspec/config.yaml` — project context and per-artifact rules injected into every OpenSpec planning request (tech stack, i18n/auth/role conventions — see the file itself).

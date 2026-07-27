@@ -40,7 +40,7 @@ Read these documents in this order when starting significant work:
 - [performance-and-reliability.md](./performance-and-reliability.md)
   Bundle, PWA, caching, loading, and resilience guidance.
 - [security-and-privacy.md](./security-and-privacy.md)
-  Security expectations for auth, data access, secrets, and moderation-sensitive features.
+  Security expectations for auth, data access, secrets, and location/map-visibility data.
 - [spec-driven-development.md](./spec-driven-development.md)
   The OpenSpec-based process for proposing, writing, and archiving specs before medium and large changes.
 - [qa-coverage-matrix.md](./qa-coverage-matrix.md)

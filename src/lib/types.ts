@@ -2,8 +2,6 @@ export type Theme = 'green' | 'dark' | 'vivid' | 'minimal'
 
 export type EsperantoLevel = 'komencanto' | 'progresanto' | 'flua'
 
-export type UserRole = 'user' | 'moderator' | 'admin' | 'owner'
-
 export type NotificationType =
   | 'like'
   | 'comment'
@@ -35,7 +33,6 @@ export interface Profile {
   avatar_url: string
   esperanto_level: EsperantoLevel
   theme: Theme
-  role: UserRole
   website: string
   country: string | null
   region: string | null
@@ -43,17 +40,6 @@ export interface Profile {
   location_lat: number | null
   location_lng: number | null
   map_visible: boolean
-  followers_count: number
-  following_count: number
-  posts_count: number
-  email_notifications_enabled: boolean
-  email_notify_like: boolean
-  email_notify_comment: boolean
-  email_notify_follow: boolean
-  email_notify_message: boolean
-  email_notify_mention: boolean
-  email_notify_category_approved: boolean
-  email_notify_category_rejected: boolean
   created_at: string
   updated_at: string
 }

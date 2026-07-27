@@ -73,17 +73,12 @@ The system SHALL preserve the current user's profile state across `TOKEN_REFRESH
 - THEN the profile and authenticated UI state remain unchanged and no guest state is shown at any point
 
 ### Requirement: Protected Route Access
-The system SHALL show a loading state (not a guest flicker) while session initialization is pending, redirect unauthenticated users to login with a `next` parameter capturing their intended destination, and redirect users lacking a required minimum role back to the feed.
+The system SHALL show a loading state (not a guest flicker) while session initialization is pending, and redirect unauthenticated users to login with a `next` parameter capturing their intended destination.
 
 #### Scenario: Unauthenticated user hits a protected route
 - GIVEN a signed-out visitor
 - WHEN they navigate directly to a protected route
 - THEN they are redirected to login with `next` set to that route, and after successful login are returned to it
-
-#### Scenario: Insufficient role
-- GIVEN an authenticated user whose role is below a route's required minimum role
-- WHEN they navigate to that route
-- THEN they are redirected to the feed
 
 ### Requirement: Sign Out
 The system SHALL clear both the Supabase session and local auth/profile state on sign-out and navigate the user to the login page.

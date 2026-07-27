@@ -1,15 +1,7 @@
 {
   "runtimeAny": [],
   "largeFiles": {
-    "src/pages/app/PostDetailPage.tsx": 722,
-    "src/pages/app/FeedPage.tsx": 595,
-    "src/components/PostComposer.tsx": 605,
-    "src/pages/admin/AdminDashboardPage.tsx": 441,
-    "src/pages/app/SearchPage.tsx": 414,
-    "src/pages/app/ProfilePage.tsx": 414,
-    "src/pages/admin/AdminReportsPage.tsx": 378,
-    "src/lib/i18n/translations.ts": 1950,
-    "src/lib/supabase/database.types.ts": 1150
+    "src/lib/i18n/translations.ts": 1950
   },
   "mojibakeAllow": []
 }

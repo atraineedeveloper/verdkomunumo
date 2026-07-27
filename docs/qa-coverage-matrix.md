@@ -10,20 +10,14 @@ This matrix helps decide what kind of verification each feature area should rece
 - integration: provider state transitions, route guards
 - E2E: login, register, reset-password, callback flows
 
-### Feed And Composer
+### Settings And Preferences
 
-- unit: normalization, optimistic updates, editor/link helpers
-- integration: composer interactions, quote flow, validation, image behavior
-- E2E: create post, like, navigate to detail, public vs auth behavior
+- unit: profile payload building, username validation, geocoding helpers
+- integration: profile/appearance section save behavior, map-visibility validation
+- E2E: edit and save profile fields, toggle map visibility, switch theme/locale
 
-### Post Detail And Comments
+### Map-Only Experience
 
-- unit: comment threading, reply targeting, optimistic detail updates
-- integration: comment form, edit/delete/report interactions
-- E2E: route navigation, comment create/edit/delete, stale route recovery
-
-### Messages And Notifications
-
-- unit: message normalization and unread calculations
-- integration: conversation list behavior, new conversation flow
-- E2E: message navigation, notification-to-target behavior
+- unit: map data normalization
+- integration: opted-in member rendering, guest vs authenticated map access
+- E2E: guest browses the map, authenticated member appears after enabling visibility

@@ -12,15 +12,14 @@ function LocationProbe() {
 
 function renderProtectedRoute() {
   render(
-    <MemoryRouter initialEntries={['/administrado?tab=roles#members']}>
+    <MemoryRouter initialEntries={['/agordoj']}>
       <Routes>
         <Route path={routes.login} element={<LocationProbe />} />
-        <Route path={routes.feed} element={<LocationProbe />} />
         <Route
-          path={routes.admin}
+          path={routes.settings}
           element={(
-            <ProtectedRoute minRole="admin">
-              <div>admin panel</div>
+            <ProtectedRoute>
+              <div>settings page</div>
             </ProtectedRoute>
           )}
         />
@@ -47,44 +46,19 @@ describe('ProtectedRoute', () => {
 
     renderProtectedRoute()
 
-    expect(screen.getByText('/ensaluti?next=%2Fadministrado%3Ftab%3Droles%23members')).toBeInTheDocument()
+    expect(screen.getByText('/ensaluti?next=%2Fagordoj')).toBeInTheDocument()
   })
 
-  it('shows a spinner while admin permissions are still loading', () => {
+  it('renders children for an authenticated user', () => {
     useAuthStore.setState({
       user: { id: 'user-1' } as never,
-      initialized: true,
-      profileLoaded: false,
-    })
-
-    renderProtectedRoute()
-
-    expect(screen.getByLabelText('Loading permissions')).toBeInTheDocument()
-  })
-
-  it('redirects users without the required role to the map', () => {
-    useAuthStore.setState({
-      user: { id: 'user-1' } as never,
-      profile: { id: 'user-1', role: 'user', username: 'ada' } as never,
+      profile: { id: 'user-1', username: 'ada' } as never,
       initialized: true,
       profileLoaded: true,
     })
 
     renderProtectedRoute()
 
-    expect(screen.getByText('/')).toBeInTheDocument()
-  })
-
-  it('renders children when the role requirement is met', () => {
-    useAuthStore.setState({
-      user: { id: 'user-1' } as never,
-      profile: { id: 'user-1', role: 'admin', username: 'ada' } as never,
-      initialized: true,
-      profileLoaded: true,
-    })
-
-    renderProtectedRoute()
-
-    expect(screen.getByText('admin panel')).toBeInTheDocument()
+    expect(screen.getByText('settings page')).toBeInTheDocument()
   })
 })

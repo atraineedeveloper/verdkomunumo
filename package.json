@@ -20,9 +20,6 @@
     "test:visual": "playwright test tests/e2e/visual.spec.ts",
     "test:visual:update": "playwright test tests/e2e/visual.spec.ts --update-snapshots",
     "test:a11y": "playwright test tests/e2e/a11y.spec.ts",
-    "mcp:admin": "bun run mcp/admin-server.ts",
-    "email:serve": "supabase functions serve send-notification-email --no-verify-jwt",
-    "email:deploy": "supabase functions deploy send-notification-email --no-verify-jwt",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
     "db:sync": "supabase db push && supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts"
@@ -63,6 +60,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "@vitejs/plugin-react": "^4.3.1",
     "jsdom": "^29.0.1",
+    "supabase": "^2.109.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.5.3",
     "vite": "^5.4.1",
