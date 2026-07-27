@@ -5,8 +5,10 @@ import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Icon } from 'leaflet'
+import { Globe, Mail } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import { TimelineSkeleton } from '@/components/ui/TimelineSkeleton'
+import { BrandIcon } from '@/components/ui/BrandIcon'
 import { LEVEL_COLORS } from '@/lib/icons'
 import { SOCIAL_PLATFORM_META } from '@/lib/constants'
 import { fetchMapUsers, formatStructuredLocation, type MapUser } from '@/lib/map'
@@ -72,7 +74,7 @@ function UserCard({ user }: { user: MapUser }) {
                 onClick={(event) => event.stopPropagation()}
                 title={t('settings_website')}
               >
-                🔗
+                <Globe size={16} />
               </a>
             )}
             {user.contact_email && (
@@ -81,7 +83,7 @@ function UserCard({ user }: { user: MapUser }) {
                 onClick={(event) => event.stopPropagation()}
                 title={t('settings_contact_email')}
               >
-                ✉️
+                <Mail size={16} />
               </a>
             )}
             {user.social_links.map((link) => (
@@ -93,7 +95,7 @@ function UserCard({ user }: { user: MapUser }) {
                 onClick={(event) => event.stopPropagation()}
                 title={SOCIAL_PLATFORM_META[link.platform].label}
               >
-                {SOCIAL_PLATFORM_META[link.platform].emoji}
+                <BrandIcon icon={SOCIAL_PLATFORM_META[link.platform].icon} className="map-user-link-icon" />
               </a>
             ))}
           </div>
@@ -258,8 +260,10 @@ export default function SamideanojPage() {
         .map-user-username { font-size: 0.78rem; color: var(--color-text-muted); }
         .map-user-level { font-size: 0.75rem; font-weight: 500; }
         .map-user-location { font-size: 0.75rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .map-user-links { display: flex; gap: 0.4rem; margin-top: 0.15rem; }
-        .map-user-links a { font-size: 0.85rem; text-decoration: none; line-height: 1; }
+        .map-user-links { display: flex; gap: 0.5rem; margin-top: 0.2rem; align-items: center; }
+        .map-user-links a { display: inline-flex; color: var(--color-text-muted); text-decoration: none; line-height: 1; transition: color 0.15s; }
+        .map-user-links a:hover { color: var(--color-text); }
+        .map-user-link-icon { width: 16px; height: 16px; }
         .map-popup { display: flex; flex-direction: column; gap: 0.35rem; min-width: 120px; }
         .map-popup-title { font-size: 0.875rem; font-weight: 700; color: #111; }
         .map-popup-count { font-size: 0.8rem; color: #555; }

@@ -1,4 +1,5 @@
 import { SOCIAL_LINKS_MAX, SOCIAL_PLATFORMS, SOCIAL_PLATFORM_META } from '@/lib/constants'
+import { BrandIcon } from '@/components/ui/BrandIcon'
 import type { SocialLink } from '@/lib/types'
 
 interface SocialLinksEditorProps {
@@ -14,6 +15,7 @@ export function SocialLinksEditor({ links, onChange, t }: SocialLinksEditorProps
       <span className="field-hint">{t('settings_social_links_hint')}</span>
       {links.map((link, index) => (
         <div className="field-row" key={index}>
+          <BrandIcon icon={SOCIAL_PLATFORM_META[link.platform].icon} className="social-platform-preview" />
           <select
             name="social_platform"
             value={link.platform}
@@ -23,7 +25,7 @@ export function SocialLinksEditor({ links, onChange, t }: SocialLinksEditorProps
           >
             {SOCIAL_PLATFORMS.map((platform) => (
               <option key={platform} value={platform}>
-                {SOCIAL_PLATFORM_META[platform].emoji} {SOCIAL_PLATFORM_META[platform].label}
+                {SOCIAL_PLATFORM_META[platform].label}
               </option>
             ))}
           </select>

@@ -31,32 +31,6 @@
   --color-danger:      #f87171;
 }
 
-/* ─── Vivid ──────────────────────────────────────── */
-.theme-vivid {
-  --color-bg:          #ffffff;
-  --color-surface:     #ffffff;
-  --color-surface-alt: #faf8ff;
-  --color-primary:     #7c3aed;
-  --color-primary-dim: rgba(124, 58, 237, 0.07);
-  --color-text:        #1a1523;
-  --color-text-muted:  #7c6d9a;
-  --color-border:      #ede9f6;
-  --color-danger:      #ef4444;
-}
-
-/* ─── Minimal ────────────────────────────────────── */
-.theme-minimal {
-  --color-bg:          #fafafa;
-  --color-surface:     #fafafa;
-  --color-surface-alt: #f4f4f5;
-  --color-primary:     #18181b;
-  --color-primary-dim: rgba(24, 24, 27, 0.05);
-  --color-text:        #18181b;
-  --color-text-muted:  #a1a1aa;
-  --color-border:      #e4e4e7;
-  --color-danger:      #ef4444;
-}
-
 /* ─── Base ───────────────────────────────────────── */
 body {
   background: var(--color-bg);

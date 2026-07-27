@@ -4,7 +4,7 @@ context: |
   Verdkomunumo: React 18 + Vite + TypeScript (strict) + Supabase (Postgres, RLS, Storage, Edge Functions) + Bun.
   State: TanStack React Query for server state, Zustand for cross-cutting client state, local useState for local UI state.
   Forms: react-hook-form + Zod. Query keys live in src/lib/query/keys.ts — never an undefined array element.
-  i18n: all user-facing strings go through i18next (src/lib/i18n); locales eo/es/en/pt/ja/fr/de/ko/zh. No hardcoded product copy.
+  i18n: all user-facing strings go through i18next (src/lib/i18n); locales eo (default/fallback) and en only. No hardcoded product copy.
   Auth: Supabase Auth; do not null out profile/auth state on TOKEN_REFRESHED-type events for the same user (guest/auth flicker is a known regression class).
   Product scope: auth, profile settings, and an authenticated member map only (no feed/posts/comments/messaging/notifications/admin — those were deliberately removed).
   Avoid new runtime `any` in production code; keep files under ~350 lines before extracting.

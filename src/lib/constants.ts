@@ -1,3 +1,5 @@
+import { siX, siInstagram, siTelegram, siMastodon, siFacebook, siWhatsapp, siThreads, siDuolingo } from 'simple-icons'
+import type { SimpleIcon } from 'simple-icons'
 import type { EsperantoLevel, SocialPlatform } from './types'
 
 export const ESPERANTO_LEVELS: Record<EsperantoLevel, { label: string; emoji: string }> = {
@@ -11,18 +13,24 @@ export const SOCIAL_PLATFORMS: readonly SocialPlatform[] = [
   'instagram',
   'telegram',
   'mastodon',
-  'facebook'
+  'facebook',
+  'duolingo',
+  'threads',
+  'whatsapp'
 ] as const
 
-export const SOCIAL_PLATFORM_META: Record<SocialPlatform, { label: string; emoji: string }> = {
-  twitter: { label: 'X / Twitter', emoji: '🐦' },
-  instagram: { label: 'Instagram', emoji: '📷' },
-  telegram: { label: 'Telegram', emoji: '✈️' },
-  mastodon: { label: 'Mastodon', emoji: '🐘' },
-  facebook: { label: 'Facebook', emoji: '📘' }
+export const SOCIAL_PLATFORM_META: Record<SocialPlatform, { label: string; icon: SimpleIcon }> = {
+  twitter: { label: 'X / Twitter', icon: siX },
+  instagram: { label: 'Instagram', icon: siInstagram },
+  telegram: { label: 'Telegram', icon: siTelegram },
+  mastodon: { label: 'Mastodon', icon: siMastodon },
+  facebook: { label: 'Facebook', icon: siFacebook },
+  duolingo: { label: 'Duolingo', icon: siDuolingo },
+  threads: { label: 'Threads', icon: siThreads },
+  whatsapp: { label: 'WhatsApp', icon: siWhatsapp }
 }
 
-export const SOCIAL_LINKS_MAX = 5
+export const SOCIAL_LINKS_MAX = 8
 
 export const CATEGORIES = [
   { name: 'Ĝenerala', slug: 'generala', icon: '💬' },

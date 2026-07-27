@@ -11,17 +11,10 @@ Verdkomunumo is multilingual and community-facing. Language quality is product q
 
 ## Supported Locales
 
-The project currently tracks these locales in the translation layer:
+The project tracks these locales in the translation layer:
 
-- Esperanto
-- Spanish
+- Esperanto (default and fallback)
 - English
-- Portuguese
-- Japanese
-- French
-- German
-- Korean
-- Chinese
 
 ## Source Of Truth
 

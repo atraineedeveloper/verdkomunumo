@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LOCALE_LABELS, LOCALE_COUNTRY, translations, type Locale } from './translations'
 
-const EXPECTED_LOCALES: Locale[] = ['eo', 'es', 'en', 'pt', 'ja', 'fr', 'de', 'ko', 'zh']
+const EXPECTED_LOCALES: Locale[] = ['eo', 'en']
 
 describe('i18n translations', () => {
   describe('LOCALE_LABELS', () => {

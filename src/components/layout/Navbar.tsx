@@ -9,7 +9,7 @@ import type { Theme } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 
-const THEMES: Theme[] = ['green', 'dark', 'vivid', 'minimal']
+const THEMES: Theme[] = ['green', 'dark']
 
 export function Navbar() {
   const { t } = useTranslation()

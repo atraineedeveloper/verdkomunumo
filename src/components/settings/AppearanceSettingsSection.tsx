@@ -2,8 +2,8 @@ import { LocaleFlag } from '@/components/ui/LocaleFlag'
 import { LOCALE_LABELS, type Locale } from '@/lib/i18n'
 import type { Theme } from '@/lib/types'
 
-const themeValues: Theme[] = ['green', 'dark', 'vivid', 'minimal']
-const themeKeys = ['theme_green', 'theme_dark', 'theme_vivid', 'theme_minimal'] as const
+const themeValues: Theme[] = ['green', 'dark']
+const themeKeys = ['theme_green', 'theme_dark'] as const
 const locales = Object.keys(LOCALE_LABELS) as Locale[]
 
 interface AppearanceSettingsSectionProps {

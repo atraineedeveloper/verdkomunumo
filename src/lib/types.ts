@@ -1,4 +1,4 @@
-export type Theme = 'green' | 'dark' | 'vivid' | 'minimal'
+export type Theme = 'green' | 'dark'
 
 export type EsperantoLevel = 'komencanto' | 'progresanto' | 'flua'
 
@@ -24,7 +24,7 @@ export type ContentReportReason =
   | 'other'
 export type ContentReportStatus = 'pending' | 'resolved' | 'dismissed'
 
-export type SocialPlatform = 'twitter' | 'instagram' | 'telegram' | 'mastodon' | 'facebook'
+export type SocialPlatform = 'twitter' | 'instagram' | 'telegram' | 'mastodon' | 'facebook' | 'duolingo' | 'threads' | 'whatsapp'
 
 export interface SocialLink {
   platform: SocialPlatform
